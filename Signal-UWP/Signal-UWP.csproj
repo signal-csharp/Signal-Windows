@@ -91,6 +91,7 @@
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
     <None Include="project.json" />
+    <Content Include="textsecure-servicewhispersystemsorg.crt" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
