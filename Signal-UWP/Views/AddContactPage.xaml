@@ -14,6 +14,6 @@
         <TextBlock>Number (e164)</TextBlock>
         <TextBox IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Name="NumberTextBox" Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}"></TextBox>
         <Button IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Name="CreateButton" Click="CreateButton_Click">Create</Button>
-        <Button IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}">Back</Button>
+        <Button IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Click="Button_Click">Back</Button>
     </StackPanel>
 </Page>

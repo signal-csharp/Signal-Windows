@@ -35,6 +35,8 @@ namespace Signal_UWP.ViewModels
             SimpleIoc.Default.Register<INavigationService, NavigationService>();
             SimpleIoc.Default.Register<StartPageViewModel>();
             SimpleIoc.Default.Register<AddContactPageViewModel>();
+            SimpleIoc.Default.Register<MainPageViewModel>();
+            SimpleIoc.Default.Register<RegisterPageViewModel>();
         }
 
 
@@ -60,6 +62,21 @@ namespace Signal_UWP.ViewModels
             }
         }
 
+        public MainPageViewModel MainPageInstance
+        {
+            get
+            {
+                return ServiceLocator.Current.GetInstance<MainPageViewModel>();
+            }
+        }
+
+        public RegisterPageViewModel RegisterPageInstance
+        {
+            get
+            {
+                return ServiceLocator.Current.GetInstance<RegisterPageViewModel>();
+            }
+        }
         // <summary>
         // The cleanup.
         // </summary>

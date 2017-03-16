@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Storage.DB
+namespace Signal_UWP.Storage
 {
     public class SignalDBContext : DbContext
     {
@@ -23,20 +23,20 @@ namespace Storage.DB
             {
                 using(var db = new SignalDBContext())
                 {
-                    var c = db.Contacts.SingleOrDefaultAsync(b => b.E164Number == contact.E164Number).Result;
+                    var c = db.Contacts.SingleOrDefaultAsync(b => b.UserName == contact.UserName).Result;
                     if(c == null)
                     {
                         c = new SignalContact()
                         {
                             Color = contact.Color,
-                            E164Number = contact.E164Number,
-                            ContactName = contact.ContactName
+                            UserName = contact.UserName,
+                            ContactDisplayName = contact.ContactDisplayName
                         };
                         db.Contacts.Add(c);
                     } else {
                         c.Color = contact.Color;
-                        c.E164Number = contact.E164Number;
-                        c.ContactName = contact.ContactName;
+                        c.UserName = contact.UserName;
+                        c.ContactDisplayName = contact.ContactDisplayName;
                     }
                     if (flush)
                     {

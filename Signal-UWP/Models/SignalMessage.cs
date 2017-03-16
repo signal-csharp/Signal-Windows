@@ -12,5 +12,10 @@ namespace Signal_UWP.Models
         public uint Type { get; set; }
         public string Content { get; set; }
         public string ThreadID { get; set; }
+        public SignalContact Author { get; set; }
+        //public uint DeviceId { get; set; }
+        //public uint Receipts { get; set; }
+        public long ReceivedTimestamp { get; set; }
+        public long ComposedTimestamp { get; set; }
     }
 }

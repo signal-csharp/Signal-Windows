@@ -1,4 +1,5 @@
 ﻿using Signal_UWP.ViewModels;
+using Signal_Windows.Signal;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -38,6 +39,11 @@ namespace Signal_UWP.Views
         private void AddNewContactButton_Click(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(AddContactPage));
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(RegisterPage));
         }
     }
 }

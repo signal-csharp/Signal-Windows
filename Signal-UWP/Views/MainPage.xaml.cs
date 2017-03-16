@@ -1,7 +1,10 @@
-﻿using Signal_UWP.Views;
-using Storage.DB;
+﻿using Signal_UWP.Models;
+using Signal_UWP.Storage;
+using Signal_UWP.ViewModels;
+using Signal_UWP.Views;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -27,17 +30,46 @@ namespace Signal_UWP
         public MainPage()
         {
             this.InitializeComponent();
+            Vm.View = this;
+        }
+
+        public MainPageViewModel Vm
+        {
+            get
+            {
+                return (MainPageViewModel)DataContext;
+            }
         }
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            using (var db = new SignalDBContext())
-            {
-                //Contacts.ItemsSource = db.Contacts.ToList();
-            }
+
         }
 
         private void AddContactButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(AddContactPage));
+        }
+
+        private void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            Vm.TextBox_KeyDown(sender, e);
+        }
+
+        private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UnselectedBlock.Visibility = Visibility.Collapsed;
+            SelectedMessagesList.Visibility = Visibility.Visible;
+            Vm.ContactsList_SelectionChanged(sender, e);
+        }
+
+        public void ScrollToBottom()
+        {
+            SelectedMessagesScrollViewer.UpdateLayout();
+            SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f);
+        }
+
+        private void AddFriendSymbol_Tapped(object sender, TappedRoutedEventArgs e)
         {
             Frame.Navigate(typeof(AddContactPage));
         }

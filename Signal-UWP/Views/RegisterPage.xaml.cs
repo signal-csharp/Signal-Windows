@@ -1,9 +1,12 @@
 ﻿using Signal_UWP.ViewModels;
+using Signal_Windows.Signal;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -21,27 +24,33 @@ namespace Signal_UWP.Views
     /// <summary>
     /// Eine leere Seite, die eigenständig verwendet oder zu der innerhalb eines Rahmens navigiert werden kann.
     /// </summary>
-    public sealed partial class AddContactPage : Page
+    public sealed partial class RegisterPage : Page
     {
-        public AddContactPage()
+        public RegisterPage()
         {
             this.InitializeComponent();
+            Vm.View = this;
         }
-        public AddContactPageViewModel Vm
+
+        public RegisterPageViewModel Vm
         {
             get
             {
-                return (AddContactPageViewModel)DataContext;
+                return (RegisterPageViewModel)DataContext;
             }
         }
 
-        private void CreateButton_Click(object sender, RoutedEventArgs e)
+        private void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
-            Vm.CreateButton_Click(sender, e);
-            Frame.Navigate(typeof(MainPage));
+            Vm.RegisterButton_Click(sender, e);
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void ConfirmButton_Click(object sender, RoutedEventArgs e)
+        {
+            Vm.ConfirmButton_Click(sender, e);
+        }
+
+        public void NavigateForward()
         {
             Frame.Navigate(typeof(MainPage));
         }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Signal_UWP.Storage;
+using Signal_UWP.ViewModels;
 using Signal_UWP.Views;
-using Storage.DB;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,6 +28,7 @@ namespace Signal_UWP
     /// </summary>
     sealed partial class App : Application
     {
+        ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
         StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
@@ -77,7 +79,14 @@ namespace Signal_UWP
                     // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
                     // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
                     // übergeben werden
-                    rootFrame.Navigate(typeof(StartPage), e.Arguments);
+                    if(LocalSettings.Values["Active"] != null && (bool) LocalSettings.Values["Active"])
+                    {
+                        rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    }
+                    else
+                    {
+                        rootFrame.Navigate(typeof(StartPage), e.Arguments);
+                    }
                 }
                 // Sicherstellen, dass das aktuelle Fenster aktiv ist
                 Window.Current.Activate();
@@ -101,9 +110,21 @@ namespace Signal_UWP
         /// </summary>
         /// <param name="sender">Die Quelle der Anhalteanforderung.</param>
         /// <param name="e">Details zur Anhalteanforderung.</param>
-        private void OnSuspending(object sender, SuspendingEventArgs e)
+        private async void OnSuspending(object sender, SuspendingEventArgs e)
         {
             var deferral = e.SuspendingOperation.GetDeferral();
+            var locator = Current.Resources["Locator"];
+            if(locator!= null && locator.GetType() == typeof(ViewModelLocator))
+            {
+                var vmloc = (ViewModelLocator)locator;
+                if(vmloc.MainPageInstance != null)
+                {
+                    vmloc.MainPageInstance.Cancel();
+                    await vmloc.MainPageInstance.OutgoingOffSwitch.WaitAsync();
+                    await vmloc.MainPageInstance.IncomingOffSwitch.WaitAsync();
+                }
+            }
+            Debug.WriteLine("shutdown successful");
             //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden
             deferral.Complete();
         }

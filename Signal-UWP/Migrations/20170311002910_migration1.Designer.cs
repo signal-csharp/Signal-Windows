@@ -8,9 +8,10 @@ using Signal_UWP.Storage;
 namespace Signal_UWP.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    partial class SignalDBContextModelSnapshot : ModelSnapshot
+    [Migration("20170311002910_migration1")]
+    partial class migration1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.1");

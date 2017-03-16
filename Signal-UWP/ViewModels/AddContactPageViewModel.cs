@@ -1,6 +1,5 @@
 ﻿using GalaSoft.MvvmLight;
 using Signal_UWP.Models;
-using Storage.DB;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,6 +11,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using System.Xml.Linq;
+using Signal_UWP.Storage;
 
 namespace Signal_UWP.ViewModels
 {
@@ -68,8 +68,8 @@ namespace Signal_UWP.ViewModels
             Debug.WriteLine("creating contact {0} ({1})", ContactName, ContactNumber);
             SignalContact contact = new SignalContact()
             {
-                ContactName = ContactName,
-                E164Number = ContactNumber
+                ContactDisplayName = ContactName,
+                UserName = ContactNumber
             };
             ContactName = "";
             ContactNumber = "";

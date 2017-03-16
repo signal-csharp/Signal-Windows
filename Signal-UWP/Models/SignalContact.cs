@@ -10,13 +10,14 @@ namespace Signal_UWP.Models
     {
         public SignalContact()
         {
-            ContactName = "Anonymous";
+            ContactDisplayName = "Anonymous";
             Color = "";
-            E164Number = "";
+            UserName = "";
         }
         public uint Id { get; set; }
-        public string E164Number { get; set; }
-        public string ContactName { get; set; }
+        public string UserName { get; set; }
+        public string ContactDisplayName { get; set; }
         public string Color { get; set; }
+        public long LastActiveTimestamp { get; set; }
     }
 }
