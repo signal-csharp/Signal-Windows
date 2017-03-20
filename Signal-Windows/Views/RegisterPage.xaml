@@ -1,0 +1,40 @@
+﻿<Page
+    x:Class="Signal_Windows.Views.RegisterPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Signal_Windows.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    DataContext="{Binding RegisterPageInstance, Source={StaticResource Locator}}">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <Color x:Key="SystemAltHighColor">#2190EA</Color>
+                    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{ThemeResource SystemAltHighColor}" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="SystemAltHighColor">#2190EA</Color>
+                    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{ThemeResource SystemAltHighColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="20 20 20 20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" TextWrapping="WrapWholeWords">Please enter your phone number you want to use with Signal in the e164 format.</TextBlock>
+        <TextBox Grid.Row="1" Margin="20 20 20 20" Name="PhoneNumberBox" Text="{x:Bind Vm.PhoneNumber, Mode=TwoWay}"></TextBox>
+        <Button Grid.Row="2" HorizontalAlignment="Center" Name="RegisterButton" Click="RegisterButton_Click">Request registration SMS</Button>
+        <TextBox Grid.Row="3" HorizontalAlignment="Center" Width="300" Margin="0 80 0 0" Name="ConfirmationCodeBox" Text="{x:Bind Vm.ConfirmationCode, Mode=TwoWay}"></TextBox>
+        <Button Grid.Row="4" HorizontalAlignment="Center" Margin="0 20 0 0" Name="ConfirmButton" Click="ConfirmButton_Click">Confirm sms authentication code</Button>
+    </Grid>
+</Page>
