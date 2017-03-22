@@ -35,7 +35,7 @@ namespace Signal_Windows.ViewModels
         public ObservableCollection<SignalContact> Contacts = new ObservableCollection<SignalContact>();
         public ObservableCollection<SignalMessage> Messages = new ObservableCollection<SignalMessage>();
         public MainPage View;
-        public SignalContact SelectedThread;
+        public string SelectedThread;
         public Manager SignalManager = null;
         public volatile bool Running = true;
         CancellationTokenSource CancelSource = new CancellationTokenSource();
@@ -94,11 +94,11 @@ namespace Signal_Windows.ViewModels
         internal void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             SignalContact contact = (SignalContact) e.AddedItems[0];
-            SelectedThread = contact;
+            SelectedThread = contact.UserName;
             Messages.Clear();
             using (var ctx = new SignalDBContext())
             {
-                var messages = ctx.Messages.Where(b => b.ThreadID == SelectedThread.UserName).AsNoTracking();
+                var messages = ctx.Messages.Where(b => b.ThreadID == SelectedThread).AsNoTracking();
                 foreach (var message in messages)
                 {
                     Messages.Add(message);
@@ -119,7 +119,7 @@ namespace Signal_Windows.ViewModels
                         Author = null,
                         ComposedTimestamp = Util.CurrentTimeMillis(),
                         Content = t.Text,
-                        ThreadID = SelectedThread.UserName,
+                        ThreadID = SelectedThread,
                         Type = 0
                     };
                     Messages.Add(sm);
@@ -253,11 +253,11 @@ namespace Signal_Windows.ViewModels
             ctx.Messages.Add(message);
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
-                if (SelectedThread.UserName == source)
+                if (SelectedThread == source)
                 {
                     Messages.Add(message);
                     View.ScrollToBottom();
-                    }
+                }
             }).AsTask().Wait();
             Debug.WriteLine(message.Content);
         }
