@@ -15,7 +15,7 @@ namespace Signal_Windows.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.1");
 
-            modelBuilder.Entity("Signal_UWP.Models.SignalContact", b =>
+            modelBuilder.Entity("Signal_Windows.Models.SignalContact", b =>
                 {
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd();
@@ -33,7 +33,7 @@ namespace Signal_Windows.Migrations
                     b.ToTable("Contacts");
                 });
 
-            modelBuilder.Entity("Signal_UWP.Models.SignalMessage", b =>
+            modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
                 {
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd();
@@ -44,7 +44,13 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("Content");
 
+                    b.Property<uint>("DeviceId");
+
+                    b.Property<uint>("Receipts");
+
                     b.Property<long>("ReceivedTimestamp");
+
+                    b.Property<uint>("Status");
 
                     b.Property<string>("ThreadID");
 
@@ -57,9 +63,9 @@ namespace Signal_Windows.Migrations
                     b.ToTable("Messages");
                 });
 
-            modelBuilder.Entity("Signal_UWP.Models.SignalMessage", b =>
+            modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
                 {
-                    b.HasOne("Signal_UWP.Models.SignalContact", "Author")
+                    b.HasOne("Signal_Windows.Models.SignalContact", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorId");
                 });

@@ -243,12 +243,15 @@ namespace Signal_Windows.ViewModels
             string threadId = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
             SignalMessage message = new SignalMessage()
             {
-                Author = author,
+                Type = source == (string)LocalSettings.Values["Username"] ? (uint)SignalMessageType.Outgoing : (uint)SignalMessageType.Incoming,
+                Status = (uint)SignalMessageStatus.Default,
                 Content = body,
-                ComposedTimestamp = envelope.getTimestamp(),
-                ReceivedTimestamp = 0,
                 ThreadID = source,
-                Type = source == (string)LocalSettings.Values["Username"] ? 0u : 1u
+                Author = author,
+                DeviceId = (uint) envelope.getSourceDevice(),
+                Receipts = 0,
+                ComposedTimestamp = envelope.getTimestamp(),
+                ReceivedTimestamp = Util.CurrentTimeMillis(),
             };
             ctx.Messages.Add(message);
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>

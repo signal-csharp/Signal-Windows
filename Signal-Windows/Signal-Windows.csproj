@@ -97,9 +97,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\20170311002910_migration1.cs" />
-    <Compile Include="Migrations\20170311002910_migration1.designer.cs">
-      <DependentUpon>20170311002910_migration1.cs</DependentUpon>
+    <Compile Include="Migrations\20170322105540_FirstMigration.cs" />
+    <Compile Include="Migrations\20170322105540_FirstMigration.designer.cs">
+      <DependentUpon>20170322105540_FirstMigration.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\SignalMessage.cs" />

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Signal_Windows.Migrations
 {
-    public partial class migration1 : Migration
+    public partial class FirstMigration : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -33,7 +33,10 @@ namespace Signal_Windows.Migrations
                     AuthorId = table.Column<uint>(nullable: true),
                     ComposedTimestamp = table.Column<long>(nullable: false),
                     Content = table.Column<string>(nullable: true),
+                    DeviceId = table.Column<uint>(nullable: false),
+                    Receipts = table.Column<uint>(nullable: false),
                     ReceivedTimestamp = table.Column<long>(nullable: false),
+                    Status = table.Column<uint>(nullable: false),
                     ThreadID = table.Column<string>(nullable: true),
                     Type = table.Column<uint>(nullable: false)
                 },
