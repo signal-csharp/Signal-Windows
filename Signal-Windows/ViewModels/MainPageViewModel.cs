@@ -264,6 +264,10 @@ namespace Signal_Windows.ViewModels
             };
             ctx.Messages.Add(message);
             int i = 0;
+            if(attachments.Count > 0)
+            {
+                ctx.SaveChanges();
+            }
             foreach(var attachment in attachments)
             {
                 var pointer = attachment.asPointer();
