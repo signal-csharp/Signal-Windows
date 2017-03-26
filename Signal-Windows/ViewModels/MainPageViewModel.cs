@@ -26,6 +26,7 @@ using static libsignalservice.SignalServiceMessagePipe;
 using Microsoft.EntityFrameworkCore;
 using Windows.UI.Xaml.Navigation;
 using Windows.Storage;
+using System.IO;
 
 namespace Signal_Windows.ViewModels
 {
@@ -208,7 +209,7 @@ namespace Signal_Windows.ViewModels
                             if (content.getDataMessage().HasValue)
                             {
                                 SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
-                                handleTextMessage(ctx, envelope, content, message);
+                                handleMessage(ctx, envelope, content, message);
                             }
                         }
                         catch (Exception e)
@@ -226,12 +227,14 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private void handleTextMessage(SignalDBContext ctx, SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
+        private void handleMessage(SignalDBContext ctx, SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
         {
+            bool createdAuthor = false;
             string source = envelope.getSource();
             SignalContact author = ctx.Contacts.SingleOrDefault(b => b.UserName == source);
             if(author == null)
             {
+                createdAuthor = true;
                 author = new SignalContact()
                 {
                     UserName = source,
@@ -241,10 +244,15 @@ namespace Signal_Windows.ViewModels
             }
             string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
             string threadId = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
+            List<SignalServiceAttachment> attachments = new List<SignalServiceAttachment>();
+            if(dataMessage.getAttachments().HasValue)
+            {
+                attachments = dataMessage.getAttachments().ForceGetValue();
+            }
             SignalMessage message = new SignalMessage()
             {
                 Type = source == (string)LocalSettings.Values["Username"] ? (uint)SignalMessageType.Outgoing : (uint)SignalMessageType.Incoming,
-                Status = (uint)SignalMessageStatus.Default,
+                Status = (uint) SignalMessageStatus.Default,
                 Content = body,
                 ThreadID = source,
                 Author = author,
@@ -252,8 +260,44 @@ namespace Signal_Windows.ViewModels
                 Receipts = 0,
                 ComposedTimestamp = envelope.getTimestamp(),
                 ReceivedTimestamp = Util.CurrentTimeMillis(),
+                Attachments = (uint) attachments.Count
             };
             ctx.Messages.Add(message);
+            int i = 0;
+            foreach(var attachment in attachments)
+            {
+                var pointer = attachment.asPointer();
+                SignalAttachment sa = new SignalAttachment()
+                {
+                    FileName = "attachment_" + message.Id + "_" + i,
+                    Message = message,
+                    Status = (uint) SignalAttachmentStatus.Default,
+                    ContentType = "",
+                    Key = pointer.getKey(),
+                    Relay = pointer.getRelay(),
+                    StorageId = pointer.getId()
+                };
+                i++;
+                ctx.Attachments.Add(sa);
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        DirectoryInfo di = Directory.CreateDirectory(Manager.localFolder + @"\Attachments");
+                        using (var cipher = File.Open(Manager.localFolder + @"\Attachments\"+sa.FileName + ".cipher", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+                        using (var plain = File.OpenWrite(Manager.localFolder + @"\Attachments\" + sa.FileName))
+                        {
+                            SignalManager.MessageReceiver.retrieveAttachment(pointer, plain, cipher);
+                            //TODO notify UI
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e.Message);
+                        Debug.WriteLine(e.StackTrace);
+                    }
+                });
+            }
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
                 if (SelectedThread == source)
@@ -261,8 +305,12 @@ namespace Signal_Windows.ViewModels
                     Messages.Add(message);
                     View.ScrollToBottom();
                 }
+                if(createdAuthor)
+                {
+                    Contacts.Add(author);
+                }
             }).AsTask().Wait();
-            Debug.WriteLine(message.Content);
+            Debug.WriteLine("received message: "+message.Content);
         }
 #endregion
     }

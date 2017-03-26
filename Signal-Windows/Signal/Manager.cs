@@ -27,7 +27,7 @@ namespace Signal_Windows.Signal
     public class Manager
     {
         ApplicationDataContainer            LocalSettings = ApplicationData.Current.LocalSettings;
-        static string                       localFolder = ApplicationData.Current.LocalFolder.Path;
+        public static string                       localFolder = ApplicationData.Current.LocalFolder.Path;
         static string                       URL         = "https://textsecure-service.whispersystems.org";
         static TrustStore                   TRUST_STORE = new WhisperTrustStore();
         SignalServiceUrl[]                  serviceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, TRUST_STORE) };
@@ -44,7 +44,7 @@ namespace Signal_Windows.Signal
         CancellationToken Token;
         SignalServiceMessagePipe Pipe = null;
         SignalServiceMessageSender MessageSender;
-        SignalServiceMessageReceiver MessageReceiver;
+        public SignalServiceMessageReceiver MessageReceiver;
 
         public Manager(CancellationToken token, String username, bool active)
         {

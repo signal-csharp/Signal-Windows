@@ -11,6 +11,7 @@ namespace Signal_Windows.Storage
         private static readonly Object obj = new Object();
         public DbSet<SignalContact> Contacts { get; set; }
         public DbSet<SignalMessage> Messages { get; set; }
+        public DbSet<SignalAttachment> Attachments { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

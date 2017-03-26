@@ -1,6 +1,6 @@
 ﻿{
   "dependencies": {
-    "libsignal-service-dotnet": "1.4.41",
+    "libsignal-service-dotnet": "1.4.66",
     "Microsoft.EntityFrameworkCore": "1.1.1",
     "Microsoft.EntityFrameworkCore.Design": "1.1.1",
     "Microsoft.EntityFrameworkCore.Sqlite": "1.1.1",

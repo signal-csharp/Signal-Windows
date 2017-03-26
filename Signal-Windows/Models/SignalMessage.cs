@@ -16,8 +16,10 @@ namespace Signal_Windows.Models
         public SignalContact Author { get; set; }
         public uint DeviceId { get; set; }
         public uint Receipts { get; set; }
+        public uint ReadConfirmations { get; set; }
         public long ReceivedTimestamp { get; set; }
         public long ComposedTimestamp { get; set; }
+        public uint Attachments { get; set; }
     }
 
     public enum SignalMessageType

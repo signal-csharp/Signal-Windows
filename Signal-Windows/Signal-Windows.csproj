@@ -97,11 +97,12 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\20170322105540_FirstMigration.cs" />
-    <Compile Include="Migrations\20170322105540_FirstMigration.designer.cs">
-      <DependentUpon>20170322105540_FirstMigration.cs</DependentUpon>
+    <Compile Include="Migrations\20170326105236_m.cs" />
+    <Compile Include="Migrations\20170326105236_m.designer.cs">
+      <DependentUpon>20170326105236_m.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\SignalDBContextModelSnapshot.cs" />
+    <Compile Include="Models\SignalAttachment.cs" />
     <Compile Include="Models\SignalMessage.cs" />
     <Compile Include="Models\SignalContact.cs" />
     <Compile Include="Signal\Manager.cs" />

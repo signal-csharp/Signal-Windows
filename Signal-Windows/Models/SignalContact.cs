@@ -19,5 +19,6 @@ namespace Signal_Windows.Models
         public string ContactDisplayName { get; set; }
         public string Color { get; set; }
         public long LastActiveTimestamp { get; set; }
+        //public bool HasUnread { get; set; }
     }
 }

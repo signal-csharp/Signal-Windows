@@ -15,6 +15,32 @@ namespace Signal_Windows.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.1");
 
+            modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("ContentType");
+
+                    b.Property<string>("FileName");
+
+                    b.Property<byte[]>("Key");
+
+                    b.Property<uint?>("MessageId");
+
+                    b.Property<string>("Relay");
+
+                    b.Property<uint>("Status");
+
+                    b.Property<ulong>("StorageId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("Attachments");
+                });
+
             modelBuilder.Entity("Signal_Windows.Models.SignalContact", b =>
                 {
                     b.Property<uint>("Id")
@@ -38,6 +64,8 @@ namespace Signal_Windows.Migrations
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<uint>("Attachments");
+
                     b.Property<uint?>("AuthorId");
 
                     b.Property<long>("ComposedTimestamp");
@@ -45,6 +73,8 @@ namespace Signal_Windows.Migrations
                     b.Property<string>("Content");
 
                     b.Property<uint>("DeviceId");
+
+                    b.Property<uint>("ReadConfirmations");
 
                     b.Property<uint>("Receipts");
 
@@ -61,6 +91,13 @@ namespace Signal_Windows.Migrations
                     b.HasIndex("AuthorId");
 
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
+                {
+                    b.HasOne("Signal_Windows.Models.SignalMessage", "Message")
+                        .WithMany()
+                        .HasForeignKey("MessageId");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
