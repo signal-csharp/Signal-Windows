@@ -122,6 +122,7 @@ namespace Signal_Windows
                     vmloc.MainPageInstance.Cancel();
                     await vmloc.MainPageInstance.OutgoingOffSwitch.WaitAsync();
                     await vmloc.MainPageInstance.IncomingOffSwitch.WaitAsync();
+                    await vmloc.MainPageInstance.DBOffSwitch.WaitAsync();
                 }
             }
             Debug.WriteLine("shutdown successful");

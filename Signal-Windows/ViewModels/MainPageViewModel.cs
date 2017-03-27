@@ -41,9 +41,13 @@ namespace Signal_Windows.ViewModels
         public volatile bool Running = true;
         CancellationTokenSource CancelSource = new CancellationTokenSource();
         private AsyncManualResetEvent SendSwitch = new AsyncManualResetEvent(false);
+        private AsyncManualResetEvent DBSwitch = new AsyncManualResetEvent(false);
+        private AsyncManualResetEvent MessageSavePendingSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent IncomingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent OutgoingOffSwitch = new AsyncManualResetEvent(false);
+        public AsyncManualResetEvent DBOffSwitch = new AsyncManualResetEvent(false);
         public ConcurrentQueue<SignalMessage> OutgoingQueue = new ConcurrentQueue<SignalMessage>();
+        private ConcurrentQueue<Tuple<SignalMessage[], bool>> DBQueue= new ConcurrentQueue<Tuple<SignalMessage[], bool>>();
 
         public MainPageViewModel()
         {
@@ -76,6 +80,7 @@ namespace Signal_Windows.ViewModels
                         });
                         Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
                         Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
+                        Task.Factory.StartNew(HandleDBQueue, TaskCreationOptions.LongRunning);
                     }
                     catch(Exception e)
                     {
@@ -123,10 +128,7 @@ namespace Signal_Windows.ViewModels
                         ThreadID = SelectedThread,
                         Type = 0
                     };
-                    Messages.Add(sm);
-                    View.ScrollToBottom();
-                    OutgoingQueue.Enqueue(sm);
-                    SendSwitch.Set();
+                    UIHandleOutgoingMessage(sm);
                     t.Text = "";
                 }
             }
@@ -138,23 +140,130 @@ namespace Signal_Windows.ViewModels
             CancelSource.Cancel();
         }
 
-        #region Background
-
-        public void HandleIncomingMessages()
+        #region MessagesDB
+        private void HandleDBQueue()
         {
-            Debug.WriteLine("HandleIncomingMessages starting...");
+            Debug.WriteLine("HandleDBQueue starting...");
             try
             {
                 while (Running)
                 {
-                    SignalManager.ReceiveBatch(this);
+                    DBSwitch.Wait(CancelSource.Token);
+                    DBSwitch.Reset();
+                    Tuple<SignalMessage[], bool> t;
+                    if (DBQueue.TryDequeue(out t))
+                    {
+                        using (var ctx = new SignalDBContext())
+                        {
+                            foreach (var message in t.Item1)
+                            {
+                                SignalContact author = ctx.Contacts.SingleOrDefault(b => b.UserName == message.AuthorUsername);
+                                if (author == null && t.Item2)
+                                { //TODO lock, display
+                                    author = new SignalContact()
+                                    {
+                                        UserName = message.AuthorUsername,
+                                        ContactDisplayName = message.AuthorUsername
+                                    };
+                                    ctx.Contacts.Add(author);
+                                    ctx.SaveChanges();
+                                }
+                                message.Author = author;
+                                ctx.Messages.Add(message);
+                                if (message.Type == (uint)SignalMessageType.Incoming)
+                                {
+                                    if (message.AttachmentList != null && message.AttachmentList.Count > 0)
+                                    {
+                                        ctx.SaveChanges();
+                                        HandleDBAttachments(message, message.AttachmentList);
+                                    }
+                                }
+                            }
+                            ctx.SaveChanges();
+                            if (t.Item2)
+                            {
+                                MessageSavePendingSwitch.Set();
+                            }
+                        }
+                    }
                 }
             }
-            catch (Exception) { }
-            IncomingOffSwitch.Set();
-            Debug.WriteLine("HandleIncomingMessages finished");
+            catch (Exception e) {
+                Debug.WriteLine(e.Message);
+                Debug.WriteLine(e.StackTrace);
+            }
+            DBOffSwitch.Set();
+            Debug.WriteLine("HandleDBQueue finished");
         }
 
+        private void HandleDBAttachments(SignalMessage message, List<SignalServiceAttachment> list)
+        {
+            int i = 0;
+            foreach (var attachment in list)
+            {
+                var pointer = attachment.asPointer();
+                SignalAttachment sa = new SignalAttachment()
+                {
+                    FileName = "attachment_" + message.Id + "_" + i,
+                    Message = message,
+                    Status = (uint)SignalAttachmentStatus.Default,
+                    ContentType = "",
+                    Key = pointer.getKey(),
+                    Relay = pointer.getRelay(),
+                    StorageId = pointer.getId()
+                };
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        DirectoryInfo di = Directory.CreateDirectory(Manager.localFolder + @"\Attachments");
+                        using (var cipher = File.Open(Manager.localFolder + @"\Attachments\" + sa.FileName + ".cipher", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+                        using (var plain = File.OpenWrite(Manager.localFolder + @"\Attachments\" + sa.FileName))
+                        {
+                            SignalManager.MessageReceiver.retrieveAttachment(pointer, plain, cipher);
+                                //TODO notify UI
+                            }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e.Message);
+                        Debug.WriteLine(e.StackTrace);
+                    }
+                });
+                i++;
+            }
+        }
+
+        #endregion
+
+        #region UIThread
+        public void UIHandleIncomingMessages(SignalMessage[] messages)
+        {
+            DBQueue.Enqueue(new Tuple<SignalMessage[], bool>(messages, true));
+            DBSwitch.Set();
+            foreach (var message in messages)
+            {
+                if (SelectedThread == message.ThreadID)
+                {
+                    Messages.Add(message);
+                    View.ScrollToBottom();
+                }
+            }
+        }
+
+        public void UIHandleOutgoingMessage(SignalMessage message)
+        {
+            SignalMessage[] messages = new SignalMessage[] { message };
+            DBQueue.Enqueue(new Tuple<SignalMessage[], bool>(messages, false));
+            DBSwitch.Set();
+            Messages.Add(message);
+            View.ScrollToBottom();
+            OutgoingQueue.Enqueue(message);
+            SendSwitch.Set();
+        }
+        #endregion
+
+        #region Sender
         public void HandleOutgoingMessages()
         {
             Debug.WriteLine("HandleOutgoingMessages starting...");
@@ -167,11 +276,6 @@ namespace Signal_Windows.ViewModels
                     SignalMessage t;
                     while (OutgoingQueue.TryDequeue(out t))
                     {
-                        using (var ctx = new SignalDBContext())
-                        {
-                            ctx.Messages.Add(t);
-                            ctx.SaveChanges();
-                        }
                         Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(t.Content).withTimestamp(t.ComposedTimestamp);
                         List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
                         if (t.ThreadID[0] == '+')
@@ -191,57 +295,64 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("HandleOutgoingMessages finished");
             OutgoingOffSwitch.Set();
         }
+        #endregion
 
+        #region Receiver
+        public void HandleIncomingMessages()
+        {
+            Debug.WriteLine("HandleIncomingMessages starting...");
+            try
+            {
+                while (Running)
+                {
+                    SignalManager.ReceiveBatch(this);
+                }
+            }
+            catch (Exception) { }
+            IncomingOffSwitch.Set();
+            Debug.WriteLine("HandleIncomingMessages finished");
+        }
         public void onMessages(SignalServiceEnvelope[] envelopes)
         {
-            using (var ctx = new SignalDBContext())
+            List<SignalMessage> messages = new List<SignalMessage>();
+            foreach (var envelope in envelopes)
             {
-                foreach (var envelope in envelopes)
+                if (envelope.isSignalMessage())
                 {
-                    if (envelope.isSignalMessage())
+                    try
                     {
-                        try
-                        {
-                            var cipher = new SignalServiceCipher(new SignalServiceAddress((string) LocalSettings.Values["Username"]), SignalManager.SignalStore);
-                            var content = cipher.decrypt(envelope);
+                        var cipher = new SignalServiceCipher(new SignalServiceAddress((string) LocalSettings.Values["Username"]), SignalManager.SignalStore);
+                        var content = cipher.decrypt(envelope);
 
-                            //TODO handle special messages & unknown groups
-                            if (content.getDataMessage().HasValue)
-                            {
-                                SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
-                                handleMessage(ctx, envelope, content, message);
-                            }
-                        }
-                        catch (Exception e)
+                        //TODO handle special messages & unknown groups
+                        if (content.getDataMessage().HasValue)
                         {
-                            Debug.WriteLine(e.Message);
-                            Debug.WriteLine(e.StackTrace);
-                        }
-                        finally
-                        {
-                            SignalManager.Save();
+                            SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
+                            messages.Add(HandleMessage(envelope, content, message));
                         }
                     }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e.Message);
+                        Debug.WriteLine(e.StackTrace);
+                    }
+                    finally
+                    {
+                        SignalManager.Save();
+                    }
                 }
-                ctx.SaveChanges();
             }
+            MessageSavePendingSwitch.Reset();
+            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                UIHandleIncomingMessages(messages.ToArray());
+            }).AsTask().Wait();
+            MessageSavePendingSwitch.Wait(CancelSource.Token);
         }
 
-        private void handleMessage(SignalDBContext ctx, SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
+        private SignalMessage HandleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
         {
-            bool createdAuthor = false;
             string source = envelope.getSource();
-            SignalContact author = ctx.Contacts.SingleOrDefault(b => b.UserName == source);
-            if(author == null)
-            {
-                createdAuthor = true;
-                author = new SignalContact()
-                {
-                    UserName = source,
-                    ContactDisplayName = source
-                };
-                ctx.Contacts.Add(author);
-            }
             string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
             string threadId = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
             List<SignalServiceAttachment> attachments = new List<SignalServiceAttachment>();
@@ -255,67 +366,17 @@ namespace Signal_Windows.ViewModels
                 Status = (uint) SignalMessageStatus.Default,
                 Content = body,
                 ThreadID = source,
-                Author = author,
+                AuthorUsername = source,
                 DeviceId = (uint) envelope.getSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = envelope.getTimestamp(),
                 ReceivedTimestamp = Util.CurrentTimeMillis(),
-                Attachments = (uint) attachments.Count
+                Attachments = (uint) attachments.Count,
+                AttachmentList = attachments
             };
-            ctx.Messages.Add(message);
-            int i = 0;
-            if(attachments.Count > 0)
-            {
-                ctx.SaveChanges();
-            }
-            foreach(var attachment in attachments)
-            {
-                var pointer = attachment.asPointer();
-                SignalAttachment sa = new SignalAttachment()
-                {
-                    FileName = "attachment_" + message.Id + "_" + i,
-                    Message = message,
-                    Status = (uint) SignalAttachmentStatus.Default,
-                    ContentType = "",
-                    Key = pointer.getKey(),
-                    Relay = pointer.getRelay(),
-                    StorageId = pointer.getId()
-                };
-                i++;
-                ctx.Attachments.Add(sa);
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        DirectoryInfo di = Directory.CreateDirectory(Manager.localFolder + @"\Attachments");
-                        using (var cipher = File.Open(Manager.localFolder + @"\Attachments\"+sa.FileName + ".cipher", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
-                        using (var plain = File.OpenWrite(Manager.localFolder + @"\Attachments\" + sa.FileName))
-                        {
-                            SignalManager.MessageReceiver.retrieveAttachment(pointer, plain, cipher);
-                            //TODO notify UI
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e.Message);
-                        Debug.WriteLine(e.StackTrace);
-                    }
-                });
-            }
-            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-            {
-                if (SelectedThread == source)
-                {
-                    Messages.Add(message);
-                    View.ScrollToBottom();
-                }
-                if(createdAuthor)
-                {
-                    Contacts.Add(author);
-                }
-            }).AsTask().Wait();
             Debug.WriteLine("received message: "+message.Content);
+            return message;
         }
-#endregion
+        #endregion
     }
 }
