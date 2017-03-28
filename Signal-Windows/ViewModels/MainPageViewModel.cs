@@ -29,6 +29,7 @@ namespace Signal_Windows.ViewModels
     public class MainPageViewModel : ViewModelBase, MessagePipeCallback
     {
         private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
+        private bool ActionInProgress = false;
 
         public ObservableCollection<SignalMessage> Messages = new ObservableCollection<SignalMessage>();
         public MainPage View;
@@ -145,23 +146,38 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        internal void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        internal async void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            SignalContact contact = (SignalContact)e.AddedItems[0];
-            SelectedThread = contact.UserName;
-            Messages.Clear();
-            using (var ctx = new SignalDBContext())
+            try
             {
-                var messages = ctx.Messages
-                    .Where(m => m.ThreadID == SelectedThread)
-                    .Include(m => m.Author)
-                    .AsNoTracking();
-
-                foreach (var message in messages)
+                if (!ActionInProgress)
                 {
-                    Messages.Add(message);
+                    ActionInProgress = true;
+                    SignalContact contact = (SignalContact)e.AddedItems[0];
+                    SelectedThread = contact.UserName;
+                    Messages.Clear();
+                    var messages = await Task.Run(() =>
+                    {
+                        using (var ctx = new SignalDBContext())
+                        {
+                            return ctx.Messages
+                                .Where(m => m.ThreadID == SelectedThread)
+                                .Include(m => m.Author)
+                                .AsNoTracking().ToList();
+                        }
+                    });
+                    foreach (var m in messages)
+                    {
+                        Messages.Add(m);
+                    }
+                    ActionInProgress = false;
+                    View.ScrollToBottom();
                 }
-                View.ScrollToBottom();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                Debug.WriteLine(ex.StackTrace);
             }
         }
 
