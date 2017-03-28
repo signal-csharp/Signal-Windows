@@ -3,22 +3,12 @@ using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 namespace Signal_Windows
@@ -28,8 +18,9 @@ namespace Signal_Windows
     /// </summary>
     sealed partial class App : Application
     {
-        ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
-        StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
+        private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
+        private StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
+
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
         /// und daher das logische Äquivalent von main() bzw. WinMain().
@@ -79,7 +70,7 @@ namespace Signal_Windows
                     // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
                     // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
                     // übergeben werden
-                    if(LocalSettings.Values["Active"] != null && (bool) LocalSettings.Values["Active"])
+                    if (LocalSettings.Values["Active"] != null && (bool)LocalSettings.Values["Active"])
                     {
                         rootFrame.Navigate(typeof(MainPage), e.Arguments);
                     }
@@ -98,7 +89,7 @@ namespace Signal_Windows
         /// </summary>
         /// <param name="sender">Der Rahmen, bei dem die Navigation fehlgeschlagen ist</param>
         /// <param name="e">Details über den Navigationsfehler</param>
-        void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
+        private void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
         {
             throw new Exception("Failed to load Page " + e.SourcePageType.FullName);
         }
@@ -114,10 +105,10 @@ namespace Signal_Windows
         {
             var deferral = e.SuspendingOperation.GetDeferral();
             var locator = Current.Resources["Locator"];
-            if(locator!= null && locator.GetType() == typeof(ViewModelLocator))
+            if (locator != null && locator.GetType() == typeof(ViewModelLocator))
             {
                 var vmloc = (ViewModelLocator)locator;
-                if(vmloc.MainPageInstance != null)
+                if (vmloc.MainPageInstance != null)
                 {
                     vmloc.MainPageInstance.Cancel();
                     await vmloc.MainPageInstance.OutgoingOffSwitch.WaitAsync();

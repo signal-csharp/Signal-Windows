@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Signal_Windows.Models;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Signal_Windows.Storage
 {
@@ -20,12 +18,12 @@ namespace Signal_Windows.Storage
 
         public static void UpdateContact(SignalContact contact, bool flush)
         {
-            lock(obj)
+            lock (obj)
             {
-                using(var db = new SignalDBContext())
+                using (var db = new SignalDBContext())
                 {
                     var c = db.Contacts.SingleOrDefaultAsync(b => b.UserName == contact.UserName).Result;
-                    if(c == null)
+                    if (c == null)
                     {
                         c = new SignalContact()
                         {
@@ -34,7 +32,9 @@ namespace Signal_Windows.Storage
                             ContactDisplayName = contact.ContactDisplayName
                         };
                         db.Contacts.Add(c);
-                    } else {
+                    }
+                    else
+                    {
                         c.Color = contact.Color;
                         c.UserName = contact.UserName;
                         c.ContactDisplayName = contact.ContactDisplayName;

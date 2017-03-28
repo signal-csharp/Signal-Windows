@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Signal_Windows.Models
+﻿namespace Signal_Windows.Models
 {
     public class SignalContact
     {
@@ -14,6 +8,7 @@ namespace Signal_Windows.Models
             Color = "";
             UserName = "";
         }
+
         public uint Id { get; set; }
         public string UserName { get; set; }
         public string ContactDisplayName { get; set; }

@@ -1,10 +1,6 @@
-﻿using libsignalservice.messages;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Signal_Windows.Models
 {
@@ -22,8 +18,10 @@ namespace Signal_Windows.Models
         public long ReceivedTimestamp { get; set; }
         public long ComposedTimestamp { get; set; }
         public uint Attachments { get; set; }
+
         [NotMapped]
-        public List<SignalServiceAttachment> AttachmentList{ get; set; }
+        public List<SignalAttachment> AttachmentList { get; set; }
+
         [NotMapped]
         public String AuthorUsername { get; set; }
     }

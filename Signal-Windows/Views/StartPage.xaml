@@ -26,8 +26,8 @@
     <Grid Padding="20" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="20">
             <Button HorizontalAlignment="Center" Foreground="#2190EA" Background="White" Click="Button_Click">Register a new Signal account</Button>

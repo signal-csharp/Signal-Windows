@@ -1,23 +1,16 @@
 ﻿using GalaSoft.MvvmLight;
 using Signal_Windows.Models;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.UI.Notifications;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Input;
-using System.Xml.Linq;
 using Signal_Windows.Storage;
+using System.Diagnostics;
+using System.Xml.Linq;
+using Windows.UI.Xaml;
 
 namespace Signal_Windows.ViewModels
 {
     public class AddContactPageViewModel : ViewModelBase
     {
         private string _ContactName = "";
+
         public string ContactName
         {
             get { return _ContactName; }
@@ -25,6 +18,7 @@ namespace Signal_Windows.ViewModels
         }
 
         private string _ContactNumber = "";
+
         public string ContactNumber
         {
             get { return _ContactNumber; }
@@ -32,6 +26,7 @@ namespace Signal_Windows.ViewModels
         }
 
         private bool _UIEnabled = true;
+
         public bool UIEnabled
         {
             get { return _UIEnabled; }
@@ -47,7 +42,7 @@ namespace Signal_Windows.ViewModels
                new XElement("text", "C# Corner"),
                new XElement("text", "Do you got MVP award?")
             )
-            ),// actions  
+            ),// actions
             new XElement("actions",
             new XElement("action", new XAttribute("activationType", "background"),
             new XAttribute("content", "Yes"), new XAttribute("arguments", "yes")),

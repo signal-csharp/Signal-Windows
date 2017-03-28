@@ -1,49 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using libsignalservice.util;
-using libsignalservice;
-using libsignalservice.push;
+﻿using libsignal;
+using libsignal.ecc;
+using libsignal.state;
 using libsignal.util;
-using libsignal;
+using libsignalservice;
+using libsignalservice.messages;
+using libsignalservice.push;
+using libsignalservice.util;
+using Newtonsoft.Json;
+using Signal_Windows.Storage;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using Newtonsoft.Json;
-using libsignal.state;
-using libsignal.ecc;
-using libsignalservice.messages;
-using static libsignalservice.SignalServiceMessagePipe;
-using libsignalservice.crypto;
-using Strilanc.Value;
-using Signal_Windows.Storage;
-using Windows.Storage;
 using System.Threading;
-using static libsignalservice.SignalServiceMessageSender;
+using Windows.Storage;
+using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.Signal
 {
     public class Manager
     {
-        ApplicationDataContainer            LocalSettings = ApplicationData.Current.LocalSettings;
-        public static string                       localFolder = ApplicationData.Current.LocalFolder.Path;
-        static string                       URL         = "https://textsecure-service.whispersystems.org";
-        static TrustStore                   TRUST_STORE = new WhisperTrustStore();
-        SignalServiceUrl[]                  serviceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, TRUST_STORE) };
-        public const String                 USER_AGENT  = "Signal-Windows";
-        public SignalServiceAccountManager  accountManager;
-        public Store                        SignalStore;
-        private static uint                 PREKEY_MINIMUM_COUNT = 20;
-        private static uint                 PREKEY_BATCH_SIZE = 100;
-        private static JsonConverter[]      converters = new JsonConverter[] {
+        private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
+        public static string localFolder = ApplicationData.Current.LocalFolder.Path;
+        private static string URL = "https://textsecure-service.whispersystems.org";
+        private static TrustStore TRUST_STORE = new WhisperTrustStore();
+        private SignalServiceUrl[] serviceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, TRUST_STORE) };
+        public const String USER_AGENT = "Signal-Windows";
+        public SignalServiceAccountManager accountManager;
+        public Store SignalStore;
+        private static uint PREKEY_MINIMUM_COUNT = 20;
+        private static uint PREKEY_BATCH_SIZE = 100;
+
+        private static JsonConverter[] converters = new JsonConverter[] {
                                                 new IdentityKeyPairConverter(),
                                                 new IdentityKeyConverter(),
                                                 new ByteArrayConverter()};
 
-        CancellationToken Token;
-        SignalServiceMessagePipe Pipe = null;
-        SignalServiceMessageSender MessageSender;
+        private CancellationToken Token;
+        private SignalServiceMessagePipe Pipe = null;
+        private SignalServiceMessageSender MessageSender;
         public SignalServiceMessageReceiver MessageReceiver;
 
         public Manager(CancellationToken token, String username, bool active)
@@ -54,7 +49,7 @@ namespace Signal_Windows.Signal
             {
                 Load(username);
                 MessageReceiver = new SignalServiceMessageReceiver(Token, serviceUrls, new StaticCredentialsProvider(SignalStore.username, SignalStore.password, SignalStore.signalingKey), USER_AGENT);
-                if(active)
+                if (active)
                 {
                     Pipe = MessageReceiver.createMessagePipe();
                 }
@@ -76,7 +71,8 @@ namespace Signal_Windows.Signal
             try
             {
                 Pipe.ReadBlocking(callback);
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Debug.WriteLine(e.Message);
                 Debug.WriteLine(e.StackTrace);
@@ -105,13 +101,13 @@ namespace Signal_Windows.Signal
                     Debug.WriteLine(s);
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 IdentityKeyPair identityKey = KeyHelper.generateIdentityKeyPair();
                 uint registrationId = KeyHelper.generateRegistrationId(false); //TODO why uint
                 SignalStore = new Store(identityKey, registrationId);
                 SignalStore.registered = false;
-                SignalStore.username = (string) LocalSettings.Values["Username"];
+                SignalStore.username = (string)LocalSettings.Values["Username"];
                 Save();
             }
             accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.username, SignalStore.password, USER_AGENT);
@@ -199,7 +195,7 @@ namespace Signal_Windows.Signal
             {
                 ECKeyPair keyPair = Curve.generateKeyPair();
                 byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
-                SignedPreKeyRecord record = new SignedPreKeyRecord(SignalStore.nextSignedPreKeyId, (ulong) DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
+                SignedPreKeyRecord record = new SignedPreKeyRecord(SignalStore.nextSignedPreKeyId, (ulong)DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
 
                 SignalStore.StoreSignedPreKey(SignalStore.nextSignedPreKeyId, record);
                 SignalStore.nextSignedPreKeyId = (SignalStore.nextSignedPreKeyId + 1) % Medium.MAX_VALUE;

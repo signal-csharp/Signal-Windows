@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Windows.UI.Xaml.Controls;
 
 namespace Signal_Windows.Models
 {
@@ -16,7 +13,11 @@ namespace Signal_Windows.Models
         public byte[] Key { get; set; }
         public string Relay { get; set; }
         public ulong StorageId { get; set; }
+
+        [NotMapped]
+        public Image AttachmentImage { get; set; }
     }
+
     public enum SignalAttachmentStatus
     {
         Default = 0,

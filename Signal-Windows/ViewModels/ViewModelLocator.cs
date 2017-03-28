@@ -2,18 +2,13 @@
 using GalaSoft.MvvmLight.Ioc;
 using GalaSoft.MvvmLight.Views;
 using Microsoft.Practices.ServiceLocation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Signal_Windows.ViewModels
 {
     /// <summary>
     /// This class contains static references to all the view models in the
     /// application and provides an entry point for the bindings.
-    /// </summary> 
+    /// </summary>
     public class ViewModelLocator
     {
         /// <summary>
@@ -38,7 +33,6 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<MainPageViewModel>();
             SimpleIoc.Default.Register<RegisterPageViewModel>();
         }
-
 
         // <summary>
         // Gets the StartPage view model.
@@ -77,6 +71,7 @@ namespace Signal_Windows.ViewModels
                 return ServiceLocator.Current.GetInstance<RegisterPageViewModel>();
             }
         }
+
         // <summary>
         // The cleanup.
         // </summary>
@@ -85,5 +80,4 @@ namespace Signal_Windows.ViewModels
             // TODO Clear the ViewModels
         }
     }
-
 }

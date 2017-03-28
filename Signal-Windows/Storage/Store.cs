@@ -1,16 +1,12 @@
-﻿using libsignal.state;
-using libsignalservice;
+﻿using libsignal;
+using libsignal.ecc;
+using libsignal.state;
 using libsignalservice.push;
+using libsignalservice.util;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using libsignal;
-using Newtonsoft.Json;
-using libsignalservice.util;
 using System.Diagnostics;
-using libsignal.ecc;
 
 namespace Signal_Windows.Storage
 {
@@ -35,7 +31,6 @@ namespace Signal_Windows.Storage
         public JsonIdentityKeyStore jsonIdentityKeyStore { get; set; }
         public JsonSessionStore jsonSessionStore { get; set; }
         public JsonSignedPreKeyStore jsonSignedPreKeyStore { get; set; }
-
 
         public IdentityKeyPair GetIdentityKeyPair()
         {
@@ -138,6 +133,7 @@ namespace Signal_Windows.Storage
     {
         [JsonProperty]
         private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
+
         public bool ContainsPreKey(uint preKeyId)
         {
             return store.ContainsKey(preKeyId);
@@ -173,11 +169,13 @@ namespace Signal_Windows.Storage
 
         [JsonProperty]
         private IdentityKeyPair identityKeyPair { get; set; }
+
         [JsonProperty]
         private uint registrationId { get; set; }
 
         [JsonProperty]
         private Dictionary<string, List<IdentityKey>> trustedKeys { get; set; } = new Dictionary<string, List<IdentityKey>>();
+
         public IdentityKeyPair GetIdentityKeyPair()
         {
             return identityKeyPair;
@@ -196,7 +194,7 @@ namespace Signal_Windows.Storage
             }
 
             List<IdentityKey> identities = trustedKeys[address.Name];
-            foreach(var identity in identities)
+            foreach (var identity in identities)
             {
                 if (identity.Equals(identityKey))
                 {
@@ -208,7 +206,7 @@ namespace Signal_Windows.Storage
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey) //TODO why bool
         {
-            if(!trustedKeys.ContainsKey(address.Name))
+            if (!trustedKeys.ContainsKey(address.Name))
             {
                 trustedKeys[address.Name] = new List<IdentityKey>();
             }
@@ -224,9 +222,9 @@ namespace Signal_Windows.Storage
 
         public bool ContainsSession(SignalProtocolAddress address)
         {
-            if(sessions.ContainsKey(address.Name))
+            if (sessions.ContainsKey(address.Name))
             {
-                if(sessions[address.Name].ContainsKey(address.DeviceId))
+                if (sessions[address.Name].ContainsKey(address.DeviceId))
                 {
                     return true;
                 }
@@ -247,7 +245,7 @@ namespace Signal_Windows.Storage
         public List<uint> GetSubDeviceSessions(string name)
         {
             List<uint> deviceIds = new List<uint>();
-            foreach(var session in sessions[name])
+            foreach (var session in sessions[name])
             {
                 deviceIds.Add(session.Key);
             }
@@ -256,7 +254,7 @@ namespace Signal_Windows.Storage
 
         public SessionRecord LoadSession(SignalProtocolAddress address)
         {
-            if(ContainsSession(address))
+            if (ContainsSession(address))
                 return new SessionRecord(sessions[address.Name][address.DeviceId]);
             else
                 return new SessionRecord();
@@ -264,7 +262,7 @@ namespace Signal_Windows.Storage
 
         public void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
-            if(!sessions.ContainsKey(address.Name))
+            if (!sessions.ContainsKey(address.Name))
             {
                 sessions[address.Name] = new Dictionary<uint, byte[]>();
             }
@@ -276,6 +274,7 @@ namespace Signal_Windows.Storage
     {
         [JsonProperty]
         private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
+
         public bool ContainsSignedPreKey(uint signedPreKeyId)
         {
             return store.ContainsKey(signedPreKeyId);
@@ -293,7 +292,7 @@ namespace Signal_Windows.Storage
         public List<SignedPreKeyRecord> LoadSignedPreKeys()
         {
             List<SignedPreKeyRecord> preKeys = new List<SignedPreKeyRecord>();
-            foreach(var key in store.Keys)
+            foreach (var key in store.Keys)
             {
                 preKeys.Add(new SignedPreKeyRecord(store[key]));
             }
@@ -313,14 +312,13 @@ namespace Signal_Windows.Storage
 
     public class ContactStore
     {
-
     }
 
     public class ByteArrayConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
-            if(objectType == typeof(byte[]))
+            if (objectType == typeof(byte[]))
             {
                 return true;
             }
@@ -335,7 +333,7 @@ namespace Signal_Windows.Storage
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if(value.GetType() == typeof(byte[]))
+            if (value.GetType() == typeof(byte[]))
             {
                 byte[] arr = (byte[])value;
                 writer.WriteValue(Base64.encodeBytes(arr));
@@ -351,7 +349,7 @@ namespace Signal_Windows.Storage
     {
         public override bool CanConvert(Type objectType)
         {
-            if(objectType == typeof(IdentityKey))
+            if (objectType == typeof(IdentityKey))
             {
                 return true;
             }
@@ -366,7 +364,7 @@ namespace Signal_Windows.Storage
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if(value.GetType() == typeof(IdentityKey))
+            if (value.GetType() == typeof(IdentityKey))
             {
                 IdentityKey ik = (IdentityKey)value;
                 writer.WriteValue(Base64.encodeBytes(ik.serialize()));
@@ -391,7 +389,7 @@ namespace Signal_Windows.Storage
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            string json = (string) reader.Value;
+            string json = (string)reader.Value;
             return new IdentityKeyPair(Base64.decode(json));
         }
 
