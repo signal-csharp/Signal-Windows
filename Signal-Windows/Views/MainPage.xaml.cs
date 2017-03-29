@@ -43,15 +43,14 @@ namespace Signal_Windows
 
         private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            UnselectedBlock.Visibility = Visibility.Collapsed;
-            SelectedMessagesList.Visibility = Visibility.Visible;
+            ThreadView.WelcomeVisibility = Visibility.Collapsed;
+            ThreadView.MainVisibility = Visibility.Visible;
             Vm.ContactsList_SelectionChanged(sender, e);
         }
 
         public void ScrollToBottom()
         {
-            SelectedMessagesScrollViewer.UpdateLayout();
-            SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f);
+            ThreadView.ScrollToBottm();
         }
 
         private void AddFriendSymbol_Tapped(object sender, TappedRoutedEventArgs e)

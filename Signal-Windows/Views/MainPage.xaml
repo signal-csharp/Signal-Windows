@@ -28,27 +28,6 @@
                 </ListView>
             </StackPanel>
         </ScrollViewer>
-        <Grid Grid.Column="1" Visibility="Visible" Padding="10 10 10 10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="40" />
-            </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Visibility="Visible" Name="UnselectedBlock">Select a contact and go!</TextBlock>
-            <ScrollViewer Name="SelectedMessagesScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 14 0">
-                <ItemsControl Grid.Row="0" Visibility="Collapsed" Name="SelectedMessagesList" ItemsSource="{x:Bind Vm.Messages}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Vertical" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <controls:MessageBox></controls:MessageBox>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-            <TextBox Grid.Row="1" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
-        </Grid>
+        <controls:ThreadView x:Name="ThreadView" Grid.Column="1" Padding="10 10 10 10" MainPageVM="{x:Bind Vm}" MessagesSource="{x:Bind Vm.Messages}" ThreadTitle="{x:Bind Vm.ThreadTitle, Mode=OneWay}" />
     </Grid>
 </Page>

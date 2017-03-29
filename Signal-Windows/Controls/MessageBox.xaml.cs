@@ -1,6 +1,5 @@
 ﻿using Signal_Windows.Models;
 using System;
-using System.Diagnostics;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
@@ -11,6 +10,8 @@ namespace Signal_Windows.Controls
 {
     public sealed partial class MessageBox : UserControl
     {
+        public bool IsExtended { get; set; }
+
         public MessageBox()
         {
             this.InitializeComponent();
@@ -19,7 +20,7 @@ namespace Signal_Windows.Controls
 
         private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
-            Debug.WriteLine("MessageBox_DataContextChanged " + sender); //name opacity 204
+            //name opacity 204
             if (Model.Author == null)
             {
                 Background = GetSolidColorBrush(255, "#f3f3f3");

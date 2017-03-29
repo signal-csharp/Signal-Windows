@@ -30,8 +30,22 @@ namespace Signal_Windows.ViewModels
     {
         private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
         private bool ActionInProgress = false;
-
         public ObservableCollection<SignalMessage> Messages = new ObservableCollection<SignalMessage>();
+        private string _ThreadTitle;
+
+        public string ThreadTitle
+        {
+            get
+            {
+                return _ThreadTitle;
+            }
+            set
+            {
+                _ThreadTitle = value;
+                RaisePropertyChanged("ThreadTitle");
+            }
+        }
+
         public MainPage View;
         public string SelectedThread;
         public Manager SignalManager = null;
@@ -110,13 +124,12 @@ namespace Signal_Windows.ViewModels
                 {
                     try
                     {
-                        Task.Run(() =>
+                        await Task.Run(async () =>
                         {
                             using (var ctx = new SignalDBContext())
                             {
                                 var contacts = ctx.Contacts.AsNoTracking().ToList();
-                                //http://stackoverflow.com/questions/670577/observablecollection-doesnt-support-addrange-method-so-i-get-notified-for-each
-                                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                                await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                                 {
                                     AddContacts(contacts);
                                 });
@@ -127,9 +140,9 @@ namespace Signal_Windows.ViewModels
                         {
                             SignalManager = manager;
                         });
-                        Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
-                        Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
-                        Task.Factory.StartNew(HandleDBQueue, TaskCreationOptions.LongRunning);
+                        await Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
+                        await Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
+                        await Task.Factory.StartNew(HandleDBQueue, TaskCreationOptions.LongRunning);
                     }
                     catch (Exception e)
                     {
@@ -155,6 +168,7 @@ namespace Signal_Windows.ViewModels
                     ActionInProgress = true;
                     SignalContact contact = (SignalContact)e.AddedItems[0];
                     SelectedThread = contact.UserName;
+                    ThreadTitle = contact.ContactDisplayName;
                     Messages.Clear();
                     var messages = await Task.Run(() =>
                     {
