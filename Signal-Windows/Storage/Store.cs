@@ -70,7 +70,7 @@ namespace Signal_Windows.Storage
 
         public void RemovePreKey(uint preKeyId)
         {
-            RemovePreKey(preKeyId);
+            jsonPreKeyStore.RemovePreKey(preKeyId);
         }
 
         public SessionRecord LoadSession(SignalProtocolAddress address)
