@@ -81,7 +81,7 @@ namespace Signal_Windows.Signal
 
         public void Save()
         {
-            using (FileStream fs = File.Open(localFolder + @"\" + LocalSettings.Values["Username"] + "Store.json", FileMode.OpenOrCreate))
+            using (FileStream fs = File.Open(localFolder + @"\" + LocalSettings.Values["Username"] + "Store.json", FileMode.Truncate))
             using (StreamWriter sw = new StreamWriter(fs))
             {
                 string s = JsonConvert.SerializeObject(SignalStore, Formatting.Indented, converters);

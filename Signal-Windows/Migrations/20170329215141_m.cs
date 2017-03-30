@@ -30,7 +30,7 @@ namespace Signal_Windows.Migrations
                 {
                     Id = table.Column<uint>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Attachments = table.Column<uint>(nullable: false),
+                    AttachmentsCount = table.Column<uint>(nullable: false),
                     AuthorId = table.Column<uint>(nullable: true),
                     ComposedTimestamp = table.Column<long>(nullable: false),
                     Content = table.Column<string>(nullable: true),

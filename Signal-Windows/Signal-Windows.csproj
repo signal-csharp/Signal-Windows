@@ -103,9 +103,9 @@
     <Compile Include="Controls\ThreadView.xaml.cs">
       <DependentUpon>ThreadView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\20170326105236_m.cs" />
-    <Compile Include="Migrations\20170326105236_m.designer.cs">
-      <DependentUpon>20170326105236_m.cs</DependentUpon>
+    <Compile Include="Migrations\20170329215141_m.cs" />
+    <Compile Include="Migrations\20170329215141_m.designer.cs">
+      <DependentUpon>20170329215141_m.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\SignalAttachment.cs" />

@@ -8,7 +8,7 @@ using Signal_Windows.Storage;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170326105236_m")]
+    [Migration("20170329215141_m")]
     partial class m
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -65,7 +65,7 @@ namespace Signal_Windows.Migrations
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<uint>("Attachments");
+                    b.Property<uint>("AttachmentsCount");
 
                     b.Property<uint?>("AuthorId");
 
@@ -97,7 +97,7 @@ namespace Signal_Windows.Migrations
             modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
                 {
                     b.HasOne("Signal_Windows.Models.SignalMessage", "Message")
-                        .WithMany()
+                        .WithMany("Attachments")
                         .HasForeignKey("MessageId");
                 });
 

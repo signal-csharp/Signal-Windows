@@ -17,10 +17,8 @@ namespace Signal_Windows.Models
         public uint ReadConfirmations { get; set; }
         public long ReceivedTimestamp { get; set; }
         public long ComposedTimestamp { get; set; }
-        public uint Attachments { get; set; }
-
-        [NotMapped]
-        public List<SignalAttachment> AttachmentList { get; set; }
+        public uint AttachmentsCount { get; set; }
+        public List<SignalAttachment> Attachments { get; set; }
 
         [NotMapped]
         public String AuthorUsername { get; set; }

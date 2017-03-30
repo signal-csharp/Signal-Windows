@@ -100,15 +100,21 @@ namespace Signal_Windows.ViewModels
                     SignalContact contact = new SignalContact()
                     {
                         UserName = username,
-                        ContactDisplayName = username
+                        ContactDisplayName = username,
+                        Color = "#ff0000"
                     };
                     using (var ctx = new SignalDBContext())
                     {
                         ctx.Contacts.Add(contact);
                         ctx.SaveChanges();
                     }
-                    Contacts.Add(contact);
-                    ContactsDictionary[username] = contact;
+                    Task.Run(async () =>
+                    {
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            AddContact(contact);
+                        });
+                    });
                     return contact;
                 }
             }
@@ -140,9 +146,9 @@ namespace Signal_Windows.ViewModels
                         {
                             SignalManager = manager;
                         });
-                        await Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
-                        await Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
-                        await Task.Factory.StartNew(HandleDBQueue, TaskCreationOptions.LongRunning);
+                        Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
+                        Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
+                        Task.Factory.StartNew(HandleDBQueue, TaskCreationOptions.LongRunning);
                     }
                     catch (Exception e)
                     {
@@ -255,7 +261,7 @@ namespace Signal_Windows.ViewModels
                                 ctx.Messages.Add(message);
                                 if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
                                 {
-                                    if (message.AttachmentList != null && message.AttachmentList.Count > 0)
+                                    if (message.Attachments != null && message.Attachments.Count > 0)
                                     {
                                         ctx.SaveChanges();
                                         HandleDBAttachments(message, ctx);
@@ -283,10 +289,9 @@ namespace Signal_Windows.ViewModels
         private void HandleDBAttachments(SignalMessage message, SignalDBContext ctx)
         {
             int i = 0;
-            foreach (var sa in message.AttachmentList)
+            foreach (var sa in message.Attachments)
             {
                 sa.FileName = "attachment_" + message.Id + "_" + i;
-                ctx.Attachments.Add(sa);
                 Task.Run(() =>
                 {
                     try
@@ -398,37 +403,45 @@ namespace Signal_Windows.ViewModels
             List<SignalMessage> messages = new List<SignalMessage>();
             foreach (var envelope in envelopes)
             {
-                if (envelope.isSignalMessage())
+                try
                 {
-                    try
-                    {
-                        var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
-                        var content = cipher.decrypt(envelope);
+                    var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
+                    var content = cipher.decrypt(envelope);
 
-                        //TODO handle special messages & unknown groups
-                        if (content.getDataMessage().HasValue)
+                    //TODO handle special messages & unknown groups
+                    if (content.getDataMessage().HasValue)
+                    {
+                        SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
+                        if (message.isEndSession())
                         {
-                            SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
+                            SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
+                            SignalManager.Save();
+                        }
+                        else
+                        {
                             messages.Add(HandleMessage(envelope, content, message));
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e.Message);
-                        Debug.WriteLine(e.StackTrace);
-                    }
-                    finally
-                    {
-                        SignalManager.Save();
-                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.StackTrace);
+                }
+                finally
+                {
+                    SignalManager.Save();
                 }
             }
-            MessageSavePendingSwitch.Reset();
-            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            if (messages.Count > 0)
             {
-                UIHandleIncomingMessages(messages.ToArray());
-            }).AsTask().Wait();
-            MessageSavePendingSwitch.Wait(CancelSource.Token);
+                MessageSavePendingSwitch.Reset();
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                {
+                    UIHandleIncomingMessages(messages.ToArray());
+                }).AsTask().Wait();
+                MessageSavePendingSwitch.Wait(CancelSource.Token);
+            }
         }
 
         private SignalMessage HandleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
@@ -450,8 +463,8 @@ namespace Signal_Windows.ViewModels
                 Receipts = 0,
                 ComposedTimestamp = envelope.getTimestamp(),
                 ReceivedTimestamp = Util.CurrentTimeMillis(),
-                Attachments = (uint)attachments.Count,
-                AttachmentList = attachments
+                AttachmentsCount = (uint)attachments.Count,
+                Attachments = attachments
             };
             if (dataMessage.getAttachments().HasValue)
             {

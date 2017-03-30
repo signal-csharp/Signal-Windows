@@ -64,7 +64,7 @@ namespace Signal_Windows.Migrations
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<uint>("Attachments");
+                    b.Property<uint>("AttachmentsCount");
 
                     b.Property<uint?>("AuthorId");
 
@@ -96,7 +96,7 @@ namespace Signal_Windows.Migrations
             modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
                 {
                     b.HasOne("Signal_Windows.Models.SignalMessage", "Message")
-                        .WithMany()
+                        .WithMany("Attachments")
                         .HasForeignKey("MessageId");
                 });
 
