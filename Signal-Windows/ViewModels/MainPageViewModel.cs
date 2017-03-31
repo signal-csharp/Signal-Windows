@@ -30,22 +30,7 @@ namespace Signal_Windows.ViewModels
     {
         private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
         private bool ActionInProgress = false;
-        public ObservableCollection<SignalMessage> Messages = new ObservableCollection<SignalMessage>();
-        private string _ThreadTitle;
-
-        public string ThreadTitle
-        {
-            get
-            {
-                return _ThreadTitle;
-            }
-            set
-            {
-                _ThreadTitle = value;
-                RaisePropertyChanged("ThreadTitle");
-            }
-        }
-
+        public ThreadViewModel Thread { get; set; }
         public MainPage View;
         public string SelectedThread;
         public Manager SignalManager = null;
@@ -124,6 +109,7 @@ namespace Signal_Windows.ViewModels
 
         public MainPageViewModel()
         {
+            Thread = new ThreadViewModel(this);
             try
             {
                 Task.Run(async () =>
@@ -174,8 +160,8 @@ namespace Signal_Windows.ViewModels
                     ActionInProgress = true;
                     SignalContact contact = (SignalContact)e.AddedItems[0];
                     SelectedThread = contact.UserName;
-                    ThreadTitle = contact.ContactDisplayName;
-                    Messages.Clear();
+                    Thread.ThreadTitle = contact.ContactDisplayName;
+                    Thread.Messages.Clear();
                     var messages = await Task.Run(() =>
                     {
                         using (var ctx = new SignalDBContext())
@@ -183,12 +169,13 @@ namespace Signal_Windows.ViewModels
                             return ctx.Messages
                                 .Where(m => m.ThreadID == SelectedThread)
                                 .Include(m => m.Author)
+                                .Include(m => m.Attachments)
                                 .AsNoTracking().ToList();
                         }
                     });
                     foreach (var m in messages)
                     {
-                        Messages.Add(m);
+                        Thread.Messages.Add(m);
                     }
                     ActionInProgress = false;
                     View.ScrollToBottom();
@@ -208,12 +195,14 @@ namespace Signal_Windows.ViewModels
                 TextBox t = (TextBox)sender;
                 if (t.Text != "")
                 {
+                    var now = Util.CurrentTimeMillis();
                     SignalMessage sm = new SignalMessage()
                     {
                         Author = null,
-                        ComposedTimestamp = Util.CurrentTimeMillis(),
+                        ComposedTimestamp = now,
                         Content = t.Text,
                         ThreadID = SelectedThread,
+                        ReceivedTimestamp = now,
                         Type = 0
                     };
                     UIHandleOutgoingMessage(sm);
@@ -326,7 +315,7 @@ namespace Signal_Windows.ViewModels
             {
                 if (SelectedThread == message.ThreadID)
                 {
-                    Messages.Add(message);
+                    Thread.Messages.Add(message);
                     View.ScrollToBottom();
                 }
             }
@@ -337,7 +326,7 @@ namespace Signal_Windows.ViewModels
             SignalMessage[] messages = new SignalMessage[] { message };
             DBQueue.Enqueue(new Tuple<SignalMessage[], bool>(messages, false));
             DBSwitch.Set();
-            Messages.Add(message);
+            Thread.Messages.Add(message);
             View.ScrollToBottom();
             OutgoingQueue.Enqueue(message);
             SendSwitch.Set();

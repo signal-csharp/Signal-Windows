@@ -43,8 +43,8 @@ namespace Signal_Windows
 
         private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ThreadView.WelcomeVisibility = Visibility.Collapsed;
-            ThreadView.MainVisibility = Visibility.Visible;
+            ThreadView.Vm.WelcomeVisibility = Visibility.Collapsed;
+            ThreadView.Vm.MainVisibility = Visibility.Visible;
             Vm.ContactsList_SelectionChanged(sender, e);
         }
 

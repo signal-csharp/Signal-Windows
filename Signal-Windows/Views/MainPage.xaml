@@ -28,6 +28,6 @@
                 </ListView>
             </StackPanel>
         </ScrollViewer>
-        <controls:ThreadView x:Name="ThreadView" Grid.Column="1" Padding="10 10 10 10" MainPageVM="{x:Bind Vm}" MessagesSource="{x:Bind Vm.Messages}" ThreadTitle="{x:Bind Vm.ThreadTitle, Mode=OneWay}" />
+        <controls:ThreadView x:Name="ThreadView" Grid.Column="1" Padding="10 10 10 10" DataContext="{x:Bind Vm.Thread}" />
     </Grid>
 </Page>

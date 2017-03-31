@@ -3,26 +3,28 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Signal_Windows.Controls"
+    xmlns:models="using:Signal_Windows.Models"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="600">
 
-    <Border BorderBrush="#00000000" BorderThickness="1,1,1,1" CornerRadius="4,4,4,4" Background="{x:Bind Background, Mode=TwoWay}" Padding="10 5 10 5" Margin="4">
+    <Border BorderBrush="#00000000" BorderThickness="1,1,1,1" CornerRadius="4,4,4,4" Background="{x:Bind Background}" Padding="10 5 10 5" Margin="4">
         <ItemsControl>
-            <TextBlock Name="MessageContentTextBlock" TextWrapping="WrapWholeWords" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="{x:Bind Foreground}" Text="{x:Bind Model.Content}"></TextBlock>
+            <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="{x:Bind Foreground}" Text="{x:Bind Model.Content}"></TextBlock>
             <ItemsControl Name="MessageAttachments" ItemsSource="{x:Bind Model.Attachments}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="models:SignalAttachment">
                         <StackPanel>
-                            <TextBlock Name="AttachmentFilenameTextBlock" Text="{Binding FileName}"></TextBlock>
+                            <TextBlock Name="AttachmentFilenameTextBlock" Text="{x:Bind FileName}"></TextBlock>
                             <Image Name="AttachmentImage"></Image>
-                            <Button Name="AttachmentSaveButton">Save</Button>
+                            <Button Name="AttachmentSaveButton" Click="AttachmentSaveButton_Click">Save</Button>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <TextBlock Name="TimestampTextBlock" Text="{x:Bind FancyTimestamp, Mode=OneWay}" />
         </ItemsControl>
     </Border>
 </UserControl>
