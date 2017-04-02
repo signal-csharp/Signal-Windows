@@ -14,8 +14,9 @@ namespace Signal_Windows.Controls
     public sealed partial class MessageBox : UserControl
     {
         public bool IsExtended { get; set; }
-
         public string FancyTimestamp { get; set; }
+        public SolidColorBrush TextColor { get; set; }
+        public SolidColorBrush TimestampColor { get; set; }
 
         public MessageBox()
         {
@@ -29,14 +30,16 @@ namespace Signal_Windows.Controls
             if (Model.Author == null)
             {
                 Background = GetSolidColorBrush(255, "#f3f3f3");
-                Foreground = GetSolidColorBrush(255, "#454545");
+                TextColor = GetSolidColorBrush(255, "#454545");
+                TimestampColor = GetSolidColorBrush(127, "#454545");
                 HorizontalAlignment = HorizontalAlignment.Right;
                 TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Right;
             }
             else
             {
-                Foreground = GetSolidColorBrush(255, "#ffffff");
                 Background = GetSolidColorBrush(255, Model.Author.Color);
+                TextColor = GetSolidColorBrush(255, "#ffffff");
+                TimestampColor = GetSolidColorBrush(127, "#ffffff");
                 HorizontalAlignment = HorizontalAlignment.Left;
                 TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Left;
             }

@@ -12,7 +12,7 @@
 
     <Border BorderBrush="#00000000" BorderThickness="1,1,1,1" CornerRadius="4,4,4,4" Background="{x:Bind Background}" Padding="10 5 10 5" Margin="4">
         <ItemsControl>
-            <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="{x:Bind Foreground}" Text="{x:Bind Model.Content}"></TextBlock>
+            <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="{x:Bind TextColor}" Text="{x:Bind Model.Content}"></TextBlock>
             <ItemsControl Name="MessageAttachments" ItemsSource="{x:Bind Model.Attachments}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="models:SignalAttachment">
@@ -24,7 +24,7 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <TextBlock Name="TimestampTextBlock" Text="{x:Bind FancyTimestamp, Mode=OneWay}" />
+            <TextBlock Name="TimestampTextBlock" Foreground="{x:Bind TimestampColor}" Text="{x:Bind FancyTimestamp}" />
         </ItemsControl>
     </Border>
 </UserControl>
