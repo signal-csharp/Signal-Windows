@@ -27,19 +27,18 @@ namespace Signal_Windows.Controls
         private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             //name opacity 204
+            Background = Utils.GetBrushFromColor(Model.Author.Color);
             if (Model.Author == null)
             {
-                Background = GetSolidColorBrush(255, "#f3f3f3");
-                TextColor = GetSolidColorBrush(255, "#454545");
-                TimestampColor = GetSolidColorBrush(127, "#454545");
+                TextColor = Utils.GetSolidColorBrush(255, "#454545");
+                TimestampColor = Utils.GetSolidColorBrush(127, "#454545");
                 HorizontalAlignment = HorizontalAlignment.Right;
                 TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Right;
             }
             else
             {
-                Background = GetSolidColorBrush(255, Model.Author.Color);
-                TextColor = GetSolidColorBrush(255, "#ffffff");
-                TimestampColor = GetSolidColorBrush(127, "#ffffff");
+                TextColor = Utils.GetSolidColorBrush(255, "#ffffff");
+                TimestampColor = Utils.GetSolidColorBrush(127, "#ffffff");
                 HorizontalAlignment = HorizontalAlignment.Left;
                 TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Left;
             }
@@ -58,16 +57,6 @@ namespace Signal_Windows.Controls
             {
                 this.DataContext = value;
             }
-        }
-
-        public SolidColorBrush GetSolidColorBrush(byte opacity, string hex)
-        {
-            hex = hex.Replace("#", string.Empty);
-            byte r = (byte)(Convert.ToUInt32(hex.Substring(0, 2), 16));
-            byte g = (byte)(Convert.ToUInt32(hex.Substring(2, 2), 16));
-            byte b = (byte)(Convert.ToUInt32(hex.Substring(4, 2), 16));
-            SolidColorBrush myBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(opacity, r, g, b));
-            return myBrush;
         }
 
         private async void AttachmentSaveButton_Click(object sender, RoutedEventArgs e)
