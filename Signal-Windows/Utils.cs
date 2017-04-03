@@ -22,6 +22,7 @@ namespace Signal_Windows
         public static SolidColorBrush Blue_Grey = GetSolidColorBrush(255, "#607D8B");
         public static SolidColorBrush Grey = GetSolidColorBrush(255, "#999999");
         public static SolidColorBrush Default = GetSolidColorBrush(255, "#2090ea");
+        public static SolidColorBrush Outgoing = GetSolidColorBrush(255, "#f3f3f3");
 
         public static SolidColorBrush GetSolidColorBrush(byte opacity, string hex)
         {
@@ -37,23 +38,23 @@ namespace Signal_Windows
         {
             switch (signalcolor)
             {
-                case "red": return Utils.Red;
-                case "pink": return Utils.Pink;
-                case "purple": return Utils.Purple;
-                case "deep_purple": return Utils.Deep_Purple;
-                case "indigo": return Utils.Indigo;
-                case "blue": return Utils.Blue;
-                case "light_blue": return Utils.Light_Blue;
-                case "cyan": return Utils.Cyan;
-                case "teal": return Utils.Teal;
-                case "green": return Utils.Green;
-                case "light_green": return Utils.Light_Green;
-                case "orange": return Utils.Orange;
-                case "deep_orange": return Utils.Deep_Orange;
-                case "amber": return Utils.Amber;
-                case "blue_grey": return Utils.Blue_Grey;
-                case "grey": return Utils.Grey;
-                default: return Utils.Default;
+                case "red": return Red;
+                case "pink": return Pink;
+                case "purple": return Purple;
+                case "deep_purple": return Deep_Purple;
+                case "indigo": return Indigo;
+                case "blue": return Blue;
+                case "light_blue": return Light_Blue;
+                case "cyan": return Cyan;
+                case "teal": return Teal;
+                case "green": return Green;
+                case "light_green": return Light_Green;
+                case "orange": return Orange;
+                case "deep_orange": return Deep_Orange;
+                case "amber": return Amber;
+                case "blue_grey": return Blue_Grey;
+                case "grey": return Grey;
+                default: return Default;
             }
         }
     }

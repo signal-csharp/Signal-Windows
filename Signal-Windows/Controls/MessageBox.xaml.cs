@@ -27,9 +27,9 @@ namespace Signal_Windows.Controls
         private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             //name opacity 204
-            Background = Utils.GetBrushFromColor(Model.Author.Color);
             if (Model.Author == null)
             {
+                Background = Utils.Outgoing;
                 TextColor = Utils.GetSolidColorBrush(255, "#454545");
                 TimestampColor = Utils.GetSolidColorBrush(127, "#454545");
                 HorizontalAlignment = HorizontalAlignment.Right;
@@ -37,6 +37,7 @@ namespace Signal_Windows.Controls
             }
             else
             {
+                Background = Utils.GetBrushFromColor(Model.Author.Color);
                 TextColor = Utils.GetSolidColorBrush(255, "#ffffff");
                 TimestampColor = Utils.GetSolidColorBrush(127, "#ffffff");
                 HorizontalAlignment = HorizontalAlignment.Left;
