@@ -26,7 +26,7 @@ using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.ViewModels
 {
-    public class MainPageViewModel : ViewModelBase, MessagePipeCallback
+    public partial class MainPageViewModel : ViewModelBase, MessagePipeCallback
     {
         private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
         private bool ActionInProgress = false;
@@ -36,13 +36,11 @@ namespace Signal_Windows.ViewModels
         public Manager SignalManager = null;
         public volatile bool Running = true;
         private CancellationTokenSource CancelSource = new CancellationTokenSource();
-        private AsyncManualResetEvent SendSwitch = new AsyncManualResetEvent(false);
         private AsyncManualResetEvent DBSwitch = new AsyncManualResetEvent(false);
         private AsyncManualResetEvent MessageSavePendingSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent IncomingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent OutgoingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent DBOffSwitch = new AsyncManualResetEvent(false);
-        public ConcurrentQueue<SignalMessage> OutgoingQueue = new ConcurrentQueue<SignalMessage>();
         private ConcurrentQueue<Tuple<SignalMessage[], bool>> DBQueue = new ConcurrentQueue<Tuple<SignalMessage[], bool>>();
 
         #region Contacts
@@ -328,47 +326,10 @@ namespace Signal_Windows.ViewModels
             DBSwitch.Set();
             Thread.Messages.Add(message);
             View.ScrollToBottom();
-            OutgoingQueue.Enqueue(message);
-            SendSwitch.Set();
+            OutgoingQueue.Add(message);
         }
 
         #endregion UIThread
-
-        #region Sender
-
-        public void HandleOutgoingMessages()
-        {
-            Debug.WriteLine("HandleOutgoingMessages starting...");
-            try
-            {
-                while (Running)
-                {
-                    SendSwitch.Wait(CancelSource.Token);
-                    SendSwitch.Reset();
-                    SignalMessage t;
-                    while (OutgoingQueue.TryDequeue(out t))
-                    {
-                        Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(t.Content).withTimestamp(t.ComposedTimestamp);
-                        List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                        if (t.ThreadID[0] == '+')
-                        {
-                            recipients.Add(new SignalServiceAddress(t.ThreadID));
-                        }
-                        else
-                        {
-                            throw new NotImplementedException();
-                        }
-                        SignalServiceDataMessage ssdm = messageBuilder.build();
-                        SignalManager.sendMessage(recipients, ssdm);
-                    }
-                }
-            }
-            catch (Exception) { }
-            Debug.WriteLine("HandleOutgoingMessages finished");
-            OutgoingOffSwitch.Set();
-        }
-
-        #endregion Sender
 
         #region Receiver
 
