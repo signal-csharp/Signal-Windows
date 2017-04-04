@@ -23,35 +23,38 @@ namespace Signal_Windows.ViewModels
         {
             Debug.WriteLine("HandleOutgoingMessages starting...");
             CancellationToken token = CancelSource.Token;
-            while (Running)
+            while (!token.IsCancellationRequested)
             {
-                while (!token.IsCancellationRequested)
+                SignalMessage t = null;
+                try
                 {
-                    var t = OutgoingQueue.Take(CancelSource.Token);
-                    try
+                    t = OutgoingQueue.Take(token);
+                    Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(t.Content).withTimestamp(t.ComposedTimestamp);
+                    List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
+                    if (t.ThreadID[0] == '+')
                     {
-                        Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(t.Content).withTimestamp(t.ComposedTimestamp);
-                        List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                        if (t.ThreadID[0] == '+')
-                        {
-                            recipients.Add(new SignalServiceAddress(t.ThreadID));
-                        }
-                        else
-                        {
-                            throw new NotImplementedException();
-                        }
-                        SignalServiceDataMessage ssdm = messageBuilder.build();
-                        SignalManager.sendMessage(recipients, ssdm);
-                        //TODO update database: send successfull
-                        //TODO notify UI
+                        recipients.Add(new SignalServiceAddress(t.ThreadID));
                     }
-                    catch (Exception e)
+                    else
                     {
-                        Debug.WriteLine(e.Message);
-                        Debug.WriteLine(e.StackTrace);
-                        OutgoingQueue.Add(t);
-                        //TODO notify UI
+                        throw new NotImplementedException();
                     }
+                    SignalServiceDataMessage ssdm = messageBuilder.build();
+                    SignalManager.sendMessage(recipients, ssdm);
+                    //TODO update database: send successful
+                    //TODO notify UI
+                }
+                catch (OperationCanceledException e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.StackTrace);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.StackTrace);
+                    OutgoingQueue.Add(t);
+                    //TODO notify UI
                 }
             }
             Debug.WriteLine("HandleOutgoingMessages finished");
