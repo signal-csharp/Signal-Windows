@@ -56,7 +56,7 @@ namespace Signal_Windows.ViewModels
                             }
                             else
                             {
-                                OutgoingMessagesSavedEvent.Set();
+                                OutgoingQueue.Add(t.Item1[0]);
                             }
                         }
                     }

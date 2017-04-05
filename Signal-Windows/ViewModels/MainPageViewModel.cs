@@ -238,7 +238,6 @@ namespace Signal_Windows.ViewModels
             DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, false));
             Thread.Messages.Add(message);
             View.ScrollToBottom();
-            OutgoingQueue.Add(message);
         }
 
         #endregion UIThread

@@ -18,8 +18,6 @@ namespace Signal_Windows.ViewModels
         /// </summary>
         private BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
 
-        private ManualResetEvent OutgoingMessagesSavedEvent = new ManualResetEvent(false);
-
         /// <summary>
         /// Reads pending messages from the <see cref="OutgoingQueue"/> and attempts to send them
         /// </summary>
@@ -27,7 +25,6 @@ namespace Signal_Windows.ViewModels
         {
             Debug.WriteLine("HandleOutgoingMessages starting...");
             CancellationToken token = CancelSource.Token;
-            WaitHandle[] handles = { OutgoingMessagesSavedEvent, token.WaitHandle };
             while (!token.IsCancellationRequested)
             {
                 SignalMessage outgoingSignalMessage = null;
@@ -45,10 +42,8 @@ namespace Signal_Windows.ViewModels
                         throw new NotImplementedException();
                     }
                     SignalServiceDataMessage ssdm = messageBuilder.build();
-                    WaitHandle.WaitAny(handles);
                     if (!token.IsCancellationRequested)
                     {
-                        OutgoingMessagesSavedEvent.Reset();
                         SignalManager.sendMessage(recipients, ssdm);
                         try
                         {
