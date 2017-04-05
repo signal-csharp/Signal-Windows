@@ -36,11 +36,9 @@ namespace Signal_Windows.ViewModels
         public Manager SignalManager = null;
         public volatile bool Running = true;
         private CancellationTokenSource CancelSource = new CancellationTokenSource();
-        private AsyncManualResetEvent DBSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent IncomingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent OutgoingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent DBOffSwitch = new AsyncManualResetEvent(false);
-        private ConcurrentQueue<Tuple<SignalMessage[], bool>> DBQueue = new ConcurrentQueue<Tuple<SignalMessage[], bool>>();
 
         #region Contacts
 
@@ -214,100 +212,11 @@ namespace Signal_Windows.ViewModels
             CancelSource.Cancel();
         }
 
-        #region MessagesDB
-
-        private void HandleDBQueue()
-        {
-            Debug.WriteLine("HandleDBQueue starting...");
-            try
-            {
-                while (Running)
-                {
-                    DBSwitch.Wait(CancelSource.Token);
-                    DBSwitch.Reset();
-                    Tuple<SignalMessage[], bool> t;
-                    if (DBQueue.TryDequeue(out t))
-                    {
-                        using (var ctx = new SignalDBContext())
-                        {
-                            foreach (var message in t.Item1)
-                            {
-                                SignalContact author = ctx.Contacts.SingleOrDefault(b => b.UserName == message.AuthorUsername);
-                                if (author == null && t.Item2)
-                                { //TODO lock, display
-                                    author = new SignalContact()
-                                    {
-                                        UserName = message.AuthorUsername,
-                                        ContactDisplayName = message.AuthorUsername
-                                    };
-                                    ctx.Contacts.Add(author);
-                                    ctx.SaveChanges();
-                                }
-                                message.Author = author;
-                                ctx.Messages.Add(message);
-                                if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
-                                {
-                                    if (message.Attachments != null && message.Attachments.Count > 0)
-                                    {
-                                        ctx.SaveChanges();
-                                        HandleDBAttachments(message, ctx);
-                                    }
-                                }
-                            }
-                            ctx.SaveChanges();
-                            if (t.Item2)
-                            {
-                                MessageSavePendingSwitch.Set();
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.Message);
-                Debug.WriteLine(e.StackTrace);
-            }
-            DBOffSwitch.Set();
-            Debug.WriteLine("HandleDBQueue finished");
-        }
-
-        private void HandleDBAttachments(SignalMessage message, SignalDBContext ctx)
-        {
-            int i = 0;
-            foreach (var sa in message.Attachments)
-            {
-                sa.FileName = "attachment_" + message.Id + "_" + i;
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        DirectoryInfo di = Directory.CreateDirectory(Manager.localFolder + @"\Attachments");
-                        using (var cipher = File.Open(Manager.localFolder + @"\Attachments\" + sa.FileName + ".cipher", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
-                        using (var plain = File.OpenWrite(Manager.localFolder + @"\Attachments\" + sa.FileName))
-                        {
-                            SignalManager.MessageReceiver.retrieveAttachment(new SignalServiceAttachmentPointer(sa.StorageId, sa.ContentType, sa.Key, sa.Relay), plain, cipher);
-                            //TODO notify UI
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e.Message);
-                        Debug.WriteLine(e.StackTrace);
-                    }
-                });
-                i++;
-            }
-        }
-
-        #endregion MessagesDB
-
         #region UIThread
 
         public void UIHandleIncomingMessages(SignalMessage[] messages)
         {
-            DBQueue.Enqueue(new Tuple<SignalMessage[], bool>(messages, true));
-            DBSwitch.Set();
+            DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, true));
             foreach (var message in messages)
             {
                 if (SelectedThread == message.ThreadID)
@@ -321,8 +230,7 @@ namespace Signal_Windows.ViewModels
         public void UIHandleOutgoingMessage(SignalMessage message)
         {
             SignalMessage[] messages = new SignalMessage[] { message };
-            DBQueue.Enqueue(new Tuple<SignalMessage[], bool>(messages, false));
-            DBSwitch.Set();
+            DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, false));
             Thread.Messages.Add(message);
             View.ScrollToBottom();
             OutgoingQueue.Add(message);

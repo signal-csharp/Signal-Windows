@@ -111,6 +111,7 @@
     <Compile Include="Models\SignalAttachment.cs" />
     <Compile Include="Models\SignalMessage.cs" />
     <Compile Include="Models\SignalContact.cs" />
+    <Compile Include="Storage\DBTask.cs" />
     <Compile Include="Signal\Manager.cs" />
     <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
