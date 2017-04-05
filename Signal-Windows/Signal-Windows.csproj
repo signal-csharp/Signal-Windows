@@ -112,6 +112,7 @@
     <Compile Include="Models\SignalMessage.cs" />
     <Compile Include="Models\SignalContact.cs" />
     <Compile Include="Signal\Manager.cs" />
+    <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
     <Compile Include="Storage\Store.cs" />
     <Compile Include="Storage\WhisperTrustStore.cs" />
