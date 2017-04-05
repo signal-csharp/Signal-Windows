@@ -1,10 +1,12 @@
 ﻿using libsignalservice.messages;
 using libsignalservice.push;
 using Signal_Windows.Models;
+using Signal_Windows.Storage;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace Signal_Windows.ViewModels
@@ -28,15 +30,15 @@ namespace Signal_Windows.ViewModels
             WaitHandle[] handles = { OutgoingMessagesSavedEvent, token.WaitHandle };
             while (!token.IsCancellationRequested)
             {
-                SignalMessage t = null;
+                SignalMessage outgoingSignalMessage = null;
                 try
                 {
-                    t = OutgoingQueue.Take(token);
-                    Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(t.Content).withTimestamp(t.ComposedTimestamp);
+                    outgoingSignalMessage = OutgoingQueue.Take(token);
+                    Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(outgoingSignalMessage.Content).withTimestamp(outgoingSignalMessage.ComposedTimestamp);
                     List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                    if (t.ThreadID[0] == '+')
+                    if (outgoingSignalMessage.ThreadID[0] == '+')
                     {
-                        recipients.Add(new SignalServiceAddress(t.ThreadID));
+                        recipients.Add(new SignalServiceAddress(outgoingSignalMessage.ThreadID));
                     }
                     else
                     {
@@ -48,8 +50,34 @@ namespace Signal_Windows.ViewModels
                     {
                         OutgoingMessagesSavedEvent.Reset();
                         SignalManager.sendMessage(recipients, ssdm);
-                        //TODO update database: send successful
-                        //TODO notify UI
+                        try
+                        {
+                            using (var ctx = new SignalDBContext())
+                            {
+                                using (var transaction = ctx.Database.BeginTransaction())
+                                {
+                                    var m = ctx.Messages.
+                                        Single(t => t.ComposedTimestamp == outgoingSignalMessage.ComposedTimestamp && t.Author == null);
+                                    if (m != null)
+                                    {
+                                        m.Status = (uint)SignalMessageStatus.Confirmed;
+                                        ctx.SaveChanges();
+                                        transaction.Commit();
+                                        //TODO notify UI
+                                    }
+                                    else
+                                    {
+                                        Debug.WriteLine("HandleOutgoingMessages could not find the correspoding message");
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine("failed to save message to db");
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(e.StackTrace);
+                        }
                     }
                 }
                 catch (OperationCanceledException e)
@@ -61,7 +89,7 @@ namespace Signal_Windows.ViewModels
                 {
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
-                    OutgoingQueue.Add(t);
+                    OutgoingQueue.Add(outgoingSignalMessage);
                     //TODO notify UI
                 }
             }

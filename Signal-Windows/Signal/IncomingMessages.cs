@@ -4,10 +4,12 @@ using libsignalservice.push;
 using libsignalservice.util;
 using Nito.AsyncEx;
 using Signal_Windows.Models;
+using Signal_Windows.Storage;
 using Strilanc.Value;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Signal_Windows.ViewModels
 {
@@ -47,23 +49,21 @@ namespace Signal_Windows.ViewModels
             {
                 try
                 {
-                    var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
-                    var content = cipher.decrypt(envelope);
-
-                    //TODO handle special messages & unknown groups
-                    if (content.getDataMessage().HasValue)
+                    if (envelope.isReceipt())
                     {
-                        SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
-                        if (message.isEndSession())
+                        HandleReceipt(envelope);
+                    }
+                    else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
+                    {
+                        SignalMessage sm = HandleMessage(envelope);
+                        if (sm != null)
                         {
-                            SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
-                            SignalManager.Save();
+                            messages.Add(sm);
                         }
-                        else
-                        {
-                            //TODO check both the db and the previous messages for duplicates
-                            messages.Add(HandleMessage(envelope, content, message));
-                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("received message of unknown type " + envelope.getType() + " from " + envelope.getSource());
                     }
                 }
                 catch (Exception e)
@@ -87,7 +87,68 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private SignalMessage HandleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
+        private void HandleReceipt(SignalServiceEnvelope envelope)
+        {
+            using (var ctx = new SignalDBContext())
+            {
+                using (var transaction = ctx.Database.BeginTransaction())
+                {
+                    var m = ctx.Messages.
+                        SingleOrDefault(t => t.ComposedTimestamp == envelope.getTimestamp() && t.Author == null);
+                    if (m != null)
+                    {
+                        m.Receipts++;
+                        ctx.SaveChanges();
+                        transaction.Commit();
+                        //TODO notify UI
+                    }
+                    else
+                    {
+                        Debug.WriteLine("HandleReceipt could not find the correspoding message");
+                    }
+                }
+            }
+        }
+
+        private SignalMessage HandleMessage(SignalServiceEnvelope envelope)
+        {
+            var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
+            var content = cipher.decrypt(envelope);
+
+            if (content.getDataMessage().HasValue)
+            {
+                SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
+                if (message.isEndSession())
+                {
+                    SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
+                    SignalManager.Save();
+                }
+                else if (message.isGroupUpdate())
+                {
+                    //TODO
+                }
+                else if (message.isExpirationUpdate())
+                {
+                    //TODO
+                }
+                else
+                {
+                    //TODO check both the db and the previous messages for duplicates
+                    return HandleSignalMessage(envelope, content, message);
+                }
+            }
+            else if (content.getSyncMessage().HasValue)
+            {
+                //TODO
+            } //TODO callmessages
+            else
+            {
+                Debug.WriteLine("HandleMessage got unrecognized message from " + envelope.getSource());
+            }
+            return null;
+        }
+
+        private SignalMessage HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
         {
             string source = envelope.getSource();
             SignalContact author = GetOrCreateContact(source);
@@ -97,7 +158,7 @@ namespace Signal_Windows.ViewModels
             SignalMessage message = new SignalMessage()
             {
                 Type = source == (string)LocalSettings.Values["Username"] ? (uint)SignalMessageType.Outgoing : (uint)SignalMessageType.Incoming,
-                Status = (uint)SignalMessageStatus.Default,
+                Status = (uint)SignalMessageStatus.Pending,
                 Author = author,
                 Content = body,
                 ThreadID = source,

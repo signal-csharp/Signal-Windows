@@ -33,9 +33,7 @@ namespace Signal_Windows.Models
 
     public enum SignalMessageStatus
     {
-        Default = 0,
-        SentConfirmed = 1,
-        DeliveryConfirmed = 2,
-        ReadConfirmed = 3
+        Pending = 0,
+        Confirmed = 1
     }
 }
