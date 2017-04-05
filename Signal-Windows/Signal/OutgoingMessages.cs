@@ -52,22 +52,25 @@ namespace Signal_Windows.ViewModels
                         SignalManager.sendMessage(recipients, ssdm);
                         try
                         {
-                            using (var ctx = new SignalDBContext())
+                            lock (SignalDBContext.DBLock)
                             {
-                                using (var transaction = ctx.Database.BeginTransaction())
+                                using (var ctx = new SignalDBContext())
                                 {
-                                    var m = ctx.Messages.
-                                        Single(t => t.ComposedTimestamp == outgoingSignalMessage.ComposedTimestamp && t.Author == null);
-                                    if (m != null)
+                                    using (var transaction = ctx.Database.BeginTransaction())
                                     {
-                                        m.Status = (uint)SignalMessageStatus.Confirmed;
-                                        ctx.SaveChanges();
-                                        transaction.Commit();
-                                        //TODO notify UI
-                                    }
-                                    else
-                                    {
-                                        Debug.WriteLine("HandleOutgoingMessages could not find the correspoding message");
+                                        var m = ctx.Messages.
+                                            Single(t => t.ComposedTimestamp == outgoingSignalMessage.ComposedTimestamp && t.Author == null);
+                                        if (m != null)
+                                        {
+                                            m.Status = (uint)SignalMessageStatus.Confirmed;
+                                            ctx.SaveChanges();
+                                            transaction.Commit();
+                                            //TODO notify UI
+                                        }
+                                        else
+                                        {
+                                            Debug.WriteLine("HandleOutgoingMessages could not find the correspoding message");
+                                        }
                                     }
                                 }
                             }

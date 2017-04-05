@@ -25,36 +25,39 @@ namespace Signal_Windows.ViewModels
                 try
                 {
                     Tuple<SignalMessage[], bool> t = DBQueue.Take(token);
-                    using (var ctx = new SignalDBContext())
+                    lock (SignalDBContext.DBLock)
                     {
-                        foreach (var message in t.Item1)
+                        using (var ctx = new SignalDBContext())
                         {
+                            foreach (var message in t.Item1)
+                            {
+                                if (t.Item2)
+                                {
+                                    message.Author = ctx.Contacts.Single(b => b.UserName == message.AuthorUsername);
+                                }
+                                else
+                                {
+                                    message.Author = null;
+                                }
+                                ctx.Messages.Add(message);
+                                if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
+                                {
+                                    if (message.Attachments != null && message.Attachments.Count > 0)
+                                    {
+                                        ctx.SaveChanges();
+                                        HandleDBAttachments(message, ctx);
+                                    }
+                                }
+                            }
+                            ctx.SaveChanges();
                             if (t.Item2)
                             {
-                                message.Author = ctx.Contacts.Single(b => b.UserName == message.AuthorUsername);
+                                IncomingMessageSavedEvent.Set();
                             }
                             else
                             {
-                                message.Author = null;
+                                OutgoingMessagesSavedEvent.Set();
                             }
-                            ctx.Messages.Add(message);
-                            if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
-                            {
-                                if (message.Attachments != null && message.Attachments.Count > 0)
-                                {
-                                    ctx.SaveChanges();
-                                    HandleDBAttachments(message, ctx);
-                                }
-                            }
-                        }
-                        ctx.SaveChanges();
-                        if (t.Item2)
-                        {
-                            IncomingMessageSavedEvent.Set();
-                        }
-                        else
-                        {
-                            OutgoingMessagesSavedEvent.Set();
                         }
                     }
                 }

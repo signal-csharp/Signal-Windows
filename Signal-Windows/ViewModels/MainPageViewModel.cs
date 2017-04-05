@@ -1,7 +1,4 @@
 ﻿using GalaSoft.MvvmLight;
-using libsignalservice.crypto;
-using libsignalservice.messages;
-using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
 using Nito.AsyncEx;
@@ -10,11 +7,9 @@ using Signal_Windows.Signal;
 using Signal_Windows.Storage;
 using Strilanc.Value;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,12 +76,15 @@ namespace Signal_Windows.ViewModels
                     {
                         UserName = username,
                         ContactDisplayName = username,
-                        Color = "#ff0000"
+                        //TODO pick random color
                     };
-                    using (var ctx = new SignalDBContext())
+                    lock (SignalDBContext.DBLock)
                     {
-                        ctx.Contacts.Add(contact);
-                        ctx.SaveChanges();
+                        using (var ctx = new SignalDBContext())
+                        {
+                            ctx.Contacts.Add(contact);
+                            ctx.SaveChanges();
+                        }
                     }
                     Task.Run(async () =>
                     {
@@ -113,14 +111,18 @@ namespace Signal_Windows.ViewModels
                     {
                         await Task.Run(async () =>
                         {
-                            using (var ctx = new SignalDBContext())
+                            List<SignalContact> contacts = new List<SignalContact>();
+                            lock (SignalDBContext.DBLock)
                             {
-                                var contacts = ctx.Contacts.AsNoTracking().ToList();
-                                await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                                using (var ctx = new SignalDBContext())
                                 {
-                                    AddContacts(contacts);
-                                });
+                                    contacts = ctx.Contacts.AsNoTracking().ToList();
+                                }
                             }
+                            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                            {
+                                AddContacts(contacts);
+                            });
                         });
                         var manager = new Manager(CancelSource.Token, (string)LocalSettings.Values["Username"], true);
                         await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -159,13 +161,16 @@ namespace Signal_Windows.ViewModels
                     Thread.Messages.Clear();
                     var messages = await Task.Run(() =>
                     {
-                        using (var ctx = new SignalDBContext())
+                        lock (SignalDBContext.DBLock)
                         {
-                            return ctx.Messages
-                                .Where(m => m.ThreadID == SelectedThread)
-                                .Include(m => m.Author)
-                                .Include(m => m.Attachments)
-                                .AsNoTracking().ToList();
+                            using (var ctx = new SignalDBContext())
+                            {
+                                return ctx.Messages
+                                    .Where(m => m.ThreadID == SelectedThread)
+                                    .Include(m => m.Author)
+                                    .Include(m => m.Attachments)
+                                    .AsNoTracking().ToList();
+                            }
                         }
                     });
                     foreach (var m in messages)

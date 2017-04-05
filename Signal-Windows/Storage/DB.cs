@@ -1,12 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Signal_Windows.Models;
-using System;
 
 namespace Signal_Windows.Storage
 {
     public class SignalDBContext : DbContext
     {
-        private static readonly Object obj = new Object();
+        public static readonly object DBLock = new object();
         public DbSet<SignalContact> Contacts { get; set; }
         public DbSet<SignalMessage> Messages { get; set; }
         public DbSet<SignalAttachment> Attachments { get; set; }
@@ -18,7 +17,7 @@ namespace Signal_Windows.Storage
 
         public static void UpdateContact(SignalContact contact, bool flush)
         {
-            lock (obj)
+            lock (DBLock)
             {
                 using (var db = new SignalDBContext())
                 {

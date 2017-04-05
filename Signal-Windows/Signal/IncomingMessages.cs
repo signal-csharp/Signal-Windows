@@ -89,22 +89,25 @@ namespace Signal_Windows.ViewModels
 
         private void HandleReceipt(SignalServiceEnvelope envelope)
         {
-            using (var ctx = new SignalDBContext())
+            lock (SignalDBContext.DBLock)
             {
-                using (var transaction = ctx.Database.BeginTransaction())
+                using (var ctx = new SignalDBContext())
                 {
-                    var m = ctx.Messages.
-                        SingleOrDefault(t => t.ComposedTimestamp == envelope.getTimestamp() && t.Author == null);
-                    if (m != null)
+                    using (var transaction = ctx.Database.BeginTransaction())
                     {
-                        m.Receipts++;
-                        ctx.SaveChanges();
-                        transaction.Commit();
-                        //TODO notify UI
-                    }
-                    else
-                    {
-                        Debug.WriteLine("HandleReceipt could not find the correspoding message");
+                        var m = ctx.Messages.
+                            SingleOrDefault(t => t.ComposedTimestamp == envelope.getTimestamp() && t.Author == null);
+                        if (m != null)
+                        {
+                            m.Receipts++;
+                            ctx.SaveChanges();
+                            transaction.Commit();
+                            //TODO notify UI
+                        }
+                        else
+                        {
+                            Debug.WriteLine("HandleReceipt could not find the correspoding message");
+                        }
                     }
                 }
             }

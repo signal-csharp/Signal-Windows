@@ -30,9 +30,12 @@ namespace Signal_Windows
             this.InitializeComponent();
             this.Suspending += OnSuspending;
             Debug.WriteLine("Signal-Windows " + LocalFolder.Path.ToString());
-            using (var db = new SignalDBContext())
+            lock (SignalDBContext.DBLock)
             {
-                db.Database.Migrate();
+                using (var db = new SignalDBContext())
+                {
+                    db.Database.Migrate();
+                }
             }
         }
 
