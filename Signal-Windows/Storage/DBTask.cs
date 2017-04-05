@@ -50,7 +50,11 @@ namespace Signal_Windows.ViewModels
                         ctx.SaveChanges();
                         if (t.Item2)
                         {
-                            MessageSavePendingSwitch.Set();
+                            IncomingMessageSavedEvent.Set();
+                        }
+                        else
+                        {
+                            OutgoingMessagesSavedEvent.Set();
                         }
                     }
                 }

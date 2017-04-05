@@ -16,7 +16,7 @@ namespace Signal_Windows.ViewModels
         /// <summary>
         /// ResetEvent that indicates the end of the pending db transactions
         /// </summary>
-        private AsyncManualResetEvent MessageSavePendingSwitch = new AsyncManualResetEvent(false);
+        private AsyncManualResetEvent IncomingMessageSavedEvent = new AsyncManualResetEvent(false);
 
         /// <summary>
         /// Reads, decrypts, handles and schedules storing and displaying of incoming messages from the pipe
@@ -78,12 +78,12 @@ namespace Signal_Windows.ViewModels
             }
             if (messages.Count > 0)
             {
-                MessageSavePendingSwitch.Reset();
+                IncomingMessageSavedEvent.Reset();
                 Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
                     UIHandleIncomingMessages(messages.ToArray());
                 }).AsTask().Wait();
-                MessageSavePendingSwitch.Wait(CancelSource.Token);
+                IncomingMessageSavedEvent.Wait(CancelSource.Token);
             }
         }
 
