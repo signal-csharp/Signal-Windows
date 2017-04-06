@@ -7,20 +7,24 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using Windows.Storage;
 
 namespace Signal_Windows.Storage
 {
     public class Store : SignalProtocolStore
     {
-        public Store(IdentityKeyPair identityKey, uint registrationId)
-        {
-            jsonPreKeyStore = new JsonPreKeyStore();
-            jsonSessionStore = new JsonSessionStore();
-            jsonSignedPreKeyStore = new JsonSignedPreKeyStore();
-            jsonIdentityKeyStore = new JsonIdentityKeyStore(identityKey, registrationId);
-        }
+        [JsonIgnore] public static Store Instance;
+        [JsonIgnore] public static string localFolder = ApplicationData.Current.LocalFolder.Path;
+        [JsonIgnore] public static ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
 
-        public uint deviceId { get; set; } = SignalServiceAddress.DEFAULT_DEVICE_ID; //TODO why uint?
+        [JsonIgnore]
+        public static JsonConverter[] Converters = new JsonConverter[] {
+                                                new IdentityKeyPairConverter(),
+                                                new IdentityKeyConverter(),
+                                                new ByteArrayConverter()};
+
+        public uint deviceId { get; set; } = SignalServiceAddress.DEFAULT_DEVICE_ID;
         public String username { get; set; }
         public String password { get; set; }
         public String signalingKey { get; set; }
@@ -31,6 +35,39 @@ namespace Signal_Windows.Storage
         public JsonIdentityKeyStore jsonIdentityKeyStore { get; set; }
         public JsonSessionStore jsonSessionStore { get; set; }
         public JsonSignedPreKeyStore jsonSignedPreKeyStore { get; set; }
+
+        public Store()
+        {
+            Instance = this;
+        }
+
+        public Store(IdentityKeyPair identityKey, uint registrationId)
+        {
+            Instance = this;
+            jsonPreKeyStore = new JsonPreKeyStore();
+            jsonSessionStore = new JsonSessionStore();
+            jsonSignedPreKeyStore = new JsonSignedPreKeyStore();
+            jsonIdentityKeyStore = new JsonIdentityKeyStore(identityKey, registrationId);
+        }
+
+        public void Save()
+        {
+            try
+            {
+                using (FileStream fs = File.Open(localFolder + @"\" + LocalSettings.Values["Username"] + "Store.json", FileMode.Truncate))
+                using (StreamWriter sw = new StreamWriter(fs))
+                {
+                    string s = JsonConvert.SerializeObject(this, Formatting.Indented, Converters);
+                    sw.Write(s);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("SignalProtocolStore failed to save!");
+                Debug.WriteLine(e.Message);
+                Debug.WriteLine(e.StackTrace);
+            }
+        }
 
         public IdentityKeyPair GetIdentityKeyPair()
         {
@@ -44,7 +81,9 @@ namespace Signal_Windows.Storage
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            return jsonIdentityKeyStore.SaveIdentity(address, identityKey);
+            jsonIdentityKeyStore.SaveIdentity(address, identityKey);
+            Save();
+            return true;
         }
 
         public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey)
@@ -61,6 +100,7 @@ namespace Signal_Windows.Storage
         {
             Debug.WriteLine(String.Format("storing prekey {0} {1}", preKeyId, record));
             jsonPreKeyStore.StorePreKey(preKeyId, record);
+            Save();
         }
 
         public bool ContainsPreKey(uint preKeyId)
@@ -71,6 +111,7 @@ namespace Signal_Windows.Storage
         public void RemovePreKey(uint preKeyId)
         {
             jsonPreKeyStore.RemovePreKey(preKeyId);
+            Save();
         }
 
         public SessionRecord LoadSession(SignalProtocolAddress address)
@@ -86,6 +127,7 @@ namespace Signal_Windows.Storage
         public void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
             jsonSessionStore.StoreSession(address, record);
+            Save();
         }
 
         public bool ContainsSession(SignalProtocolAddress address)
@@ -96,11 +138,13 @@ namespace Signal_Windows.Storage
         public void DeleteSession(SignalProtocolAddress address)
         {
             jsonSessionStore.DeleteSession(address);
+            Save();
         }
 
         public void DeleteAllSessions(string name)
         {
             jsonSessionStore.DeleteAllSessions(name);
+            Save();
         }
 
         public SignedPreKeyRecord LoadSignedPreKey(uint signedPreKeyId)
@@ -116,6 +160,7 @@ namespace Signal_Windows.Storage
         public void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
         {
             jsonSignedPreKeyStore.StoreSignedPreKey(signedPreKeyId, record);
+            Save();
         }
 
         public bool ContainsSignedPreKey(uint signedPreKeyId)
@@ -126,13 +171,13 @@ namespace Signal_Windows.Storage
         public void RemoveSignedPreKey(uint signedPreKeyId)
         {
             jsonSignedPreKeyStore.RemoveSignedPreKey(signedPreKeyId);
+            Save();
         }
     }
 
     public class JsonPreKeyStore : PreKeyStore
     {
-        [JsonProperty]
-        private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
+        [JsonProperty] private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
 
         public bool ContainsPreKey(uint preKeyId)
         {
@@ -156,25 +201,21 @@ namespace Signal_Windows.Storage
         public void StorePreKey(uint preKeyId, PreKeyRecord record)
         {
             store[preKeyId] = record.serialize();
+            Store.Instance.Save();
         }
     }
 
     public class JsonIdentityKeyStore : IdentityKeyStore
     {
+        [JsonProperty] private IdentityKeyPair identityKeyPair { get; set; }
+        [JsonProperty] private uint registrationId { get; set; }
+        [JsonProperty] private Dictionary<string, List<IdentityKey>> trustedKeys { get; set; } = new Dictionary<string, List<IdentityKey>>();
+
         public JsonIdentityKeyStore(IdentityKeyPair identityKey, uint registrationId)
         {
             this.identityKeyPair = identityKey;
             this.registrationId = registrationId;
         }
-
-        [JsonProperty]
-        private IdentityKeyPair identityKeyPair { get; set; }
-
-        [JsonProperty]
-        private uint registrationId { get; set; }
-
-        [JsonProperty]
-        private Dictionary<string, List<IdentityKey>> trustedKeys { get; set; } = new Dictionary<string, List<IdentityKey>>();
 
         public IdentityKeyPair GetIdentityKeyPair()
         {
@@ -211,14 +252,14 @@ namespace Signal_Windows.Storage
                 trustedKeys[address.Name] = new List<IdentityKey>();
             }
             trustedKeys[address.Name].Add(identityKey);
+            Store.Instance.Save();
             return true;
         }
     }
 
     public class JsonSessionStore : SessionStore
     {
-        [JsonProperty]
-        private Dictionary<string, Dictionary<uint, byte[]>> sessions = new Dictionary<string, Dictionary<uint, byte[]>>();
+        [JsonProperty] private Dictionary<string, Dictionary<uint, byte[]>> sessions = new Dictionary<string, Dictionary<uint, byte[]>>();
 
         public bool ContainsSession(SignalProtocolAddress address)
         {
@@ -235,11 +276,13 @@ namespace Signal_Windows.Storage
         public void DeleteAllSessions(string name)
         {
             sessions.Remove(name);
+            Store.Instance.Save();
         }
 
         public void DeleteSession(SignalProtocolAddress address)
         {
             sessions[address.Name].Remove(address.DeviceId);
+            Store.Instance.Save();
         }
 
         public List<uint> GetSubDeviceSessions(string name)
@@ -270,13 +313,13 @@ namespace Signal_Windows.Storage
                 sessions[address.Name] = new Dictionary<uint, byte[]>();
             }
             sessions[address.Name][address.DeviceId] = record.serialize();
+            Store.Instance.Save();
         }
     }
 
     public class JsonSignedPreKeyStore : SignedPreKeyStore
     {
-        [JsonProperty]
-        private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
+        [JsonProperty] private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
 
         public bool ContainsSignedPreKey(uint signedPreKeyId)
         {
@@ -305,16 +348,14 @@ namespace Signal_Windows.Storage
         public void RemoveSignedPreKey(uint signedPreKeyId)
         {
             store.Remove(signedPreKeyId);
+            Store.Instance.Save();
         }
 
         public void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
         {
             store[signedPreKeyId] = record.serialize();
+            Store.Instance.Save();
         }
-    }
-
-    public class ContactStore
-    {
     }
 
     public class ByteArrayConverter : JsonConverter

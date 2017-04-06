@@ -31,11 +31,6 @@ namespace Signal_Windows.Signal
         private static uint PREKEY_MINIMUM_COUNT = 20;
         private static uint PREKEY_BATCH_SIZE = 100;
 
-        private static JsonConverter[] converters = new JsonConverter[] {
-                                                new IdentityKeyPairConverter(),
-                                                new IdentityKeyConverter(),
-                                                new ByteArrayConverter()};
-
         private CancellationToken Token;
         private SignalServiceMessagePipe Pipe = null;
         private SignalServiceMessageSender MessageSender;
@@ -79,16 +74,6 @@ namespace Signal_Windows.Signal
             }
         }
 
-        public void Save()
-        {
-            using (FileStream fs = File.Open(localFolder + @"\" + LocalSettings.Values["Username"] + "Store.json", FileMode.Truncate))
-            using (StreamWriter sw = new StreamWriter(fs))
-            {
-                string s = JsonConvert.SerializeObject(SignalStore, Formatting.Indented, converters);
-                sw.Write(s);
-            }
-        }
-
         public void Load(string username)
         {
             try
@@ -96,9 +81,7 @@ namespace Signal_Windows.Signal
                 using (FileStream fs = File.Open(localFolder + @"\" + LocalSettings.Values["Username"] + "Store.json", FileMode.Open))
                 using (StreamReader sr = new StreamReader(fs))
                 {
-                    SignalStore = JsonConvert.DeserializeObject<Store>(sr.ReadToEnd(), converters);
-                    string s = JsonConvert.SerializeObject(SignalStore, Formatting.Indented, converters);
-                    Debug.WriteLine(s);
+                    SignalStore = JsonConvert.DeserializeObject<Store>(sr.ReadToEnd(), Store.Converters);
                 }
             }
             catch (Exception e)
@@ -108,7 +91,6 @@ namespace Signal_Windows.Signal
                 SignalStore = new Store(identityKey, registrationId);
                 SignalStore.registered = false;
                 SignalStore.username = (string)LocalSettings.Values["Username"];
-                Save();
             }
             accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.username, SignalStore.password, USER_AGENT);
         }
@@ -123,7 +105,7 @@ namespace Signal_Windows.Signal
                 accountManager.requestSmsVerificationCode();
 
             SignalStore.registered = false;
-            Save();
+            SignalStore.Save();
         }
 
         public void VerifyAccount(String verificationCode)
@@ -134,13 +116,12 @@ namespace Signal_Windows.Signal
 
             SignalStore.registered = true;
             refreshPreKeys();
-            Save();
+            SignalStore.Save();
         }
 
         public void sendMessage(List<SignalServiceAddress> recipients, SignalServiceDataMessage message)
         {
             MessageSender.sendMessage(recipients, message);
-            Save();
         }
 
         private void refreshPreKeys()
@@ -165,7 +146,6 @@ namespace Signal_Windows.Signal
                 records.Add(record);
             }
             SignalStore.preKeyIdOffset = (SignalStore.preKeyIdOffset + PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE;
-            Save();
             return records;
         }
 
@@ -185,7 +165,6 @@ namespace Signal_Windows.Signal
             ECKeyPair keyPair = Curve.generateKeyPair();
             PreKeyRecord record = new PreKeyRecord(Medium.MAX_VALUE, keyPair);
             SignalStore.StorePreKey(Medium.MAX_VALUE, record);
-            Save();
             return record;
         }
 
@@ -199,8 +178,6 @@ namespace Signal_Windows.Signal
 
                 SignalStore.StoreSignedPreKey(SignalStore.nextSignedPreKeyId, record);
                 SignalStore.nextSignedPreKeyId = (SignalStore.nextSignedPreKeyId + 1) % Medium.MAX_VALUE;
-                Save();
-
                 return record;
             }
             catch (InvalidKeyException e)

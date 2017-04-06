@@ -71,10 +71,6 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
                 }
-                finally
-                {
-                    SignalManager.Save();
-                }
             }
             if (messages.Count > 0)
             {
@@ -124,7 +120,6 @@ namespace Signal_Windows.ViewModels
                 if (message.isEndSession())
                 {
                     SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
-                    SignalManager.Save();
                 }
                 else if (message.isGroupUpdate())
                 {
