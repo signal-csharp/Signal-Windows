@@ -9,10 +9,29 @@ namespace Signal_Windows.Storage
         public DbSet<SignalContact> Contacts { get; set; }
         public DbSet<SignalMessage> Messages { get; set; }
         public DbSet<SignalAttachment> Attachments { get; set; }
+        public DbSet<SignalGroup> Groups { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite("Filename=Main.db");
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<SignalMessage>()
+                .HasIndex(m => m.ThreadID);
+
+            modelBuilder.Entity<SignalMessage>()
+                .HasIndex(m => m.AuthorId);
+
+            modelBuilder.Entity<SignalAttachment>()
+                .HasIndex(a => a.MessageId);
+
+            modelBuilder.Entity<GroupMembership>()
+                .HasIndex(gm => gm.ContactId);
+
+            modelBuilder.Entity<GroupMembership>()
+                .HasIndex(gm => gm.GroupId);
         }
 
         public static void UpdateContact(SignalContact contact, bool flush)

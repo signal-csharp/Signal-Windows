@@ -8,13 +8,31 @@ using Signal_Windows.Storage;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170329215141_m")]
+    [Migration("20170406140259_m")]
     partial class m
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.1");
+
+            modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<uint>("ContactId");
+
+                    b.Property<uint>("GroupId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("GroupMembership");
+                });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
                 {
@@ -27,7 +45,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<byte[]>("Key");
 
-                    b.Property<uint?>("MessageId");
+                    b.Property<uint>("MessageId");
 
                     b.Property<string>("Relay");
 
@@ -47,17 +65,41 @@ namespace Signal_Windows.Migrations
                     b.Property<uint>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<string>("AvatarFile");
+
                     b.Property<string>("Color");
 
                     b.Property<string>("ContactDisplayName");
 
                     b.Property<long>("LastActiveTimestamp");
 
+                    b.Property<uint>("Unread");
+
                     b.Property<string>("UserName");
 
                     b.HasKey("Id");
 
                     b.ToTable("Contacts");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalGroup", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("AvatarFile");
+
+                    b.Property<string>("Color");
+
+                    b.Property<string>("GroupDisplayName");
+
+                    b.Property<long>("LastActiveTimestamp");
+
+                    b.Property<uint>("Unread");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Groups");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
@@ -91,14 +133,30 @@ namespace Signal_Windows.Migrations
 
                     b.HasIndex("AuthorId");
 
+                    b.HasIndex("ThreadID");
+
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
+                {
+                    b.HasOne("Signal_Windows.Models.SignalContact", "Contact")
+                        .WithMany("GroupMemberships")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Signal_Windows.Models.SignalGroup", "Group")
+                        .WithMany("GroupMemberships")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
                 {
                     b.HasOne("Signal_Windows.Models.SignalMessage", "Message")
                         .WithMany("Attachments")
-                        .HasForeignKey("MessageId");
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>

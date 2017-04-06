@@ -11,6 +11,7 @@ namespace Signal_Windows.Models
         public uint Status { get; set; }
         public string Content { get; set; }
         public string ThreadID { get; set; }
+        public uint? AuthorId { get; set; }
         public SignalContact Author { get; set; }
         public uint DeviceId { get; set; }
         public uint Receipts { get; set; }

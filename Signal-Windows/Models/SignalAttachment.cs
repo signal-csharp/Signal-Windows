@@ -6,6 +6,7 @@ namespace Signal_Windows.Models
     public class SignalAttachment
     {
         public uint Id { get; set; }
+        public uint MessageId { get; set; }
         public SignalMessage Message { get; set; }
         public string FileName { get; set; }
         public string ContentType { get; set; }
