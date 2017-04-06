@@ -247,7 +247,10 @@ namespace Signal_Windows.Storage
             List<uint> deviceIds = new List<uint>();
             foreach (var session in sessions[name])
             {
-                deviceIds.Add(session.Key);
+                if (session.Key != SignalServiceAddress.DEFAULT_DEVICE_ID)
+                {
+                    deviceIds.Add(session.Key);
+                }
             }
             return deviceIds;
         }
