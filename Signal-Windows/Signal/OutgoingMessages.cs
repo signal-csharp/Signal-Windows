@@ -1,5 +1,6 @@
 ﻿using libsignalservice.messages;
 using libsignalservice.push;
+using libsignalservice.util;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System;
@@ -39,7 +40,12 @@ namespace Signal_Windows.ViewModels
                     }
                     else
                     {
-                        throw new NotImplementedException();
+                        SignalGroup g = (SignalGroup)SelectedThread;
+                        foreach (GroupMembership sc in g.GroupMemberships)
+                        {
+                            recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
+                        }
+                        messageBuilder = messageBuilder.asGroupMessage(new SignalServiceGroup(Base64.decode(g.ThreadId)));
                     }
                     SignalServiceDataMessage ssdm = messageBuilder.build();
                     if (!token.IsCancellationRequested)

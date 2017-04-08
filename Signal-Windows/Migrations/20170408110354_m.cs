@@ -16,10 +16,11 @@ namespace Signal_Windows.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     AvatarFile = table.Column<string>(nullable: true),
                     Color = table.Column<string>(nullable: true),
-                    ContactDisplayName = table.Column<string>(nullable: true),
                     LastActiveTimestamp = table.Column<long>(nullable: false),
-                    Unread = table.Column<uint>(nullable: false),
-                    UserName = table.Column<string>(nullable: true)
+                    LastMessage = table.Column<string>(nullable: true),
+                    ThreadDisplayName = table.Column<string>(nullable: true),
+                    ThreadId = table.Column<string>(nullable: true),
+                    Unread = table.Column<uint>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -33,9 +34,10 @@ namespace Signal_Windows.Migrations
                     Id = table.Column<uint>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AvatarFile = table.Column<string>(nullable: true),
-                    Color = table.Column<string>(nullable: true),
-                    GroupDisplayName = table.Column<string>(nullable: true),
                     LastActiveTimestamp = table.Column<long>(nullable: false),
+                    LastMessage = table.Column<string>(nullable: true),
+                    ThreadDisplayName = table.Column<string>(nullable: true),
+                    ThreadId = table.Column<string>(nullable: true),
                     Unread = table.Column<uint>(nullable: false)
                 },
                 constraints: table =>
@@ -73,7 +75,7 @@ namespace Signal_Windows.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "GroupMembership",
+                name: "GroupMemberships",
                 columns: table => new
                 {
                     Id = table.Column<uint>(nullable: false)
@@ -83,15 +85,15 @@ namespace Signal_Windows.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_GroupMembership", x => x.Id);
+                    table.PrimaryKey("PK_GroupMemberships", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GroupMembership_Contacts_ContactId",
+                        name: "FK_GroupMemberships_Contacts_ContactId",
                         column: x => x.ContactId,
                         principalTable: "Contacts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_GroupMembership_Groups_GroupId",
+                        name: "FK_GroupMemberships_Groups_GroupId",
                         column: x => x.GroupId,
                         principalTable: "Groups",
                         principalColumn: "Id",
@@ -124,13 +126,13 @@ namespace Signal_Windows.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_GroupMembership_ContactId",
-                table: "GroupMembership",
+                name: "IX_GroupMemberships_ContactId",
+                table: "GroupMemberships",
                 column: "ContactId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_GroupMembership_GroupId",
-                table: "GroupMembership",
+                name: "IX_GroupMemberships_GroupId",
+                table: "GroupMemberships",
                 column: "GroupId");
 
             migrationBuilder.CreateIndex(
@@ -152,7 +154,7 @@ namespace Signal_Windows.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "GroupMembership");
+                name: "GroupMemberships");
 
             migrationBuilder.DropTable(
                 name: "Attachments");

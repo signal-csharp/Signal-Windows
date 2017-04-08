@@ -63,8 +63,8 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("creating contact {0} ({1})", ContactName, ContactNumber);
             SignalContact contact = new SignalContact()
             {
-                ContactDisplayName = ContactName,
-                UserName = ContactNumber
+                ThreadDisplayName = ContactName,
+                ThreadId = ContactNumber
             };
             ContactName = "";
             ContactNumber = "";

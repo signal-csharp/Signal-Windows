@@ -123,7 +123,7 @@ namespace Signal_Windows.ViewModels
                 }
                 else if (message.isGroupUpdate())
                 {
-                    //TODO
+                    HandleGroupUpdateMessage(envelope, content, message);
                 }
                 else if (message.isExpirationUpdate())
                 {
@@ -146,10 +146,55 @@ namespace Signal_Windows.ViewModels
             return null;
         }
 
+        private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
+        {
+            if (dataMessage.getGroupInfo().HasValue) //check signal droid
+            {
+                SignalServiceGroup group = dataMessage.getGroupInfo().ForceGetValue();
+                lock (SignalDBContext.DBLock)
+                    using (var ctx = new SignalDBContext())
+                    {
+                        var dbgroup = GetOrCreateGroup(ctx, Base64.encodeBytes(group.getGroupId()));
+                        if (group.getName().HasValue)
+                        {
+                            dbgroup.ThreadDisplayName = group.getName().ForceGetValue();
+                        }
+                        if (group.getMembers().HasValue)
+                        {
+                            foreach (var member in group.getMembers().ForceGetValue())
+                            {
+                                bool n = true;
+                                foreach (var m in dbgroup.GroupMemberships)
+                                {
+                                    if (m.Contact.ThreadId == member)
+                                    {
+                                        n = false;
+                                    }
+                                }
+                                if (n && member != (string)LocalSettings.Values["Username"])
+                                {
+                                    dbgroup.GroupMemberships.Add(new GroupMembership()
+                                    {
+                                        Contact = GetOrCreateContact(ctx, member),
+                                        Group = dbgroup
+                                    });
+                                }
+                            }
+                        }
+                        ctx.SaveChanges();
+                    }
+            }
+            else
+            {
+                Debug.WriteLine("received group update without group info!");
+            }
+        }
+
         private SignalMessage HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
         {
             string source = envelope.getSource();
-            SignalContact author = GetOrCreateContact(source);
+            string thread = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
+            SignalContact author = GetOrCreateContactLocked(source);
             string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
             string threadId = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
             List<SignalAttachment> attachments = new List<SignalAttachment>();
@@ -159,7 +204,7 @@ namespace Signal_Windows.ViewModels
                 Status = (uint)SignalMessageStatus.Pending,
                 Author = author,
                 Content = body,
-                ThreadID = source,
+                ThreadID = thread,
                 AuthorUsername = source,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,

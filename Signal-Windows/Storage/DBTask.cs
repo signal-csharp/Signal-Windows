@@ -33,7 +33,7 @@ namespace Signal_Windows.ViewModels
                             {
                                 if (t.Item2)
                                 {
-                                    message.Author = ctx.Contacts.Single(b => b.UserName == message.AuthorUsername);
+                                    message.Author = ctx.Contacts.Single(b => b.ThreadId == message.AuthorUsername);
                                 }
                                 else
                                 {

@@ -10,6 +10,7 @@ namespace Signal_Windows.Storage
         public DbSet<SignalMessage> Messages { get; set; }
         public DbSet<SignalAttachment> Attachments { get; set; }
         public DbSet<SignalGroup> Groups { get; set; }
+        public DbSet<GroupMembership> GroupMemberships { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -40,22 +41,22 @@ namespace Signal_Windows.Storage
             {
                 using (var db = new SignalDBContext())
                 {
-                    var c = db.Contacts.SingleOrDefaultAsync(b => b.UserName == contact.UserName).Result;
+                    var c = db.Contacts.SingleOrDefaultAsync(b => b.ThreadId == contact.ThreadId).Result;
                     if (c == null)
                     {
                         c = new SignalContact()
                         {
                             Color = contact.Color,
-                            UserName = contact.UserName,
-                            ContactDisplayName = contact.ContactDisplayName
+                            ThreadId = contact.ThreadId,
+                            ThreadDisplayName = contact.ThreadDisplayName
                         };
                         db.Contacts.Add(c);
                     }
                     else
                     {
                         c.Color = contact.Color;
-                        c.UserName = contact.UserName;
-                        c.ContactDisplayName = contact.ContactDisplayName;
+                        c.ThreadId = contact.ThreadId;
+                        c.ThreadDisplayName = contact.ThreadDisplayName;
                     }
                     if (flush)
                     {

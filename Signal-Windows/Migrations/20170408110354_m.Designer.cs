@@ -8,7 +8,7 @@ using Signal_Windows.Storage;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170406140259_m")]
+    [Migration("20170408110354_m")]
     partial class m
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,7 +31,7 @@ namespace Signal_Windows.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.ToTable("GroupMembership");
+                    b.ToTable("GroupMemberships");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
@@ -69,13 +69,15 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("Color");
 
-                    b.Property<string>("ContactDisplayName");
-
                     b.Property<long>("LastActiveTimestamp");
 
-                    b.Property<uint>("Unread");
+                    b.Property<string>("LastMessage");
 
-                    b.Property<string>("UserName");
+                    b.Property<string>("ThreadDisplayName");
+
+                    b.Property<string>("ThreadId");
+
+                    b.Property<uint>("Unread");
 
                     b.HasKey("Id");
 
@@ -89,11 +91,13 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("AvatarFile");
 
-                    b.Property<string>("Color");
-
-                    b.Property<string>("GroupDisplayName");
-
                     b.Property<long>("LastActiveTimestamp");
+
+                    b.Property<string>("LastMessage");
+
+                    b.Property<string>("ThreadDisplayName");
+
+                    b.Property<string>("ThreadId");
 
                     b.Property<uint>("Unread");
 

@@ -19,10 +19,10 @@
         <ScrollViewer Grid.Column="0" Name="ContactsPanelScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 15 0">
             <StackPanel>
                 <SymbolIcon Symbol="AddFriend" HorizontalAlignment="Right" Name="AddFriendSymbol" Tapped="AddFriendSymbol_Tapped" Margin="0 0 0 5" />
-                <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Contacts}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
+                <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding ContactDisplayName}" />
+                            <TextBlock Text="{Binding ThreadDisplayName}" />
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

@@ -27,7 +27,7 @@ namespace Signal_Windows.ViewModels
         private bool ActionInProgress = false;
         public ThreadViewModel Thread { get; set; }
         public MainPage View;
-        public string SelectedThread;
+        public SignalThread SelectedThread;
         public Manager SignalManager = null;
         public volatile bool Running = true;
         private CancellationTokenSource CancelSource = new CancellationTokenSource();
@@ -37,65 +37,93 @@ namespace Signal_Windows.ViewModels
 
         #region Contacts
 
-        private object ContactsLock = new object();
-        public ObservableCollection<SignalContact> Contacts = new ObservableCollection<SignalContact>();
-        private Dictionary<string, SignalContact> ContactsDictionary = new Dictionary<string, SignalContact>();
+        public ObservableCollection<SignalThread> Threads = new ObservableCollection<SignalThread>();
+        private Dictionary<string, SignalThread> ThreadsDictionary = new Dictionary<string, SignalThread>();
 
-        public void AddContacts(IEnumerable<SignalContact> contacts)
+        public void AddThreads(IEnumerable<SignalThread> contacts)
         {
-            lock (ContactsLock)
+            foreach (SignalThread thread in contacts)
             {
-                foreach (SignalContact contact in contacts)
-                {
-                    Contacts.Add(contact);
-                    ContactsDictionary[contact.UserName] = contact;
-                }
+                Threads.Add(thread);
+                ThreadsDictionary[thread.ThreadId] = thread;
             }
         }
 
-        public void AddContact(SignalContact contact)
+        public void AddThread(SignalThread contact)
         {
-            lock (ContactsLock)
-            {
-                Contacts.Add(contact);
-                ContactsDictionary[contact.UserName] = contact;
-            }
+            Threads.Add(contact);
+            ThreadsDictionary[contact.ThreadId] = contact;
         }
 
-        public SignalContact GetOrCreateContact(string username)
+        public SignalContact GetOrCreateContact(SignalDBContext ctx, string username)
         {
-            lock (ContactsLock)
+            SignalContact contact = ctx.Contacts
+                .Where(c => c.ThreadId == username)
+                .SingleOrDefault();
+            if (contact == null)
             {
-                if (ContactsDictionary.ContainsKey(username))
+                contact = new SignalContact()
                 {
-                    return ContactsDictionary[username];
-                }
-                else
+                    ThreadId = username,
+                    ThreadDisplayName = username,
+                    //TODO pick random color
+                };
+                ctx.Contacts.Add(contact);
+                Task.Run(async () =>
                 {
-                    SignalContact contact = new SignalContact()
+                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        UserName = username,
-                        ContactDisplayName = username,
-                        //TODO pick random color
-                    };
-                    lock (SignalDBContext.DBLock)
-                    {
-                        using (var ctx = new SignalDBContext())
-                        {
-                            ctx.Contacts.Add(contact);
-                            ctx.SaveChanges();
-                        }
-                    }
-                    Task.Run(async () =>
-                    {
-                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                        {
-                            AddContact(contact);
-                        });
+                        AddThread(contact);
                     });
-                    return contact;
-                }
+                }).Wait();
             }
+            return contact;
+        }
+
+        public SignalContact GetOrCreateContactLocked(string username)
+        {
+            lock (SignalDBContext.DBLock)
+                using (var ctx = new SignalDBContext())
+                {
+                    var t = GetOrCreateContact(ctx, username);
+                    ctx.SaveChanges();
+                    return t;
+                }
+        }
+
+        public SignalGroup GetOrCreateGroup(SignalDBContext ctx, string threadid)
+        {
+            SignalGroup dbgroup = ctx.Groups
+                .Where(g => g.ThreadId == threadid)
+                .Include(g => g.GroupMemberships)
+                .ThenInclude(gm => gm.Contact)
+                .SingleOrDefault();
+            if (dbgroup == null)
+            {
+                dbgroup = new SignalGroup()
+                {
+                    ThreadId = threadid,
+                    ThreadDisplayName = "Unknown",
+                    LastActiveTimestamp = Util.CurrentTimeMillis(),
+                    AvatarFile = null,
+                    Unread = 1,
+                    GroupMemberships = new List<GroupMembership>()
+                };
+                ctx.Add(dbgroup);
+                Task.Run(async () =>
+                {
+                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        AddThread(dbgroup);
+                    });
+                }).Wait();
+            }
+            return dbgroup;
+        }
+
+        public void UIUpdateThread(SignalThread thread)
+        {
+            //TODO
         }
 
         #endregion Contacts
@@ -112,16 +140,26 @@ namespace Signal_Windows.ViewModels
                         await Task.Run(async () =>
                         {
                             List<SignalContact> contacts = new List<SignalContact>();
+                            List<SignalGroup> groups = new List<SignalGroup>();
                             lock (SignalDBContext.DBLock)
                             {
                                 using (var ctx = new SignalDBContext())
                                 {
-                                    contacts = ctx.Contacts.AsNoTracking().ToList();
+                                    contacts = ctx.Contacts
+                                    .AsNoTracking()
+                                    .ToList();
+
+                                    groups = ctx.Groups
+                                    .Include(g => g.GroupMemberships)
+                                    .ThenInclude(gm => gm.Contact)
+                                    .AsNoTracking()
+                                    .ToList();
                                 }
                             }
                             await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                             {
-                                AddContacts(contacts);
+                                AddThreads(groups);
+                                AddThreads(contacts);
                             });
                         });
                         var manager = new Manager(CancelSource.Token, (string)LocalSettings.Values["Username"], true);
@@ -155,9 +193,8 @@ namespace Signal_Windows.ViewModels
                 if (!ActionInProgress)
                 {
                     ActionInProgress = true;
-                    SignalContact contact = (SignalContact)e.AddedItems[0];
-                    SelectedThread = contact.UserName;
-                    Thread.ThreadTitle = contact.ContactDisplayName;
+                    SelectedThread = (SignalThread)e.AddedItems[0];
+                    Thread.ThreadTitle = SelectedThread.ThreadDisplayName;
                     Thread.Messages.Clear();
                     var messages = await Task.Run(() =>
                     {
@@ -166,7 +203,7 @@ namespace Signal_Windows.ViewModels
                             using (var ctx = new SignalDBContext())
                             {
                                 return ctx.Messages
-                                    .Where(m => m.ThreadID == SelectedThread)
+                                    .Where(m => m.ThreadID == SelectedThread.ThreadId)
                                     .Include(m => m.Author)
                                     .Include(m => m.Attachments)
                                     .AsNoTracking().ToList();
@@ -201,7 +238,7 @@ namespace Signal_Windows.ViewModels
                         Author = null,
                         ComposedTimestamp = now,
                         Content = t.Text,
-                        ThreadID = SelectedThread,
+                        ThreadID = SelectedThread.ThreadId,
                         ReceivedTimestamp = now,
                         Type = 0
                     };
@@ -224,7 +261,7 @@ namespace Signal_Windows.ViewModels
             DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, true));
             foreach (var message in messages)
             {
-                if (SelectedThread == message.ThreadID)
+                if (SelectedThread.ThreadId == message.ThreadID)
                 {
                     Thread.Messages.Add(message);
                     View.ScrollToBottom();
