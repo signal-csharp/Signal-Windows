@@ -9,12 +9,13 @@ This is a Signal client for the Universal Windows Platform. It is (currently) a 
 - add/edit contacts
 - receive direct signal messages
 - send direct signal messages
+- receive group update messages
+- receive group messages
+- send group messages
 - download attachments to `\Attachments`
 
 ## What can i expect next?
-- display attachments
-- receive group messages
-- send group messages
+- proper attachment handling
 - proper resend behaviour
 - run as a slave
 
