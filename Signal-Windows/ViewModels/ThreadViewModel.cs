@@ -61,9 +61,9 @@ namespace Signal_Windows.ViewModels
 
         public void UpdateMessageBox(SignalMessage updatedMessage)
         {
-            var m = OutgoingCache[updatedMessage.Id];
-            if (m != null)
+            if (OutgoingCache.ContainsKey(updatedMessage.Id))
             {
+                var m = OutgoingCache[updatedMessage.Id];
                 m.UpdateSignalMessageStatusIcon(updatedMessage);
             }
         }
