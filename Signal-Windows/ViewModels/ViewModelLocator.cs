@@ -17,14 +17,14 @@ namespace Signal_Windows.ViewModels
         public ViewModelLocator()
         {
             ServiceLocator.SetLocatorProvider(() => SimpleIoc.Default);
-            if (ViewModelBase.IsInDesignModeStatic)
+            /*if (ViewModelBase.IsInDesignModeStatic)
             {
                 // Create design time view services and models
             }
             else
             {
                 // Create run time view services and models
-            }
+            }*/
 
             //Register your services used here
             SimpleIoc.Default.Register<INavigationService, NavigationService>();
