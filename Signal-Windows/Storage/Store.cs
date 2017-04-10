@@ -288,11 +288,14 @@ namespace Signal_Windows.Storage
         public List<uint> GetSubDeviceSessions(string name)
         {
             List<uint> deviceIds = new List<uint>();
-            foreach (var session in sessions[name])
+            if(sessions.ContainsKey(name))
             {
-                if (session.Key != SignalServiceAddress.DEFAULT_DEVICE_ID)
+                foreach (var session in sessions[name])
                 {
-                    deviceIds.Add(session.Key);
+                    if (session.Key != SignalServiceAddress.DEFAULT_DEVICE_ID)
+                    {
+                        deviceIds.Add(session.Key);
+                    }
                 }
             }
             return deviceIds;
