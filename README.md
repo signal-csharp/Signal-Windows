@@ -17,3 +17,9 @@ This is a Signal client for the Universal Windows Platform. It is (currently) a 
 - send group messages
 - proper resend behaviour
 - run as a slave
+
+# License
+
+Copyright 2017
+
+Licensed under the GPLv3: http://www.gnu.org/licenses/gpl-3.0.html
