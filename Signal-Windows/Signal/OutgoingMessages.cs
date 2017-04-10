@@ -66,7 +66,10 @@ namespace Signal_Windows.ViewModels
                                             m.Status = (uint)SignalMessageStatus.Confirmed;
                                             ctx.SaveChanges();
                                             transaction.Commit();
-                                            //TODO notify UI
+                                            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                                            {
+                                                UIHandleSuccessfullSend(m);
+                                            }).AsTask().Wait();
                                         }
                                         else
                                         {

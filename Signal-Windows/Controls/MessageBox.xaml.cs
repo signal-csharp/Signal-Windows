@@ -1,6 +1,7 @@
 ﻿using Signal_Windows.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using Windows.Storage;
 using Windows.UI.Xaml;
@@ -11,42 +12,16 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class MessageBox : UserControl
+    public sealed partial class MessageBox : UserControl, INotifyPropertyChanged
     {
-        public bool IsExtended { get; set; }
+        public Visibility HeaderVisibility { get; set; }
+        public string ContactName { get; set; }
         public string FancyTimestamp { get; set; }
+        public SolidColorBrush ContactNameColor { get; set; }
         public SolidColorBrush TextColor { get; set; }
         public SolidColorBrush TimestampColor { get; set; }
-
-        public MessageBox()
-        {
-            this.InitializeComponent();
-            this.DataContextChanged += MessageBox_DataContextChanged;
-        }
-
-        private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
-        {
-            //name opacity 204
-            if (Model.Author == null)
-            {
-                Background = Utils.Outgoing;
-                TextColor = Utils.GetSolidColorBrush(255, "#454545");
-                TimestampColor = Utils.GetSolidColorBrush(127, "#454545");
-                HorizontalAlignment = HorizontalAlignment.Right;
-                TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Right;
-            }
-            else
-            {
-                Background = Utils.GetBrushFromColor(Model.Author.Color);
-                TextColor = Utils.GetSolidColorBrush(255, "#ffffff");
-                TimestampColor = Utils.GetSolidColorBrush(127, "#ffffff");
-                HorizontalAlignment = HorizontalAlignment.Left;
-                TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Left;
-            }
-            DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.ReceivedTimestamp / 1000);
-            DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
-            FancyTimestamp = dt.ToString();
-        }
+        public Visibility CheckVisibility { get; set; } = Visibility.Collapsed;
+        public Visibility DoubleCheckVisibility { get; set; } = Visibility.Collapsed;
 
         public SignalMessage Model
         {
@@ -58,6 +33,74 @@ namespace Signal_Windows.Controls
             {
                 this.DataContext = value;
             }
+        }
+
+        public MessageBox()
+        {
+            this.InitializeComponent();
+            this.DataContextChanged += MessageBox_DataContextChanged;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
+        {
+            Model.View = this;
+            if (Model.Author == null)
+            {
+                HeaderVisibility = Visibility.Collapsed;
+                Background = Utils.Outgoing;
+                TextColor = Utils.GetSolidColorBrush(255, "#454545");
+                TimestampColor = Utils.GetSolidColorBrush(127, "#454545");
+                HorizontalAlignment = HorizontalAlignment.Right;
+                TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Right;
+            }
+            else
+            {
+                if (Model.ThreadID[0] != '+')
+                {
+                    HeaderVisibility = Visibility.Visible;
+                    ContactName = Model.Author.ThreadDisplayName;
+                }
+                else
+                {
+                    HeaderVisibility = Visibility.Collapsed;
+                }
+                Background = Utils.GetBrushFromColor(Model.Author.Color);
+                ContactNameColor = Utils.GetSolidColorBrush(204, "#ffffff");
+                TextColor = Utils.GetSolidColorBrush(255, "#ffffff");
+                TimestampColor = Utils.GetSolidColorBrush(127, "#ffffff");
+                HorizontalAlignment = HorizontalAlignment.Left;
+                TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Left;
+            }
+            DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.ReceivedTimestamp / 1000);
+            DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
+            FancyTimestamp = dt.ToString();
+            SetSignalMessageStatusIcon(Model);
+        }
+
+        private void SetSignalMessageStatusIcon(SignalMessage updatedMessage)
+        {
+            if (updatedMessage.Status == (uint)SignalMessageStatus.Confirmed)
+            {
+                if (updatedMessage.Receipts > 0)
+                {
+                    CheckVisibility = Visibility.Collapsed;
+                    DoubleCheckVisibility = Visibility.Visible;
+                }
+                else
+                {
+                    CheckVisibility = Visibility.Visible;
+                    DoubleCheckVisibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        public void UpdateSignalMessageStatusIcon(SignalMessage updatedMessage)
+        {
+            SetSignalMessageStatusIcon(updatedMessage);
+            PropertyChanged(this, new PropertyChangedEventArgs("CheckVisibility"));
+            PropertyChanged(this, new PropertyChangedEventArgs("DoubleCheckVisibility"));
         }
 
         private async void AttachmentSaveButton_Click(object sender, RoutedEventArgs e)

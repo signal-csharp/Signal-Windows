@@ -194,26 +194,7 @@ namespace Signal_Windows.ViewModels
                 {
                     ActionInProgress = true;
                     SelectedThread = (SignalThread)e.AddedItems[0];
-                    Thread.ThreadTitle = SelectedThread.ThreadDisplayName;
-                    Thread.Messages.Clear();
-                    var messages = await Task.Run(() =>
-                    {
-                        lock (SignalDBContext.DBLock)
-                        {
-                            using (var ctx = new SignalDBContext())
-                            {
-                                return ctx.Messages
-                                    .Where(m => m.ThreadID == SelectedThread.ThreadId)
-                                    .Include(m => m.Author)
-                                    .Include(m => m.Attachments)
-                                    .AsNoTracking().ToList();
-                            }
-                        }
-                    });
-                    foreach (var m in messages)
-                    {
-                        Thread.Messages.Add(m);
-                    }
+                    await Thread.Load(SelectedThread);
                     ActionInProgress = false;
                     View.ScrollToBottom();
                 }
@@ -263,7 +244,7 @@ namespace Signal_Windows.ViewModels
             {
                 if (SelectedThread.ThreadId == message.ThreadID)
                 {
-                    Thread.Messages.Add(message);
+                    Thread.Append(message);
                     View.ScrollToBottom();
                 }
             }
@@ -272,9 +253,33 @@ namespace Signal_Windows.ViewModels
         public void UIHandleOutgoingMessage(SignalMessage message)
         {
             SignalMessage[] messages = new SignalMessage[] { message };
-            DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, false));
-            Thread.Messages.Add(message);
+            Thread.Append(message);
             View.ScrollToBottom();
+            DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, false));
+        }
+
+        public void UIHandleOutgoingSaved(SignalMessage originalMessage)
+        {
+            if (SelectedThread != null && SelectedThread.ThreadId == originalMessage.ThreadID)
+            {
+                Thread.AddToCache(originalMessage);
+            }
+        }
+
+        private void UIHandleSuccessfullSend(SignalMessage updatedMessage)
+        {
+            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadID)
+            {
+                Thread.UpdateMessageBox(updatedMessage);
+            }
+        }
+
+        private void UIHandleReceiptReceived(SignalMessage updatedMessage)
+        {
+            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadID)
+            {
+                Thread.UpdateMessageBox(updatedMessage);
+            }
         }
 
         #endregion UIThread

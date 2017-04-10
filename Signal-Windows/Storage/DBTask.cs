@@ -33,11 +33,7 @@ namespace Signal_Windows.ViewModels
                             {
                                 if (t.Item2)
                                 {
-                                    message.Author = ctx.Contacts.Single(b => b.ThreadId == message.AuthorUsername);
-                                }
-                                else
-                                {
-                                    message.Author = null;
+                                    message.Author = ctx.Contacts.Single(b => b.ThreadId == message.Author.ThreadId);
                                 }
                                 ctx.Messages.Add(message);
                                 if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
@@ -56,6 +52,10 @@ namespace Signal_Windows.ViewModels
                             }
                             else
                             {
+                                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                                {
+                                    UIHandleOutgoingSaved(t.Item1[0]);
+                                }).AsTask().Wait();
                                 OutgoingQueue.Add(t.Item1[0]);
                             }
                         }

@@ -10,8 +10,13 @@
     d:DesignHeight="300"
     d:DesignWidth="600">
 
+    <UserControl.Resources>
+        <BitmapImage x:Key="Check" UriSource="ms-appx:///Assets//check.png" />
+        <BitmapImage x:Key="DoubleCheck" UriSource="ms-appx:///Assets//double-check.png" />
+    </UserControl.Resources>
     <Border BorderBrush="#00000000" BorderThickness="1,1,1,1" CornerRadius="4,4,4,4" Background="{x:Bind Background}" Padding="10 5 10 5" Margin="4">
         <ItemsControl>
+            <TextBlock Visibility="{x:Bind HeaderVisibility}" Name="MessageContentHeader" Foreground="{x:Bind ContactNameColor}" Text="{x:Bind ContactName}" FontWeight="Bold" />
             <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="{x:Bind TextColor}" Text="{x:Bind Model.Content}"></TextBlock>
             <ItemsControl Name="MessageAttachments" ItemsSource="{x:Bind Model.Attachments}">
                 <ItemsControl.ItemTemplate>
@@ -24,7 +29,11 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <TextBlock Name="TimestampTextBlock" Foreground="{x:Bind TimestampColor}" Text="{x:Bind FancyTimestamp}" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Name="TimestampTextBlock" Foreground="{x:Bind TimestampColor}" Text="{x:Bind FancyTimestamp}" Margin="0 0 5 0" />
+                <Image Source="{StaticResource Check}" Visibility="{x:Bind CheckVisibility, Mode=OneWay}" Width="16" Height="16" />
+                <Image Source="{StaticResource DoubleCheck}" Visibility="{x:Bind DoubleCheckVisibility, Mode=OneWay}" Width="16" Height="16" />
+            </StackPanel>
         </ItemsControl>
     </Border>
 </UserControl>

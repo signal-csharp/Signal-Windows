@@ -98,7 +98,13 @@ namespace Signal_Windows.ViewModels
                             m.Receipts++;
                             ctx.SaveChanges();
                             transaction.Commit();
-                            //TODO notify UI
+                            if (m.Receipts > 0 && m.Status == (uint)SignalMessageStatus.Confirmed)
+                            {
+                                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                                {
+                                    UIHandleReceiptReceived(m);
+                                }).AsTask().Wait();
+                            }
                         }
                         else
                         {
@@ -205,7 +211,6 @@ namespace Signal_Windows.ViewModels
                 Author = author,
                 Content = body,
                 ThreadID = thread,
-                AuthorUsername = source,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = envelope.getTimestamp(),

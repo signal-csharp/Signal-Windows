@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Signal_Windows.Controls;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -20,9 +20,7 @@ namespace Signal_Windows.Models
         public long ComposedTimestamp { get; set; }
         public uint AttachmentsCount { get; set; }
         public List<SignalAttachment> Attachments { get; set; }
-
-        [NotMapped]
-        public String AuthorUsername { get; set; }
+        [NotMapped] public MessageBox View { get; set; }
     }
 
     public enum SignalMessageType
