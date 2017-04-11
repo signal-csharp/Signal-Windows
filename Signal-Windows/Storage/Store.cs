@@ -17,6 +17,7 @@ namespace Signal_Windows.Storage
         [JsonIgnore] public static Store Instance;
         [JsonIgnore] public static string localFolder = ApplicationData.Current.LocalFolder.Path;
         [JsonIgnore] public static ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
+        [JsonIgnore] public static object Lock = new object();
 
         [JsonIgnore]
         public static JsonConverter[] Converters = new JsonConverter[] {
@@ -24,17 +25,17 @@ namespace Signal_Windows.Storage
                                                 new IdentityKeyConverter(),
                                                 new ByteArrayConverter()};
 
-        public uint deviceId { get; set; } = SignalServiceAddress.DEFAULT_DEVICE_ID;
-        public String username { get; set; }
-        public String password { get; set; }
-        public String signalingKey { get; set; }
-        public uint preKeyIdOffset { get; set; }
-        public uint nextSignedPreKeyId { get; set; }
-        public bool registered { get; set; } = false;
-        public JsonPreKeyStore jsonPreKeyStore { get; set; }
-        public JsonIdentityKeyStore jsonIdentityKeyStore { get; set; }
-        public JsonSessionStore jsonSessionStore { get; set; }
-        public JsonSignedPreKeyStore jsonSignedPreKeyStore { get; set; }
+        public uint DeviceId { get; set; } = SignalServiceAddress.DEFAULT_DEVICE_ID;
+        public String Username { get; set; }
+        public String Password { get; set; }
+        public String SignalingKey { get; set; }
+        public uint PreKeyIdOffset { get; set; }
+        public uint NextSignedPreKeyId { get; set; }
+        public bool Registered { get; set; } = false;
+        public JsonPreKeyStore PreKeyStore { get; set; }
+        public JsonIdentityKeyStore IdentityKeyStore { get; set; }
+        public JsonSessionStore SessionStore { get; set; }
+        public JsonSignedPreKeyStore SignedPreKeyStore { get; set; }
 
         public Store()
         {
@@ -44,10 +45,10 @@ namespace Signal_Windows.Storage
         public Store(IdentityKeyPair identityKey, uint registrationId)
         {
             Instance = this;
-            jsonPreKeyStore = new JsonPreKeyStore();
-            jsonSessionStore = new JsonSessionStore();
-            jsonSignedPreKeyStore = new JsonSignedPreKeyStore();
-            jsonIdentityKeyStore = new JsonIdentityKeyStore(identityKey, registrationId);
+            PreKeyStore = new JsonPreKeyStore();
+            SessionStore = new JsonSessionStore();
+            SignedPreKeyStore = new JsonSignedPreKeyStore();
+            IdentityKeyStore = new JsonIdentityKeyStore(identityKey, registrationId);
         }
 
         public void Save()
@@ -71,293 +72,347 @@ namespace Signal_Windows.Storage
 
         public IdentityKeyPair GetIdentityKeyPair()
         {
-            return jsonIdentityKeyStore.GetIdentityKeyPair();
+            return IdentityKeyStore.GetIdentityKeyPair();
         }
 
         public uint GetLocalRegistrationId()
         {
-            return jsonIdentityKeyStore.GetLocalRegistrationId();
+            return IdentityKeyStore.GetLocalRegistrationId();
         }
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            jsonIdentityKeyStore.SaveIdentity(address, identityKey);
+            IdentityKeyStore.SaveIdentity(address, identityKey);
             Save();
             return true;
         }
 
         public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            return jsonIdentityKeyStore.IsTrustedIdentity(address, identityKey);
+            return IdentityKeyStore.IsTrustedIdentity(address, identityKey);
         }
 
         public PreKeyRecord LoadPreKey(uint preKeyId)
         {
-            return jsonPreKeyStore.LoadPreKey(preKeyId);
+            return PreKeyStore.LoadPreKey(preKeyId);
         }
 
         public void StorePreKey(uint preKeyId, PreKeyRecord record)
         {
             Debug.WriteLine(String.Format("storing prekey {0} {1}", preKeyId, record));
-            jsonPreKeyStore.StorePreKey(preKeyId, record);
+            PreKeyStore.StorePreKey(preKeyId, record);
             Save();
         }
 
         public bool ContainsPreKey(uint preKeyId)
         {
-            return jsonPreKeyStore.ContainsPreKey(preKeyId);
+            return PreKeyStore.ContainsPreKey(preKeyId);
         }
 
         public void RemovePreKey(uint preKeyId)
         {
-            jsonPreKeyStore.RemovePreKey(preKeyId);
+            PreKeyStore.RemovePreKey(preKeyId);
             Save();
         }
 
         public SessionRecord LoadSession(SignalProtocolAddress address)
         {
-            return jsonSessionStore.LoadSession(address);
+            return SessionStore.LoadSession(address);
         }
 
         public List<uint> GetSubDeviceSessions(string name)
         {
-            return jsonSessionStore.GetSubDeviceSessions(name);
+            return SessionStore.GetSubDeviceSessions(name);
         }
 
         public void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
-            jsonSessionStore.StoreSession(address, record);
+            SessionStore.StoreSession(address, record);
             Save();
         }
 
         public bool ContainsSession(SignalProtocolAddress address)
         {
-            return jsonSessionStore.ContainsSession(address);
+            return SessionStore.ContainsSession(address);
         }
 
         public void DeleteSession(SignalProtocolAddress address)
         {
-            jsonSessionStore.DeleteSession(address);
+            SessionStore.DeleteSession(address);
             Save();
         }
 
         public void DeleteAllSessions(string name)
         {
-            jsonSessionStore.DeleteAllSessions(name);
+            SessionStore.DeleteAllSessions(name);
             Save();
         }
 
         public SignedPreKeyRecord LoadSignedPreKey(uint signedPreKeyId)
         {
-            return jsonSignedPreKeyStore.LoadSignedPreKey(signedPreKeyId);
+            return SignedPreKeyStore.LoadSignedPreKey(signedPreKeyId);
         }
 
         public List<SignedPreKeyRecord> LoadSignedPreKeys()
         {
-            return jsonSignedPreKeyStore.LoadSignedPreKeys();
+            return SignedPreKeyStore.LoadSignedPreKeys();
         }
 
         public void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
         {
-            jsonSignedPreKeyStore.StoreSignedPreKey(signedPreKeyId, record);
+            SignedPreKeyStore.StoreSignedPreKey(signedPreKeyId, record);
             Save();
         }
 
         public bool ContainsSignedPreKey(uint signedPreKeyId)
         {
-            return jsonSignedPreKeyStore.ContainsSignedPreKey(signedPreKeyId);
+            return SignedPreKeyStore.ContainsSignedPreKey(signedPreKeyId);
         }
 
         public void RemoveSignedPreKey(uint signedPreKeyId)
         {
-            jsonSignedPreKeyStore.RemoveSignedPreKey(signedPreKeyId);
+            SignedPreKeyStore.RemoveSignedPreKey(signedPreKeyId);
             Save();
         }
     }
 
     public class JsonPreKeyStore : PreKeyStore
     {
-        [JsonProperty] private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
+        [JsonProperty] private Dictionary<uint, byte[]> _Store = new Dictionary<uint, byte[]>();
 
         public bool ContainsPreKey(uint preKeyId)
         {
-            return store.ContainsKey(preKeyId);
+            lock (Store.Lock)
+            {
+                return _Store.ContainsKey(preKeyId);
+            }
         }
 
         public PreKeyRecord LoadPreKey(uint preKeyId)
         {
-            if (store.ContainsKey(preKeyId))
+            lock (Store.Lock)
             {
-                return new PreKeyRecord(store[preKeyId]);
+                if (_Store.ContainsKey(preKeyId))
+                {
+                    return new PreKeyRecord(_Store[preKeyId]);
+                }
+                throw new InvalidKeyException("no such PreKeyRecord");
             }
-            throw new InvalidKeyException("no such PreKeyRecord");
         }
 
         public void RemovePreKey(uint preKeyId)
         {
-            store.Remove(preKeyId);
+            lock (Store.Lock)
+            {
+                _Store.Remove(preKeyId);
+            }
         }
 
         public void StorePreKey(uint preKeyId, PreKeyRecord record)
         {
-            store[preKeyId] = record.serialize();
-            Store.Instance.Save();
+            lock (Store.Lock)
+            {
+                _Store[preKeyId] = record.serialize();
+                Store.Instance.Save();
+            }
         }
     }
 
     public class JsonIdentityKeyStore : IdentityKeyStore
     {
-        [JsonProperty] private IdentityKeyPair identityKeyPair { get; set; }
-        [JsonProperty] private uint registrationId { get; set; }
-        [JsonProperty] private Dictionary<string, List<IdentityKey>> trustedKeys { get; set; } = new Dictionary<string, List<IdentityKey>>();
+        [JsonProperty] private IdentityKeyPair IdentityKeyPair { get; set; }
+        [JsonProperty] private uint RegistrationId { get; set; }
+        [JsonProperty] private Dictionary<string, List<IdentityKey>> _Store { get; set; } = new Dictionary<string, List<IdentityKey>>();
 
         public JsonIdentityKeyStore(IdentityKeyPair identityKey, uint registrationId)
         {
-            this.identityKeyPair = identityKey;
-            this.registrationId = registrationId;
+            this.IdentityKeyPair = identityKey;
+            this.RegistrationId = registrationId;
         }
 
         public IdentityKeyPair GetIdentityKeyPair()
         {
-            return identityKeyPair;
+            return IdentityKeyPair;
         }
 
         public uint GetLocalRegistrationId()
         {
-            return registrationId;
+            return RegistrationId;
         }
 
         public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            if (!trustedKeys.ContainsKey(address.Name))
+            lock (Store.Lock)
             {
-                return true;
-            }
-
-            List<IdentityKey> identities = trustedKeys[address.Name];
-            foreach (var identity in identities)
-            {
-                if (identity.Equals(identityKey))
+                if (!_Store.ContainsKey(address.Name))
                 {
                     return true;
                 }
+
+                List<IdentityKey> identities = _Store[address.Name];
+                foreach (var identity in identities)
+                {
+                    if (identity.Equals(identityKey))
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
-            return false;
         }
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey) //TODO why bool
         {
-            if (!trustedKeys.ContainsKey(address.Name))
+            lock (Store.Lock)
             {
-                trustedKeys[address.Name] = new List<IdentityKey>();
+                if (!_Store.ContainsKey(address.Name))
+                {
+                    _Store[address.Name] = new List<IdentityKey>();
+                }
+                _Store[address.Name].Add(identityKey);
+                Store.Instance.Save();
+                return true;
             }
-            trustedKeys[address.Name].Add(identityKey);
-            Store.Instance.Save();
-            return true;
         }
     }
 
     public class JsonSessionStore : SessionStore
     {
-        [JsonProperty] private Dictionary<string, Dictionary<uint, byte[]>> sessions = new Dictionary<string, Dictionary<uint, byte[]>>();
+        [JsonProperty] private Dictionary<string, Dictionary<uint, byte[]>> _Store = new Dictionary<string, Dictionary<uint, byte[]>>();
 
         public bool ContainsSession(SignalProtocolAddress address)
         {
-            if (sessions.ContainsKey(address.Name))
+            lock (Store.Lock)
             {
-                if (sessions[address.Name].ContainsKey(address.DeviceId))
+                if (_Store.ContainsKey(address.Name))
                 {
-                    return true;
+                    if (_Store[address.Name].ContainsKey(address.DeviceId))
+                    {
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
         }
 
         public void DeleteAllSessions(string name)
         {
-            sessions.Remove(name);
-            Store.Instance.Save();
+            lock (Store.Lock)
+            {
+                _Store.Remove(name);
+                Store.Instance.Save();
+            }
         }
 
         public void DeleteSession(SignalProtocolAddress address)
         {
-            sessions[address.Name].Remove(address.DeviceId);
-            Store.Instance.Save();
+            lock (Store.Lock)
+            {
+                if (_Store.ContainsKey(address.Name))
+                {
+                    _Store[address.Name].Remove(address.DeviceId);
+                    Store.Instance.Save();
+                }
+            }
         }
 
         public List<uint> GetSubDeviceSessions(string name)
         {
-            List<uint> deviceIds = new List<uint>();
-            if(sessions.ContainsKey(name))
+            lock (Store.Lock)
             {
-                foreach (var session in sessions[name])
+                List<uint> deviceIds = new List<uint>();
+                if (_Store.ContainsKey(name))
                 {
-                    if (session.Key != SignalServiceAddress.DEFAULT_DEVICE_ID)
+                    foreach (var session in _Store[name])
                     {
-                        deviceIds.Add(session.Key);
+                        if (session.Key != SignalServiceAddress.DEFAULT_DEVICE_ID)
+                        {
+                            deviceIds.Add(session.Key);
+                        }
                     }
                 }
+                return deviceIds;
             }
-            return deviceIds;
         }
 
         public SessionRecord LoadSession(SignalProtocolAddress address)
         {
-            if (ContainsSession(address))
-                return new SessionRecord(sessions[address.Name][address.DeviceId]);
-            else
-                return new SessionRecord();
+            lock (Store.Lock)
+            {
+                if (ContainsSession(address))
+                    return new SessionRecord(_Store[address.Name][address.DeviceId]);
+                else
+                    return new SessionRecord();
+            }
         }
 
         public void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
-            if (!sessions.ContainsKey(address.Name))
+            lock (Store.Lock)
             {
-                sessions[address.Name] = new Dictionary<uint, byte[]>();
+                if (!_Store.ContainsKey(address.Name))
+                {
+                    _Store[address.Name] = new Dictionary<uint, byte[]>();
+                }
+                _Store[address.Name][address.DeviceId] = record.serialize();
+                Store.Instance.Save();
             }
-            sessions[address.Name][address.DeviceId] = record.serialize();
-            Store.Instance.Save();
         }
     }
 
     public class JsonSignedPreKeyStore : SignedPreKeyStore
     {
-        [JsonProperty] private Dictionary<uint, byte[]> store = new Dictionary<uint, byte[]>();
+        [JsonProperty] private Dictionary<uint, byte[]> _Store = new Dictionary<uint, byte[]>();
 
         public bool ContainsSignedPreKey(uint signedPreKeyId)
         {
-            return store.ContainsKey(signedPreKeyId);
+            lock (Store.Lock)
+            {
+                return _Store.ContainsKey(signedPreKeyId);
+            }
         }
 
         public SignedPreKeyRecord LoadSignedPreKey(uint signedPreKeyId)
         {
-            if (store.ContainsKey(signedPreKeyId))
+            lock (Store.Lock)
             {
-                return new SignedPreKeyRecord(store[signedPreKeyId]);
+                if (_Store.ContainsKey(signedPreKeyId))
+                {
+                    return new SignedPreKeyRecord(_Store[signedPreKeyId]);
+                }
+                throw new InvalidKeyException();
             }
-            throw new InvalidKeyException();
         }
 
         public List<SignedPreKeyRecord> LoadSignedPreKeys()
         {
-            List<SignedPreKeyRecord> preKeys = new List<SignedPreKeyRecord>();
-            foreach (var key in store.Keys)
+            lock (Store.Lock)
             {
-                preKeys.Add(new SignedPreKeyRecord(store[key]));
+                List<SignedPreKeyRecord> preKeys = new List<SignedPreKeyRecord>();
+                foreach (var key in _Store.Keys)
+                {
+                    preKeys.Add(new SignedPreKeyRecord(_Store[key]));
+                }
+                return preKeys;
             }
-            return preKeys;
         }
 
         public void RemoveSignedPreKey(uint signedPreKeyId)
         {
-            store.Remove(signedPreKeyId);
-            Store.Instance.Save();
+            lock (Store.Lock)
+            {
+                _Store.Remove(signedPreKeyId);
+                Store.Instance.Save();
+            }
         }
 
         public void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
         {
-            store[signedPreKeyId] = record.serialize();
-            Store.Instance.Save();
+            lock (Store.Lock)
+            {
+                _Store[signedPreKeyId] = record.serialize();
+                Store.Instance.Save();
+            }
         }
     }
 

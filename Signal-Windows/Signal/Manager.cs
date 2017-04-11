@@ -43,12 +43,12 @@ namespace Signal_Windows.Signal
             try
             {
                 Load(username);
-                MessageReceiver = new SignalServiceMessageReceiver(Token, serviceUrls, new StaticCredentialsProvider(SignalStore.username, SignalStore.password, SignalStore.signalingKey), USER_AGENT);
+                MessageReceiver = new SignalServiceMessageReceiver(Token, serviceUrls, new StaticCredentialsProvider(SignalStore.Username, SignalStore.Password, SignalStore.SignalingKey), USER_AGENT);
                 if (active)
                 {
                     Pipe = MessageReceiver.createMessagePipe();
                 }
-                MessageSender = new SignalServiceMessageSender(Token, serviceUrls, SignalStore.username, SignalStore.password, SignalStore, Pipe, null, USER_AGENT);
+                MessageSender = new SignalServiceMessageSender(Token, serviceUrls, SignalStore.Username, SignalStore.Password, SignalStore, Pipe, null, USER_AGENT);
             }
             catch (Exception e)
             {
@@ -89,32 +89,32 @@ namespace Signal_Windows.Signal
                 IdentityKeyPair identityKey = KeyHelper.generateIdentityKeyPair();
                 uint registrationId = KeyHelper.generateRegistrationId(false); //TODO why uint
                 SignalStore = new Store(identityKey, registrationId);
-                SignalStore.registered = false;
-                SignalStore.username = (string)LocalSettings.Values["Username"];
+                SignalStore.Registered = false;
+                SignalStore.Username = (string)LocalSettings.Values["Username"];
             }
-            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.username, SignalStore.password, USER_AGENT);
+            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.Username, SignalStore.Password, USER_AGENT);
         }
 
         public void Register(bool voiceVerification)
         {
-            SignalStore.password = Base64.encodeBytes(Util.getSecretBytes(18));
-            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.username, SignalStore.password, USER_AGENT);
+            SignalStore.Password = Base64.encodeBytes(Util.getSecretBytes(18));
+            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.Username, SignalStore.Password, USER_AGENT);
             if (voiceVerification)
                 accountManager.requestVoiceVerificationCode();
             else
                 accountManager.requestSmsVerificationCode();
 
-            SignalStore.registered = false;
+            SignalStore.Registered = false;
             SignalStore.Save();
         }
 
         public void VerifyAccount(String verificationCode)
         {
             Debug.WriteLine("VERIFYING " + verificationCode);
-            SignalStore.signalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
-            accountManager.verifyAccountWithCode(verificationCode, SignalStore.signalingKey, SignalStore.jsonIdentityKeyStore.GetLocalRegistrationId(), true);
+            SignalStore.SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
+            accountManager.verifyAccountWithCode(verificationCode, SignalStore.SignalingKey, SignalStore.IdentityKeyStore.GetLocalRegistrationId(), true);
 
-            SignalStore.registered = true;
+            SignalStore.Registered = true;
             refreshPreKeys();
             SignalStore.Save();
         }
@@ -138,14 +138,14 @@ namespace Signal_Windows.Signal
             List<PreKeyRecord> records = new List<PreKeyRecord>();
             for (uint i = 0; i < PREKEY_BATCH_SIZE; i++)
             {
-                uint preKeyId = (SignalStore.preKeyIdOffset + i) % Medium.MAX_VALUE;
+                uint preKeyId = (SignalStore.PreKeyIdOffset + i) % Medium.MAX_VALUE;
                 ECKeyPair keyPair = Curve.generateKeyPair();
                 PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
 
                 SignalStore.StorePreKey(preKeyId, record);
                 records.Add(record);
             }
-            SignalStore.preKeyIdOffset = (SignalStore.preKeyIdOffset + PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE;
+            SignalStore.PreKeyIdOffset = (SignalStore.PreKeyIdOffset + PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE;
             return records;
         }
 
@@ -174,10 +174,10 @@ namespace Signal_Windows.Signal
             {
                 ECKeyPair keyPair = Curve.generateKeyPair();
                 byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
-                SignedPreKeyRecord record = new SignedPreKeyRecord(SignalStore.nextSignedPreKeyId, (ulong)DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
+                SignedPreKeyRecord record = new SignedPreKeyRecord(SignalStore.NextSignedPreKeyId, (ulong)DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
 
-                SignalStore.StoreSignedPreKey(SignalStore.nextSignedPreKeyId, record);
-                SignalStore.nextSignedPreKeyId = (SignalStore.nextSignedPreKeyId + 1) % Medium.MAX_VALUE;
+                SignalStore.StoreSignedPreKey(SignalStore.NextSignedPreKeyId, record);
+                SignalStore.NextSignedPreKeyId = (SignalStore.NextSignedPreKeyId + 1) % Medium.MAX_VALUE;
                 return record;
             }
             catch (InvalidKeyException e)
