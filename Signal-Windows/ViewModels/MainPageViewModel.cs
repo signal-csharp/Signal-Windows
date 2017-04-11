@@ -242,7 +242,7 @@ namespace Signal_Windows.ViewModels
             DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, true));
             foreach (var message in messages)
             {
-                if (SelectedThread.ThreadId == message.ThreadID)
+                if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
                 {
                     Thread.Append(message);
                     View.ScrollToBottom();
