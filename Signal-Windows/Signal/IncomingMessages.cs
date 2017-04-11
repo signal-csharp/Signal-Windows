@@ -47,6 +47,10 @@ namespace Signal_Windows.ViewModels
             List<SignalMessage> messages = new List<SignalMessage>();
             foreach (var envelope in envelopes)
             {
+                if (envelope == null)
+                {
+                    continue;
+                }
                 try
                 {
                     if (envelope.isReceipt())
