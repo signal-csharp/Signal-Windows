@@ -17,7 +17,7 @@ namespace Signal_Windows.ViewModels
     {
         public MainPageViewModel MainPageVm;
         public ObservableCollection<SignalMessage> Messages = new ObservableCollection<SignalMessage>();
-        private Dictionary<long, MessageBox> OutgoingCache = new Dictionary<long, MessageBox>();
+        private Dictionary<ulong, MessageBox> OutgoingCache = new Dictionary<ulong, MessageBox>();
 
         public ThreadViewModel(MainPageViewModel mainPageVm)
         {

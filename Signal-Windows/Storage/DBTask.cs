@@ -40,7 +40,6 @@ namespace Signal_Windows.ViewModels
                                 {
                                     if (message.Attachments != null && message.Attachments.Count > 0)
                                     {
-                                        ctx.SaveChanges();
                                         HandleDBAttachments(message, ctx);
                                     }
                                 }
@@ -76,7 +75,7 @@ namespace Signal_Windows.ViewModels
             int i = 0;
             foreach (var sa in message.Attachments)
             {
-                sa.FileName = "attachment_" + message.Id + "_" + i;
+                sa.FileName = "attachment_" + (message.Author != null ? message.Author.Id + "_" : "") + message.ComposedTimestamp + "_" + i + "_" + sa.SentFileName;
                 Task.Run(() =>
                 {
                     try
@@ -85,7 +84,7 @@ namespace Signal_Windows.ViewModels
                         using (var cipher = File.Open(Manager.localFolder + @"\Attachments\" + sa.FileName + ".cipher", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
                         using (var plain = File.OpenWrite(Manager.localFolder + @"\Attachments\" + sa.FileName))
                         {
-                            SignalManager.MessageReceiver.retrieveAttachment(new SignalServiceAttachmentPointer(sa.StorageId, sa.ContentType, sa.Key, sa.Relay), plain, cipher);
+                            SignalManager.MessageReceiver.retrieveAttachment(new SignalServiceAttachmentPointer(sa.StorageId, sa.ContentType, sa.FileName, sa.Key, sa.Relay), plain, cipher);
                             //TODO notify UI
                         }
                     }

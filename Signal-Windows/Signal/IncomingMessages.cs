@@ -232,6 +232,7 @@ namespace Signal_Windows.ViewModels
                     {
                         Message = message,
                         Status = (uint)SignalAttachmentStatus.Default,
+                        SentFileName = pointer.FileName,
                         ContentType = "",
                         Key = pointer.getKey(),
                         Relay = pointer.getRelay(),

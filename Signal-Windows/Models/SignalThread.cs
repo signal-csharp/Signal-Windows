@@ -2,7 +2,7 @@
 {
     public class SignalThread
     {
-        public uint Id { get; set; }
+        public ulong Id { get; set; }
         public string ThreadId { get; set; }
         public string ThreadDisplayName { get; set; }
         public long LastActiveTimestamp { get; set; }

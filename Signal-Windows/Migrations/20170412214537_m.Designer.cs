@@ -8,7 +8,7 @@ using Signal_Windows.Storage;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170408110354_m")]
+    [Migration("20170412214537_m")]
     partial class m
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -18,12 +18,12 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<uint>("ContactId");
+                    b.Property<ulong>("ContactId");
 
-                    b.Property<uint>("GroupId");
+                    b.Property<ulong>("GroupId");
 
                     b.HasKey("Id");
 
@@ -36,7 +36,7 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("ContentType");
@@ -45,9 +45,11 @@ namespace Signal_Windows.Migrations
 
                     b.Property<byte[]>("Key");
 
-                    b.Property<uint>("MessageId");
+                    b.Property<ulong>("MessageId");
 
                     b.Property<string>("Relay");
+
+                    b.Property<string>("SentFileName");
 
                     b.Property<uint>("Status");
 
@@ -62,7 +64,7 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalContact", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("AvatarFile");
@@ -86,7 +88,7 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalGroup", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("AvatarFile");
@@ -108,12 +110,12 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<uint>("AttachmentsCount");
 
-                    b.Property<uint?>("AuthorId");
+                    b.Property<ulong?>("AuthorId");
 
                     b.Property<long>("ComposedTimestamp");
 

@@ -12,7 +12,7 @@ namespace Signal_Windows.Migrations
                 name: "Contacts",
                 columns: table => new
                 {
-                    Id = table.Column<uint>(nullable: false)
+                    Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AvatarFile = table.Column<string>(nullable: true),
                     Color = table.Column<string>(nullable: true),
@@ -31,7 +31,7 @@ namespace Signal_Windows.Migrations
                 name: "Groups",
                 columns: table => new
                 {
-                    Id = table.Column<uint>(nullable: false)
+                    Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AvatarFile = table.Column<string>(nullable: true),
                     LastActiveTimestamp = table.Column<long>(nullable: false),
@@ -49,10 +49,10 @@ namespace Signal_Windows.Migrations
                 name: "Messages",
                 columns: table => new
                 {
-                    Id = table.Column<uint>(nullable: false)
+                    Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AttachmentsCount = table.Column<uint>(nullable: false),
-                    AuthorId = table.Column<uint>(nullable: true),
+                    AuthorId = table.Column<ulong>(nullable: true),
                     ComposedTimestamp = table.Column<long>(nullable: false),
                     Content = table.Column<string>(nullable: true),
                     DeviceId = table.Column<uint>(nullable: false),
@@ -78,10 +78,10 @@ namespace Signal_Windows.Migrations
                 name: "GroupMemberships",
                 columns: table => new
                 {
-                    Id = table.Column<uint>(nullable: false)
+                    Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ContactId = table.Column<uint>(nullable: false),
-                    GroupId = table.Column<uint>(nullable: false)
+                    ContactId = table.Column<ulong>(nullable: false),
+                    GroupId = table.Column<ulong>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -104,13 +104,14 @@ namespace Signal_Windows.Migrations
                 name: "Attachments",
                 columns: table => new
                 {
-                    Id = table.Column<uint>(nullable: false)
+                    Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     ContentType = table.Column<string>(nullable: true),
                     FileName = table.Column<string>(nullable: true),
                     Key = table.Column<byte[]>(nullable: true),
-                    MessageId = table.Column<uint>(nullable: false),
+                    MessageId = table.Column<ulong>(nullable: false),
                     Relay = table.Column<string>(nullable: true),
+                    SentFileName = table.Column<string>(nullable: true),
                     Status = table.Column<uint>(nullable: false),
                     StorageId = table.Column<ulong>(nullable: false)
                 },

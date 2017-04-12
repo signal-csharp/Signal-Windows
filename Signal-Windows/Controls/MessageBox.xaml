@@ -22,7 +22,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="models:SignalAttachment">
                         <StackPanel>
-                            <TextBlock Name="AttachmentFilenameTextBlock" Text="{x:Bind FileName}"></TextBlock>
+                            <TextBlock Name="AttachmentFilenameTextBlock" Text="{x:Bind SentFileName}"></TextBlock>
                             <Image Name="AttachmentImage"></Image>
                             <Button Name="AttachmentSaveButton" Click="AttachmentSaveButton_Click">Save</Button>
                         </StackPanel>

@@ -9,10 +9,10 @@ namespace Signal_Windows.Models
 
     public class GroupMembership
     {
-        public uint Id { get; set; }
-        public uint GroupId { get; set; }
+        public ulong Id { get; set; }
+        public ulong GroupId { get; set; }
         public SignalGroup Group { get; set; }
-        public uint ContactId { get; set; }
+        public ulong ContactId { get; set; }
         public SignalContact Contact { get; set; }
     }
 }
