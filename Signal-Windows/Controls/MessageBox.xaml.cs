@@ -53,7 +53,7 @@ namespace Signal_Windows.Controls
                 TextColor = Utils.GetSolidColorBrush(255, "#454545");
                 TimestampColor = Utils.GetSolidColorBrush(127, "#454545");
                 HorizontalAlignment = HorizontalAlignment.Right;
-                TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Right;
+                FooterPanel.HorizontalAlignment = HorizontalAlignment.Right;
             }
             else
             {
@@ -71,7 +71,7 @@ namespace Signal_Windows.Controls
                 TextColor = Utils.GetSolidColorBrush(255, "#ffffff");
                 TimestampColor = Utils.GetSolidColorBrush(127, "#ffffff");
                 HorizontalAlignment = HorizontalAlignment.Left;
-                TimestampTextBlock.HorizontalAlignment = HorizontalAlignment.Left;
+                FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;
             }
             DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.ReceivedTimestamp / 1000);
             DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
