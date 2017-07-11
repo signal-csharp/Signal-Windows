@@ -15,7 +15,6 @@ namespace Signal_Windows.Models
         public SignalGroup Group { get; set; }
         public ulong ContactId { get; set; }
         public SignalContact Contact { get; set; }
-
     }
 
     public enum GroupStatus

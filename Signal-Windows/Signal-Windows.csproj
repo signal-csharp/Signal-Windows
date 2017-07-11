@@ -106,15 +106,17 @@
     <Compile Include="Controls\ThreadView.xaml.cs">
       <DependentUpon>ThreadView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\20170711104505_m.cs" />
-    <Compile Include="Migrations\20170711104505_m.designer.cs">
-      <DependentUpon>20170711104505_m.cs</DependentUpon>
+    <Compile Include="Logging\LoggerProvider.cs" />
+    <Compile Include="Migrations\20170711194125_m.cs" />
+    <Compile Include="Migrations\20170711194125_m.designer.cs">
+      <DependentUpon>20170711194125_m.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\SignalAttachment.cs" />
     <Compile Include="Models\SignalGroup.cs" />
     <Compile Include="Models\SignalMessage.cs" />
     <Compile Include="Models\SignalContact.cs" />
+    <Compile Include="Models\SignalMessageContent.cs" />
     <Compile Include="Models\SignalThread.cs" />
     <Compile Include="Storage\DBTask.cs" />
     <Compile Include="Signal\Manager.cs" />

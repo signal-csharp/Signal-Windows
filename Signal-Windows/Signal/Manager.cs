@@ -1,4 +1,4 @@
-﻿using libsignal;
+using libsignal;
 using libsignal.ecc;
 using libsignal.state;
 using libsignal.util;
@@ -112,7 +112,7 @@ namespace Signal_Windows.Signal
         {
             Debug.WriteLine("VERIFYING " + verificationCode);
             SignalStore.SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
-            accountManager.verifyAccountWithCode(verificationCode, SignalStore.SignalingKey, SignalStore.IdentityKeyStore.GetLocalRegistrationId(), true);
+            accountManager.verifyAccountWithCode(verificationCode, SignalStore.SignalingKey, SignalStore.IdentityKeyStore.GetLocalRegistrationId(), false, false, true);
 
             SignalStore.Registered = true;
             refreshPreKeys();

@@ -1,8 +1,6 @@
-﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Signal_Windows.Storage;
 
 namespace Signal_Windows.Migrations
@@ -120,7 +118,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<long>("ComposedTimestamp");
 
-                    b.Property<string>("Content");
+                    b.Property<ulong?>("Contentrowid");
 
                     b.Property<uint>("DeviceId");
 
@@ -140,9 +138,23 @@ namespace Signal_Windows.Migrations
 
                     b.HasIndex("AuthorId");
 
+                    b.HasIndex("Contentrowid");
+
                     b.HasIndex("ThreadID");
 
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalMessageContent", b =>
+                {
+                    b.Property<ulong>("rowid")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Content");
+
+                    b.HasKey("rowid");
+
+                    b.ToTable("Messages_fts");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
@@ -171,6 +183,10 @@ namespace Signal_Windows.Migrations
                     b.HasOne("Signal_Windows.Models.SignalContact", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorId");
+
+                    b.HasOne("Signal_Windows.Models.SignalMessageContent", "Content")
+                        .WithMany()
+                        .HasForeignKey("Contentrowid");
                 });
         }
     }

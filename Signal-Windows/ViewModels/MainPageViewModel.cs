@@ -123,7 +123,7 @@ namespace Signal_Windows.ViewModels
                     {
                         Author = null,
                         ComposedTimestamp = now,
-                        Content = t.Text,
+                        Content = new SignalMessageContent() { Content = t.Text },
                         ThreadID = SelectedThread.ThreadId,
                         ReceivedTimestamp = now,
                         Type = 0

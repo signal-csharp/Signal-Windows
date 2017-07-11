@@ -91,9 +91,9 @@ namespace Signal_Windows.ViewModels
             var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
             var content = cipher.decrypt(envelope);
 
-            if (content.getDataMessage().HasValue)
+            if (content.Message != null)
             {
-                SignalServiceDataMessage message = content.getDataMessage().ForceGetValue();
+                SignalServiceDataMessage message = content.Message;
                 if (message.isEndSession())
                 {
                     SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
@@ -112,7 +112,7 @@ namespace Signal_Windows.ViewModels
                     return HandleSignalMessage(envelope, content, message);
                 }
             }
-            else if (content.getSyncMessage().HasValue)
+            else if (content.SynchronizeMessage != null)
             {
                 //TODO
             } //TODO callmessages
@@ -125,15 +125,22 @@ namespace Signal_Windows.ViewModels
 
         private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
         {
-            if (dataMessage.getGroupInfo().HasValue) //check signal droid
+            if (dataMessage.getGroupInfo().HasValue) //TODO check signal droid: group messages have different types!
             {
                 SignalServiceGroup group = dataMessage.getGroupInfo().ForceGetValue();
-                var dbgroup = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(group.getGroupId()), group.getName().ForceGetValue(), this);
+                SignalGroup g = new SignalGroup();
+                string displayname = null;
+                string avatarfile = null;
+                if (group.getName().HasValue)
+                {
+                    displayname = group.getName().ForceGetValue();
+                }
+                var dbgroup = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, this);
                 if (group.getMembers().HasValue)
                 {
                     foreach (var member in group.getMembers().ForceGetValue())
                     {
-                        SignalDBContext.AddOrUpdateGroupMembershipLocked(dbgroup.Id, 1);
+                        SignalDBContext.AddOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, this).Id);
                     }
                 }
             }
@@ -156,7 +163,7 @@ namespace Signal_Windows.ViewModels
                 Type = source == (string)LocalSettings.Values["Username"] ? (uint)SignalMessageType.Outgoing : (uint)SignalMessageType.Incoming,
                 Status = (uint)SignalMessageStatus.Pending,
                 Author = author,
-                Content = body,
+                Content = new SignalMessageContent() { Content = body },
                 ThreadID = thread,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,

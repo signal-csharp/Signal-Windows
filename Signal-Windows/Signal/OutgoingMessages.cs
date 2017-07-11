@@ -31,7 +31,7 @@ namespace Signal_Windows.ViewModels
                 try
                 {
                     outgoingSignalMessage = OutgoingQueue.Take(token);
-                    Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(outgoingSignalMessage.Content).withTimestamp(outgoingSignalMessage.ComposedTimestamp);
+                    Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(outgoingSignalMessage.Content.Content).withTimestamp(outgoingSignalMessage.ComposedTimestamp);
                     List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
                     if (outgoingSignalMessage.ThreadID[0] == '+')
                     {

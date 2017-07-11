@@ -9,7 +9,7 @@ namespace Signal_Windows.Models
         public ulong Id { get; set; }
         public uint Type { get; set; }
         public uint Status { get; set; }
-        public string Content { get; set; }
+        public SignalMessageContent Content { get; set; }
         public string ThreadID { get; set; }
         public ulong? AuthorId { get; set; }
         public SignalContact Author { get; set; }

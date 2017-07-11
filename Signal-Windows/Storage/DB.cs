@@ -1,6 +1,10 @@
 using libsignalservice.messages;
 using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Signal_Windows.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.ViewModels;
 using System;
@@ -18,10 +22,11 @@ namespace Signal_Windows.Storage
         public DbSet<SignalAttachment> Attachments { get; set; }
         public DbSet<SignalGroup> Groups { get; set; }
         public DbSet<GroupMembership> GroupMemberships { get; set; }
+        public DbSet<SignalMessageContent> Messages_fts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Filename=Main.db");
+            optionsBuilder.UseSqlite("Filename=Main.db", x => x.SuppressForeignKeyEnforcement());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -66,6 +71,7 @@ namespace Signal_Windows.Storage
                 {
                     return ctx.Messages
                         .Where(m => m.ThreadID == thread.ThreadId)
+                        .Include(m => m.Content)
                         .Include(m => m.Author)
                         .Include(m => m.Attachments)
                         .AsNoTracking().ToList();
@@ -80,6 +86,9 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     ctx.Database.Migrate();
+                    var serviceProvider = ctx.GetInfrastructure<IServiceProvider>();
+                    var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+                    loggerFactory.AddProvider(new SqlLoggerProvider());
                 }
             }
         }
@@ -98,7 +107,7 @@ namespace Signal_Windows.Storage
 
         #region db functions
 
-        public static SignalGroup GetOrCreateGroupLocked(string groupid, string groupname, MainPageViewModel mpvm)
+        public static SignalGroup GetOrCreateGroupLocked(string groupid, string displayname, string avatarfile, MainPageViewModel mpvm)
         {
             SignalGroup dbgroup;
             bool is_new = false;
@@ -117,19 +126,22 @@ namespace Signal_Windows.Storage
                         dbgroup = new SignalGroup()
                         {
                             ThreadId = groupid,
-                            ThreadDisplayName = "Unknown",
+                            ThreadDisplayName = displayname,
                             LastActiveTimestamp = Util.CurrentTimeMillis(),
-                            AvatarFile = null,
+                            AvatarFile = avatarfile,
                             Unread = 1,
                             GroupMemberships = new List<GroupMembership>()
                         };
                         ctx.Add(dbgroup);
-                        ctx.SaveChanges();
                     }
                     else
                     {
-                        dbgroup.ThreadDisplayName = groupname;
+                        dbgroup.ThreadDisplayName = displayname;
+                        dbgroup.LastActiveTimestamp = Util.CurrentTimeMillis();
+                        dbgroup.AvatarFile = avatarfile;
+                        dbgroup.Unread = 1;
                     }
+                    ctx.SaveChanges();
                 }
             }
             if (is_new && mpvm != null)
@@ -173,8 +185,10 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     return ctx.Groups
-                    .AsNoTracking()
-                    .ToList();
+                        .Include(g => g.GroupMemberships)
+                        .ThenInclude(gm => gm.Contact)
+                        .AsNoTracking()
+                        .ToList();
                 }
             }
         }
@@ -198,7 +212,7 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    var old = ctx.GroupMemberships.Where(g => g.GroupId == groupid && g.ContactId == memberid);
+                    var old = ctx.GroupMemberships.Where(g => g.GroupId == groupid && g.ContactId == memberid).SingleOrDefault();
                     if (old == null)
                     {
                         ctx.GroupMemberships.Add(new GroupMembership()
