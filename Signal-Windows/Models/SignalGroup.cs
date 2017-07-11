@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Signal_Windows.Models
 {
     public class SignalGroup : SignalThread
     {
         public List<GroupMembership> GroupMemberships { get; set; }
+        public uint Status { get; set; }
     }
 
     public class GroupMembership
@@ -14,5 +15,12 @@ namespace Signal_Windows.Models
         public SignalGroup Group { get; set; }
         public ulong ContactId { get; set; }
         public SignalContact Contact { get; set; }
+
+    }
+
+    public enum GroupStatus
+    {
+        Known = 0,
+        Unknown = 1
     }
 }

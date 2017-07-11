@@ -93,6 +93,7 @@
     <None Include="project.json" />
     <Content Include="Assets\check.png" />
     <Content Include="Assets\double-check.png" />
+    <Content Include="Assets\LICENSE.TXT" />
     <Content Include="textsecure-servicewhispersystemsorg.crt" />
   </ItemGroup>
   <ItemGroup>
@@ -105,9 +106,9 @@
     <Compile Include="Controls\ThreadView.xaml.cs">
       <DependentUpon>ThreadView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\20170412214537_m.cs" />
-    <Compile Include="Migrations\20170412214537_m.designer.cs">
-      <DependentUpon>20170412214537_m.cs</DependentUpon>
+    <Compile Include="Migrations\20170711104505_m.cs" />
+    <Compile Include="Migrations\20170711104505_m.designer.cs">
+      <DependentUpon>20170711104505_m.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\SignalAttachment.cs" />

@@ -81,29 +81,24 @@ namespace Signal_Windows.Controls
 
         private void SetSignalMessageStatusIcon(SignalMessage updatedMessage)
         {
-            if (Model.Status == (uint)SignalMessageStatus.Pending)
+            uint status = Math.Max(Model.Status, updatedMessage.Status);
+            if(status == (uint)SignalMessageStatus.Pending)
             {
-                if (updatedMessage.Status == (uint)SignalMessageStatus.Confirmed)
-                {
-                    Model.Status = (uint)SignalMessageStatus.Confirmed;
-                    CheckVisibility = Visibility.Visible;
-                    DoubleCheckVisibility = Visibility.Collapsed;
-                }
-                else if (updatedMessage.Status == (uint)SignalMessageStatus.Received)
-                {
-                    Model.Status = (uint)SignalMessageStatus.Confirmed;
-                    CheckVisibility = Visibility.Collapsed;
-                    DoubleCheckVisibility = Visibility.Visible;
-                }
+                Model.Status = (uint)SignalMessageStatus.Pending;
+                CheckVisibility = Visibility.Collapsed;
+                DoubleCheckVisibility = Visibility.Collapsed;
             }
-            else if (Model.Status == (uint)SignalMessageStatus.Confirmed)
+            else if(status == (uint)SignalMessageStatus.Confirmed)
             {
-                if (updatedMessage.Status == (uint)SignalMessageStatus.Received)
-                {
-                    Model.Status = (uint)SignalMessageStatus.Confirmed;
-                    CheckVisibility = Visibility.Collapsed;
-                    DoubleCheckVisibility = Visibility.Visible;
-                }
+                Model.Status = (uint)SignalMessageStatus.Confirmed;
+                CheckVisibility = Visibility.Visible;
+                DoubleCheckVisibility = Visibility.Collapsed;
+            }
+            else if(status == (uint)SignalMessageStatus.Received)
+            {
+                Model.Status = (uint)SignalMessageStatus.Received;
+                CheckVisibility = Visibility.Collapsed;
+                DoubleCheckVisibility = Visibility.Visible;
             }
         }
 
