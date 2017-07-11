@@ -1,4 +1,4 @@
-﻿using Signal_Windows.Controls;
+using Signal_Windows.Controls;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -33,6 +33,7 @@ namespace Signal_Windows.Models
     public enum SignalMessageStatus
     {
         Pending = 0,
-        Confirmed = 1
+        Confirmed = 1,
+        Received = 2
     }
 }

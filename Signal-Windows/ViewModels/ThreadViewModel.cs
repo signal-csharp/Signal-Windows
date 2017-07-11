@@ -1,13 +1,11 @@
-﻿using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight;
 using libsignalservice.util;
-using Microsoft.EntityFrameworkCore;
 using Signal_Windows.Controls;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI.Xaml;
 
@@ -31,17 +29,7 @@ namespace Signal_Windows.ViewModels
             var before = Util.CurrentTimeMillis();
             var messages = await Task.Run(() =>
             {
-                lock (SignalDBContext.DBLock)
-                {
-                    using (var ctx = new SignalDBContext())
-                    {
-                        return ctx.Messages
-                            .Where(m => m.ThreadID == thread.ThreadId)
-                            .Include(m => m.Author)
-                            .Include(m => m.Attachments)
-                            .AsNoTracking().ToList();
-                    }
-                }
+                return SignalDBContext.GetMessagesLocked(thread, this);
             });
             var after1 = Util.CurrentTimeMillis();
             foreach (var m in messages)

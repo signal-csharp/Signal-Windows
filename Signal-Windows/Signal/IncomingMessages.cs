@@ -1,4 +1,4 @@
-﻿using libsignalservice.crypto;
+using libsignalservice.crypto;
 using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.util;
@@ -9,7 +9,6 @@ using Strilanc.Value;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Signal_Windows.ViewModels
 {
@@ -55,7 +54,7 @@ namespace Signal_Windows.ViewModels
                 {
                     if (envelope.isReceipt())
                     {
-                        HandleReceipt(envelope);
+                        SignalDBContext.IncreaseReceiptCountLocked(envelope, this);
                     }
                     else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
                     {
@@ -84,38 +83,6 @@ namespace Signal_Windows.ViewModels
                     UIHandleIncomingMessages(messages.ToArray());
                 }).AsTask().Wait();
                 IncomingMessageSavedEvent.Wait(CancelSource.Token);
-            }
-        }
-
-        private void HandleReceipt(SignalServiceEnvelope envelope)
-        {
-            lock (SignalDBContext.DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    using (var transaction = ctx.Database.BeginTransaction())
-                    {
-                        var m = ctx.Messages.
-                            SingleOrDefault(t => t.ComposedTimestamp == envelope.getTimestamp() && t.Author == null);
-                        if (m != null)
-                        {
-                            m.Receipts++;
-                            ctx.SaveChanges();
-                            transaction.Commit();
-                            if (m.Receipts > 0 && m.Status == (uint)SignalMessageStatus.Confirmed)
-                            {
-                                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                                {
-                                    UIHandleReceiptReceived(m);
-                                }).AsTask().Wait();
-                            }
-                        }
-                        else
-                        {
-                            Debug.WriteLine("HandleReceipt could not find the correspoding message");
-                        }
-                    }
-                }
             }
         }
 
@@ -161,38 +128,14 @@ namespace Signal_Windows.ViewModels
             if (dataMessage.getGroupInfo().HasValue) //check signal droid
             {
                 SignalServiceGroup group = dataMessage.getGroupInfo().ForceGetValue();
-                lock (SignalDBContext.DBLock)
-                    using (var ctx = new SignalDBContext())
+                var dbgroup = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(group.getGroupId()), group.getName().ForceGetValue(), this);
+                if (group.getMembers().HasValue)
+                {
+                    foreach (var member in group.getMembers().ForceGetValue())
                     {
-                        var dbgroup = GetOrCreateGroup(ctx, Base64.encodeBytes(group.getGroupId()));
-                        if (group.getName().HasValue)
-                        {
-                            dbgroup.ThreadDisplayName = group.getName().ForceGetValue();
-                        }
-                        if (group.getMembers().HasValue)
-                        {
-                            foreach (var member in group.getMembers().ForceGetValue())
-                            {
-                                bool n = true;
-                                foreach (var m in dbgroup.GroupMemberships)
-                                {
-                                    if (m.Contact.ThreadId == member)
-                                    {
-                                        n = false;
-                                    }
-                                }
-                                if (n && member != (string)LocalSettings.Values["Username"])
-                                {
-                                    dbgroup.GroupMemberships.Add(new GroupMembership()
-                                    {
-                                        Contact = GetOrCreateContact(ctx, member),
-                                        Group = dbgroup
-                                    });
-                                }
-                            }
-                        }
-                        ctx.SaveChanges();
+                        SignalDBContext.AddOrUpdateGroupMembershipLocked(dbgroup.Id, 1);
                     }
+                }
             }
             else
             {
@@ -204,7 +147,7 @@ namespace Signal_Windows.ViewModels
         {
             string source = envelope.getSource();
             string thread = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
-            SignalContact author = GetOrCreateContactLocked(source);
+            SignalContact author = SignalDBContext.GetOrCreateContactLocked(source, this);
             string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
             string threadId = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
             List<SignalAttachment> attachments = new List<SignalAttachment>();

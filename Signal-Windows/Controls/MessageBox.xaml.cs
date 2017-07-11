@@ -1,4 +1,4 @@
-﻿using Signal_Windows.Models;
+using Signal_Windows.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -81,17 +81,28 @@ namespace Signal_Windows.Controls
 
         private void SetSignalMessageStatusIcon(SignalMessage updatedMessage)
         {
-            if (updatedMessage.Status == (uint)SignalMessageStatus.Confirmed)
+            if (Model.Status == (uint)SignalMessageStatus.Pending)
             {
-                if (updatedMessage.Receipts > 0)
+                if (updatedMessage.Status == (uint)SignalMessageStatus.Confirmed)
                 {
+                    Model.Status = (uint)SignalMessageStatus.Confirmed;
+                    CheckVisibility = Visibility.Visible;
+                    DoubleCheckVisibility = Visibility.Collapsed;
+                }
+                else if (updatedMessage.Status == (uint)SignalMessageStatus.Received)
+                {
+                    Model.Status = (uint)SignalMessageStatus.Confirmed;
                     CheckVisibility = Visibility.Collapsed;
                     DoubleCheckVisibility = Visibility.Visible;
                 }
-                else
+            }
+            else if (Model.Status == (uint)SignalMessageStatus.Confirmed)
+            {
+                if (updatedMessage.Status == (uint)SignalMessageStatus.Received)
                 {
-                    CheckVisibility = Visibility.Visible;
-                    DoubleCheckVisibility = Visibility.Collapsed;
+                    Model.Status = (uint)SignalMessageStatus.Confirmed;
+                    CheckVisibility = Visibility.Collapsed;
+                    DoubleCheckVisibility = Visibility.Visible;
                 }
             }
         }

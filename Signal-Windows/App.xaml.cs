@@ -1,4 +1,3 @@
-﻿using Microsoft.EntityFrameworkCore;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
@@ -30,13 +29,7 @@ namespace Signal_Windows
             this.InitializeComponent();
             this.Suspending += OnSuspending;
             Debug.WriteLine("Signal-Windows " + LocalFolder.Path.ToString());
-            lock (SignalDBContext.DBLock)
-            {
-                using (var db = new SignalDBContext())
-                {
-                    db.Database.Migrate();
-                }
-            }
+            SignalDBContext.Migrate();
         }
 
         /// <summary>

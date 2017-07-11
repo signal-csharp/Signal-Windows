@@ -1,4 +1,4 @@
-﻿using libsignalservice.messages;
+using libsignalservice.messages;
 using Signal_Windows.Models;
 using Signal_Windows.Signal;
 using Signal_Windows.Storage;
@@ -6,7 +6,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,39 +24,28 @@ namespace Signal_Windows.ViewModels
                 try
                 {
                     Tuple<SignalMessage[], bool> t = DBQueue.Take(token);
-                    lock (SignalDBContext.DBLock)
+                    foreach (SignalMessage message in t.Item1)
                     {
-                        using (var ctx = new SignalDBContext())
+                        SignalDBContext.SaveMessage(message, t.Item2);
+                        if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
                         {
-                            foreach (var message in t.Item1)
+                            if (message.Attachments != null && message.Attachments.Count > 0)
                             {
-                                if (t.Item2)
-                                {
-                                    message.Author = ctx.Contacts.Single(b => b.ThreadId == message.Author.ThreadId);
-                                }
-                                ctx.Messages.Add(message);
-                                if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
-                                {
-                                    if (message.Attachments != null && message.Attachments.Count > 0)
-                                    {
-                                        HandleDBAttachments(message, ctx);
-                                    }
-                                }
-                            }
-                            ctx.SaveChanges();
-                            if (t.Item2)
-                            {
-                                IncomingMessageSavedEvent.Set();
-                            }
-                            else
-                            {
-                                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                                {
-                                    UIHandleOutgoingSaved(t.Item1[0]);
-                                }).AsTask().Wait();
-                                OutgoingQueue.Add(t.Item1[0]);
+                                HandleDBAttachments(message);
                             }
                         }
+                    }
+                    if (t.Item2)
+                    {
+                        IncomingMessageSavedEvent.Set();
+                    }
+                    else
+                    {
+                        Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            UIHandleOutgoingSaved(t.Item1[0]);
+                        }).AsTask().Wait();
+                        OutgoingQueue.Add(t.Item1[0]);
                     }
                 }
                 catch (Exception e)
@@ -70,12 +58,13 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("HandleDBQueue finished");
         }
 
-        private void HandleDBAttachments(SignalMessage message, SignalDBContext ctx)
+        private void HandleDBAttachments(SignalMessage message)
         {
             int i = 0;
             foreach (var sa in message.Attachments)
             {
                 sa.FileName = "attachment_" + (message.Author != null ? message.Author.Id + "_" : "") + message.ComposedTimestamp + "_" + i + "_" + sa.SentFileName;
+                SignalDBContext.UpdateAttachmentLocked(sa);
                 Task.Run(() =>
                 {
                     try

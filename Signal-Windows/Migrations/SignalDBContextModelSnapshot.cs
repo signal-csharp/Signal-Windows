@@ -1,8 +1,6 @@
-﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Signal_Windows.Storage;
 
 namespace Signal_Windows.Migrations

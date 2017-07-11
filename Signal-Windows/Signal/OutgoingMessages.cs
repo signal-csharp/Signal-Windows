@@ -1,4 +1,4 @@
-﻿using libsignalservice.messages;
+using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.util;
 using Signal_Windows.Models;
@@ -7,7 +7,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 
 namespace Signal_Windows.ViewModels
@@ -51,40 +50,7 @@ namespace Signal_Windows.ViewModels
                     if (!token.IsCancellationRequested)
                     {
                         SignalManager.sendMessage(recipients, ssdm);
-                        try
-                        {
-                            lock (SignalDBContext.DBLock)
-                            {
-                                using (var ctx = new SignalDBContext())
-                                {
-                                    using (var transaction = ctx.Database.BeginTransaction())
-                                    {
-                                        var m = ctx.Messages.
-                                            Single(t => t.ComposedTimestamp == outgoingSignalMessage.ComposedTimestamp && t.Author == null);
-                                        if (m != null)
-                                        {
-                                            m.Status = (uint)SignalMessageStatus.Confirmed;
-                                            ctx.SaveChanges();
-                                            transaction.Commit();
-                                            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                                            {
-                                                UIHandleSuccessfullSend(m);
-                                            }).AsTask().Wait();
-                                        }
-                                        else
-                                        {
-                                            Debug.WriteLine("HandleOutgoingMessages could not find the correspoding message");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine("failed to save message to db");
-                            Debug.WriteLine(e.Message);
-                            Debug.WriteLine(e.StackTrace);
-                        }
+                        SignalDBContext.UpdateMessageLocked(outgoingSignalMessage, this);
                     }
                 }
                 catch (OperationCanceledException e)

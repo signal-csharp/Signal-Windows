@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System.Diagnostics;
@@ -68,7 +68,7 @@ namespace Signal_Windows.ViewModels
             };
             ContactName = "";
             ContactNumber = "";
-            SignalDBContext.UpdateContact(contact, true);
+            SignalDBContext.AddOrUpdateContactLocked(contact, null); ////TODO can we get a vm reference here? would fix #5
             UIEnabled = true;
         }
     }
