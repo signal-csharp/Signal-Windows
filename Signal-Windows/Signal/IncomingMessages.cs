@@ -135,7 +135,7 @@ namespace Signal_Windows.ViewModels
                 {
                     displayname = group.getName().ForceGetValue();
                 }
-                var dbgroup = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, this);
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, GroupStatus.Known, this);
                 if (group.getMembers().HasValue)
                 {
                     foreach (var member in group.getMembers().ForceGetValue())
@@ -156,7 +156,16 @@ namespace Signal_Windows.ViewModels
             string thread = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
             SignalContact author = SignalDBContext.GetOrCreateContactLocked(source, this);
             string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
-            string threadId = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
+            string threadId;
+            if (dataMessage.getGroupInfo().HasValue)
+            {
+                threadId = Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId());
+                SignalDBContext.GetOrCreateGroupLocked(threadId, this);
+            }
+            else
+            {
+                threadId = source;
+            }
             List<SignalAttachment> attachments = new List<SignalAttachment>();
             SignalMessage message = new SignalMessage()
             {

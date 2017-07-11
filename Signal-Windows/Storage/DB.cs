@@ -105,9 +105,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        #region db functions
-
-        public static SignalGroup GetOrCreateGroupLocked(string groupid, string displayname, string avatarfile, MainPageViewModel mpvm)
+        public static SignalGroup GetOrCreateGroupLocked(string groupId, MainPageViewModel mpvm)
         {
             SignalGroup dbgroup;
             bool is_new = false;
@@ -116,7 +114,7 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     dbgroup = ctx.Groups
-                        .Where(g => g.ThreadId == groupid)
+                        .Where(g => g.ThreadId == groupId)
                         .Include(g => g.GroupMemberships)
                         .ThenInclude(gm => gm.Contact)
                         .SingleOrDefault();
@@ -125,11 +123,56 @@ namespace Signal_Windows.Storage
                         is_new = true;
                         dbgroup = new SignalGroup()
                         {
-                            ThreadId = groupid,
+                            ThreadId = groupId,
+                            ThreadDisplayName = "Unknown group",
+                            LastActiveTimestamp = Util.CurrentTimeMillis(),
+                            AvatarFile = null,
+                            Unread = 1,
+                            Status = (uint)GroupStatus.Unknown,
+                            GroupMemberships = new List<GroupMembership>()
+                        };
+                        ctx.Add(dbgroup);
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+            if (is_new)
+            {
+                Task.Run(async () =>
+                {
+                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        mpvm.AddThread(dbgroup);
+                    });
+                }).Wait();
+            }
+            return dbgroup;
+        }
+
+        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, GroupStatus status, MainPageViewModel mpvm)
+        {
+            SignalGroup dbgroup;
+            bool is_new = false;
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    dbgroup = ctx.Groups
+                        .Where(g => g.ThreadId == groupId)
+                        .Include(g => g.GroupMemberships)
+                        .ThenInclude(gm => gm.Contact)
+                        .SingleOrDefault();
+                    if (dbgroup == null)
+                    {
+                        is_new = true;
+                        dbgroup = new SignalGroup()
+                        {
+                            ThreadId = groupId,
                             ThreadDisplayName = displayname,
                             LastActiveTimestamp = Util.CurrentTimeMillis(),
                             AvatarFile = avatarfile,
                             Unread = 1,
+                            Status = (uint)status,
                             GroupMemberships = new List<GroupMembership>()
                         };
                         ctx.Add(dbgroup);
@@ -140,11 +183,12 @@ namespace Signal_Windows.Storage
                         dbgroup.LastActiveTimestamp = Util.CurrentTimeMillis();
                         dbgroup.AvatarFile = avatarfile;
                         dbgroup.Unread = 1;
+                        dbgroup.Status = (uint)status;
                     }
                     ctx.SaveChanges();
                 }
             }
-            if (is_new && mpvm != null)
+            if (is_new)
             {
                 Task.Run(async () =>
                 {
@@ -333,7 +377,5 @@ namespace Signal_Windows.Storage
                 }).AsTask().Wait();
             }
         }
-
-        #endregion db functions
     }
 }
