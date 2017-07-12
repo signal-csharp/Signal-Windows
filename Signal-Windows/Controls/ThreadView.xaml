@@ -31,6 +31,6 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
-        <TextBox Grid.Row="2" Visibility="{x:Bind  Vm.MainVisibility, Mode=OneWay}" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
+        <TextBox Grid.Row="2" Visibility="{x:Bind  Vm.MainVisibility, Mode=OneWay}" IsEnabled="{x:Bind Vm.CanSend, Mode=OneWay}" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
     </Grid>
 </UserControl>

@@ -26,6 +26,7 @@ namespace Signal_Windows.ViewModels
 
         public async Task Load(SignalThread thread)
         {
+            CanSend = false;
             DisposeCurrentThread();
             ThreadTitle = thread.ThreadDisplayName;
             var before = Util.CurrentTimeMillis();
@@ -39,8 +40,12 @@ namespace Signal_Windows.ViewModels
                 Messages.Add(m);
             }
             var after2 = Util.CurrentTimeMillis();
-            Debug.WriteLine("db query: " + (before - after1));
-            Debug.WriteLine("ui: " + (after1 - after2));
+            Debug.WriteLine("db query: " + (after1 - before));
+            Debug.WriteLine("ui: " + (after2 - after1));
+            if (!(thread.GetType() == typeof(SignalGroup) && ((SignalGroup)thread).Status == (uint)GroupStatus.Unknown))
+            {
+                CanSend = true;
+            }
         }
 
         private void DisposeCurrentThread()
@@ -111,6 +116,21 @@ namespace Signal_Windows.ViewModels
             {
                 _MainVisibility = value;
                 RaisePropertyChanged("MainVisibility");
+            }
+        }
+
+        private bool _CanSend;
+
+        public bool CanSend
+        {
+            get
+            {
+                return _CanSend;
+            }
+            set
+            {
+                _CanSend = value;
+                RaisePropertyChanged("CanSend");
             }
         }
     }
