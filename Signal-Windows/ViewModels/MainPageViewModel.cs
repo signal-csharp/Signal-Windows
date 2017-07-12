@@ -60,6 +60,7 @@ namespace Signal_Windows.ViewModels
             uiThread.LastMessage = thread.LastMessage;
             uiThread.Unread = thread.Unread;
             uiThread.AvatarFile = thread.AvatarFile;
+            uiThread.View.Reload();
         }
 
         #endregion Contacts

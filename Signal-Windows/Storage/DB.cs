@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.UI.Core;
 
 namespace Signal_Windows.Storage
 {
@@ -135,16 +136,16 @@ namespace Signal_Windows.Storage
                         ctx.SaveChanges();
                     }
                 }
-            }
-            if (is_new)
-            {
-                Task.Run(async () =>
+                if (is_new)
                 {
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    Task.Run(async () =>
                     {
-                        mpvm.AddThread(dbgroup);
-                    });
-                }).Wait();
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            mpvm.AddThread(dbgroup);
+                        });
+                    }).Wait();
+                }
             }
             return dbgroup;
         }
@@ -187,16 +188,26 @@ namespace Signal_Windows.Storage
                     }
                     ctx.SaveChanges();
                 }
-            }
-            if (is_new)
-            {
-                Task.Run(async () =>
+                if (is_new)
                 {
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    Task.Run(async () =>
                     {
-                        mpvm.AddThread(dbgroup);
-                    });
-                }).Wait();
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            mpvm.AddThread(dbgroup);
+                        });
+                    }).Wait();
+                }
+                else
+                {
+                    Task.Run(async () =>
+                    {
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            mpvm.UIUpdateThread(dbgroup);
+                        });
+                    }).Wait();
+                }
             }
             return dbgroup;
         }
@@ -294,16 +305,16 @@ namespace Signal_Windows.Storage
                         ctx.SaveChanges();
                     }
                 }
-            }
-            if (is_new)
-            {
-                Task.Run(async () =>
+                if (is_new)
                 {
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    Task.Run(async () =>
                     {
-                        mpvm.AddThread(contact);
-                    });
-                }).Wait();
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            mpvm.AddThread(contact);
+                        });
+                    }).Wait();
+                }
             }
             return contact;
         }
@@ -335,20 +346,40 @@ namespace Signal_Windows.Storage
                     }
                     ctx.SaveChanges();
                 }
-            }
-            if (is_new)
-            {
-                Task.Run(async () =>
+                if (is_new)
                 {
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    if (CoreWindow.GetForCurrentThread().Dispatcher.HasThreadAccess)
                     {
                         mpvm.AddThread(contact);
-                    });
-                }).Wait();
-            }
-            else
-            {
-                mpvm.UIUpdateThread(contact);
+                    }
+                    else
+                    {
+                        Task.Run(async () =>
+                        {
+                            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                            {
+                                mpvm.AddThread(contact);
+                            });
+                        }).Wait();
+                    }
+                }
+                else
+                {
+                    if (CoreWindow.GetForCurrentThread().Dispatcher.HasThreadAccess)
+                    {
+                        mpvm.UIUpdateThread(contact);
+                    }
+                    else
+                    {
+                        Task.Run(async () =>
+                        {
+                            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                            {
+                                mpvm.UIUpdateThread(contact);
+                            });
+                        }).Wait();
+                    }
+                }
             }
         }
 

@@ -21,7 +21,7 @@
                 <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding ThreadDisplayName, Mode=OneWay}" />
+                            <controls:ThreadListItem />
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

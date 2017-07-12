@@ -1,4 +1,7 @@
-﻿namespace Signal_Windows.Models
+using Signal_Windows.Controls;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Signal_Windows.Models
 {
     public class SignalThread
     {
@@ -9,5 +12,6 @@
         public string LastMessage { get; set; }
         public string AvatarFile { get; set; }
         public uint Unread { get; set; }
+        [NotMapped] public ThreadListItem View;
     }
 }
