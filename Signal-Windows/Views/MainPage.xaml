@@ -8,7 +8,6 @@
     xmlns:viewmodels="using:Signal_Windows.ViewModels"
     xmlns:controls="using:Signal_Windows.Controls"
     mc:Ignorable="d"
-    Loaded="Page_Loaded"
     DataContext="{Binding MainPageInstance, Source={StaticResource Locator}}">
 
     <Grid>
@@ -22,7 +21,7 @@
                 <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding ThreadDisplayName}" />
+                            <TextBlock Text="{Binding ThreadDisplayName, Mode=OneWay}" />
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

@@ -1,4 +1,4 @@
-﻿using Signal_Windows.ViewModels;
+using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -27,15 +27,6 @@ namespace Signal_Windows
             }
         }
 
-        private void Page_Loaded(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void AddContactButton_Click(object sender, RoutedEventArgs e)
-        {
-            Frame.Navigate(typeof(AddContactPage));
-        }
-
         private void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             Vm.TextBox_KeyDown(sender, e);
@@ -55,6 +46,9 @@ namespace Signal_Windows
 
         private void AddFriendSymbol_Tapped(object sender, TappedRoutedEventArgs e)
         {
+            App.ViewModels.AddContactPageInstance.MainPageVM = Vm;
+            App.ViewModels.AddContactPageInstance.ContactName = "";
+            App.ViewModels.AddContactPageInstance.ContactNumber = "";
             Frame.Navigate(typeof(AddContactPage));
         }
     }

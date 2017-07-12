@@ -336,7 +336,7 @@ namespace Signal_Windows.Storage
                     ctx.SaveChanges();
                 }
             }
-            if (is_new && mpvm != null)
+            if (is_new)
             {
                 Task.Run(async () =>
                 {
@@ -345,7 +345,11 @@ namespace Signal_Windows.Storage
                         mpvm.AddThread(contact);
                     });
                 }).Wait();
-            } //TODO else update UI
+            }
+            else
+            {
+                mpvm.UIUpdateThread(contact);
+            }
         }
 
         public static void IncreaseReceiptCountLocked(SignalServiceEnvelope envelope, MainPageViewModel mpvm)

@@ -1,4 +1,4 @@
-﻿using Signal_Windows.ViewModels;
+using Signal_Windows.ViewModels;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -22,11 +22,6 @@ namespace Signal_Windows.Views
             {
                 return (StartPageViewModel)DataContext;
             }
-        }
-
-        private void AddNewContactButton_Click(object sender, RoutedEventArgs e)
-        {
-            Frame.Navigate(typeof(AddContactPage));
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

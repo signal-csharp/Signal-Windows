@@ -128,7 +128,6 @@
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\RegisterPageViewModel.cs" />
-    <Compile Include="ViewModels\SignalMessageStyleSelector.cs" />
     <Compile Include="ViewModels\StartPageViewModel.cs" />
     <Compile Include="ViewModels\ThreadViewModel.cs" />
     <Compile Include="ViewModels\ViewModelLocator.cs" />

@@ -54,7 +54,12 @@ namespace Signal_Windows.ViewModels
 
         public void UIUpdateThread(SignalThread thread)
         {
-            //TODO
+            SignalThread uiThread = ThreadsDictionary[thread.ThreadId];
+            uiThread.ThreadDisplayName = thread.ThreadDisplayName;
+            uiThread.LastActiveTimestamp = thread.LastActiveTimestamp;
+            uiThread.LastMessage = thread.LastMessage;
+            uiThread.Unread = thread.Unread;
+            uiThread.AvatarFile = thread.AvatarFile;
         }
 
         #endregion Contacts

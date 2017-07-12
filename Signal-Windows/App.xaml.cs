@@ -19,6 +19,7 @@ namespace Signal_Windows
     {
         private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
         private StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
+        public static ViewModelLocator ViewModels = (ViewModelLocator)Current.Resources["Locator"];
 
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
@@ -100,17 +101,12 @@ namespace Signal_Windows
         private async void OnSuspending(object sender, SuspendingEventArgs e)
         {
             var deferral = e.SuspendingOperation.GetDeferral();
-            var locator = Current.Resources["Locator"];
-            if (locator != null && locator.GetType() == typeof(ViewModelLocator))
+            if (ViewModels.MainPageInstance != null)
             {
-                var vmloc = (ViewModelLocator)locator;
-                if (vmloc.MainPageInstance != null)
-                {
-                    vmloc.MainPageInstance.Cancel();
-                    await vmloc.MainPageInstance.OutgoingOffSwitch.WaitAsync();
-                    await vmloc.MainPageInstance.IncomingOffSwitch.WaitAsync();
-                    await vmloc.MainPageInstance.DBOffSwitch.WaitAsync();
-                }
+                ViewModels.MainPageInstance.Cancel();
+                await ViewModels.MainPageInstance.OutgoingOffSwitch.WaitAsync();
+                await ViewModels.MainPageInstance.IncomingOffSwitch.WaitAsync();
+                await ViewModels.MainPageInstance.DBOffSwitch.WaitAsync();
             }
             Debug.WriteLine("shutdown successful");
             //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden
