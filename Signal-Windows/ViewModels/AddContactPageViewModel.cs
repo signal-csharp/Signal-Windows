@@ -2,6 +2,7 @@ using GalaSoft.MvvmLight;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Windows.UI.Xaml;
 
 namespace Signal_Windows.ViewModels
@@ -34,7 +35,7 @@ namespace Signal_Windows.ViewModels
             set { _UIEnabled = value; RaisePropertyChanged("UIEnabled"); }
         }
 
-        internal void CreateButton_Click(object sender, RoutedEventArgs e)
+        internal async void CreateButton_Click(object sender, RoutedEventArgs e)
         {
             UIEnabled = false;
             Debug.WriteLine("creating contact {0} ({1})", ContactName, ContactNumber);
@@ -45,7 +46,10 @@ namespace Signal_Windows.ViewModels
             };
             ContactName = "";
             ContactNumber = "";
-            SignalDBContext.AddOrUpdateContactLocked(contact, MainPageVM);
+            await Task.Run(() =>
+            {
+                SignalDBContext.AddOrUpdateContactLocked(contact, MainPageVM);
+            });
             UIEnabled = true;
         }
     }
