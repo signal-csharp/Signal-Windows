@@ -317,20 +317,18 @@ namespace Signal_Windows.Storage
                     if (c == null)
                     {
                         is_new = true;
-                        c = new SignalContact()
-                        {
-                            Color = contact.Color,
-                            ThreadId = contact.ThreadId,
-                            ThreadDisplayName = contact.ThreadDisplayName,
-                            CanReceive = true
-                        };
-                        ctx.Contacts.Add(c);
+                        ctx.Contacts.Add(contact);
                     }
                     else
                     {
                         c.Color = contact.Color;
                         c.ThreadId = contact.ThreadId;
                         c.ThreadDisplayName = contact.ThreadDisplayName;
+                        c.CanReceive = contact.CanReceive;
+                        c.AvatarFile = contact.AvatarFile;
+                        c.LastActiveTimestamp = contact.LastActiveTimestamp;
+                        c.LastMessage = contact.LastMessage;
+                        c.Unread = contact.Unread;
                     }
                     ctx.SaveChanges();
                 }

@@ -42,7 +42,13 @@ namespace Signal_Windows.ViewModels
             SignalContact contact = new SignalContact()
             {
                 ThreadDisplayName = ContactName,
-                ThreadId = ContactNumber
+                ThreadId = ContactNumber,
+                CanReceive = true,
+                AvatarFile = null,
+                LastActiveTimestamp = 0,
+                LastMessage = null,
+                Color = "red",
+                Unread = 0
             };
             ContactName = "";
             ContactNumber = "";
