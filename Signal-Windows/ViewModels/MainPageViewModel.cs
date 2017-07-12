@@ -61,6 +61,10 @@ namespace Signal_Windows.ViewModels
             uiThread.Unread = thread.Unread;
             uiThread.AvatarFile = thread.AvatarFile;
             uiThread.View.Reload();
+            if (SelectedThread != null && uiThread.ThreadId == SelectedThread.ThreadId)
+            {
+                Thread.Update(thread);
+            }
         }
 
         #endregion Contacts

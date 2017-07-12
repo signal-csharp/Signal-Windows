@@ -10,8 +10,6 @@ using Signal_Windows.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Windows.UI.Core;
 
 namespace Signal_Windows.Storage
 {
@@ -129,7 +127,7 @@ namespace Signal_Windows.Storage
                             LastActiveTimestamp = Util.CurrentTimeMillis(),
                             AvatarFile = null,
                             Unread = 1,
-                            Status = (uint)GroupStatus.Unknown,
+                            CanReceive = false,
                             GroupMemberships = new List<GroupMembership>()
                         };
                         ctx.Add(dbgroup);
@@ -147,7 +145,7 @@ namespace Signal_Windows.Storage
             return dbgroup;
         }
 
-        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, GroupStatus status, MainPageViewModel mpvm)
+        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, bool canReceive, MainPageViewModel mpvm)
         {
             SignalGroup dbgroup;
             bool is_new = false;
@@ -170,7 +168,7 @@ namespace Signal_Windows.Storage
                             LastActiveTimestamp = Util.CurrentTimeMillis(),
                             AvatarFile = avatarfile,
                             Unread = 1,
-                            Status = (uint)status,
+                            CanReceive = canReceive,
                             GroupMemberships = new List<GroupMembership>()
                         };
                         ctx.Add(dbgroup);
@@ -181,7 +179,7 @@ namespace Signal_Windows.Storage
                         dbgroup.LastActiveTimestamp = Util.CurrentTimeMillis();
                         dbgroup.AvatarFile = avatarfile;
                         dbgroup.Unread = 1;
-                        dbgroup.Status = (uint)status;
+                        dbgroup.CanReceive = true;
                     }
                     ctx.SaveChanges();
                 }
@@ -290,6 +288,7 @@ namespace Signal_Windows.Storage
                         {
                             ThreadId = username,
                             ThreadDisplayName = username,
+                            CanReceive = true
                             //TODO pick random color
                         };
                         ctx.Contacts.Add(contact);
@@ -322,7 +321,8 @@ namespace Signal_Windows.Storage
                         {
                             Color = contact.Color,
                             ThreadId = contact.ThreadId,
-                            ThreadDisplayName = contact.ThreadDisplayName
+                            ThreadDisplayName = contact.ThreadDisplayName,
+                            CanReceive = true
                         };
                         ctx.Contacts.Add(c);
                     }

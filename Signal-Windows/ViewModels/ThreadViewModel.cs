@@ -24,6 +24,11 @@ namespace Signal_Windows.ViewModels
             MainVisibility = Visibility.Collapsed;
         }
 
+        public void Update(SignalThread thread)
+        {
+            CanSend = thread.CanReceive;
+        }
+
         public async Task Load(SignalThread thread)
         {
             CanSend = false;
@@ -42,10 +47,7 @@ namespace Signal_Windows.ViewModels
             var after2 = Util.CurrentTimeMillis();
             Debug.WriteLine("db query: " + (after1 - before));
             Debug.WriteLine("ui: " + (after2 - after1));
-            if (!(thread.GetType() == typeof(SignalGroup) && ((SignalGroup)thread).Status == (uint)GroupStatus.Unknown))
-            {
-                CanSend = true;
-            }
+            CanSend = thread.CanReceive;
         }
 
         private void DisposeCurrentThread()

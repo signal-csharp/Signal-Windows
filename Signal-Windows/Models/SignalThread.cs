@@ -12,6 +12,7 @@ namespace Signal_Windows.Models
         public string LastMessage { get; set; }
         public string AvatarFile { get; set; }
         public uint Unread { get; set; }
+        public bool CanReceive { get; set; }
         [NotMapped] public ThreadListItem View;
     }
 }

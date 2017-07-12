@@ -13,6 +13,7 @@ namespace Signal_Windows.Migrations
                     Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AvatarFile = table.Column<string>(nullable: true),
+                    CanReceive = table.Column<bool>(nullable: false),
                     Color = table.Column<string>(nullable: true),
                     LastActiveTimestamp = table.Column<long>(nullable: false),
                     LastMessage = table.Column<string>(nullable: true),
@@ -32,9 +33,9 @@ namespace Signal_Windows.Migrations
                     Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AvatarFile = table.Column<string>(nullable: true),
+                    CanReceive = table.Column<bool>(nullable: false),
                     LastActiveTimestamp = table.Column<long>(nullable: false),
                     LastMessage = table.Column<string>(nullable: true),
-                    Status = table.Column<uint>(nullable: false),
                     ThreadDisplayName = table.Column<string>(nullable: true),
                     ThreadId = table.Column<string>(nullable: true),
                     Unread = table.Column<uint>(nullable: false)
@@ -43,6 +44,7 @@ namespace Signal_Windows.Migrations
                 {
                     table.PrimaryKey("PK_Groups", x => x.Id);
                 });
+
             /*
             migrationBuilder.CreateTable(
                 name: "Messages_fts",

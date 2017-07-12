@@ -135,7 +135,7 @@ namespace Signal_Windows.ViewModels
                 {
                     displayname = group.getName().ForceGetValue();
                 }
-                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, GroupStatus.Known, this);
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, true, this);
                 if (group.getMembers().HasValue)
                 {
                     foreach (var member in group.getMembers().ForceGetValue())

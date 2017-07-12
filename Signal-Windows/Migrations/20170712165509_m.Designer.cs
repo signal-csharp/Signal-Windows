@@ -8,7 +8,7 @@ using Signal_Windows.Storage;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170711194125_m")]
+    [Migration("20170712165509_m")]
     partial class m
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -69,6 +69,8 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("AvatarFile");
 
+                    b.Property<bool>("CanReceive");
+
                     b.Property<string>("Color");
 
                     b.Property<long>("LastActiveTimestamp");
@@ -93,11 +95,11 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("AvatarFile");
 
+                    b.Property<bool>("CanReceive");
+
                     b.Property<long>("LastActiveTimestamp");
 
                     b.Property<string>("LastMessage");
-
-                    b.Property<uint>("Status");
 
                     b.Property<string>("ThreadDisplayName");
 

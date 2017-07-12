@@ -66,6 +66,8 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("AvatarFile");
 
+                    b.Property<bool>("CanReceive");
+
                     b.Property<string>("Color");
 
                     b.Property<long>("LastActiveTimestamp");
@@ -90,11 +92,11 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("AvatarFile");
 
+                    b.Property<bool>("CanReceive");
+
                     b.Property<long>("LastActiveTimestamp");
 
                     b.Property<string>("LastMessage");
-
-                    b.Property<uint>("Status");
 
                     b.Property<string>("ThreadDisplayName");
 
