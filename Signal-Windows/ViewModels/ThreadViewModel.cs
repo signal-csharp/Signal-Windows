@@ -20,6 +20,8 @@ namespace Signal_Windows.ViewModels
         public ThreadViewModel(MainPageViewModel mainPageVm)
         {
             this.MainPageVm = mainPageVm;
+            WelcomeVisibility = Visibility.Visible;
+            MainVisibility = Visibility.Collapsed;
         }
 
         public async Task Load(SignalThread thread)

@@ -1,4 +1,4 @@
-﻿using Signal_Windows.ViewModels;
+using Signal_Windows.ViewModels;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 
