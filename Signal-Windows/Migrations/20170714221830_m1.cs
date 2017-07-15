@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Signal_Windows.Migrations
 {
-    public partial class m : Migration
+    public partial class m1 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -45,20 +45,21 @@ namespace Signal_Windows.Migrations
                     table.PrimaryKey("PK_Groups", x => x.Id);
                 });
 
-            /*
             migrationBuilder.CreateTable(
-                name: "Messages_fts",
+                name: "Identities",
                 columns: table => new
                 {
-                    rowid = table.Column<ulong>(nullable: false)
+                    Id = table.Column<ulong>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Content = table.Column<string>(nullable: true)
+                    IdentityKey = table.Column<string>(nullable: true),
+                    Username = table.Column<string>(nullable: true),
+                    VerifiedStatus = table.Column<uint>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Messages_fts", x => x.rowid);
+                    table.PrimaryKey("PK_Identities", x => x.Id);
                 });
-            */
+
             migrationBuilder.Sql(@"CREATE VIRTUAL TABLE Messages_fts USING fts5(Content);");
 
             migrationBuilder.CreateTable(
@@ -164,6 +165,11 @@ namespace Signal_Windows.Migrations
                 column: "MessageId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Identities_Username",
+                table: "Identities",
+                column: "Username");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Messages_AuthorId",
                 table: "Messages",
                 column: "AuthorId");
@@ -186,6 +192,9 @@ namespace Signal_Windows.Migrations
 
             migrationBuilder.DropTable(
                 name: "Attachments");
+
+            migrationBuilder.DropTable(
+                name: "Identities");
 
             migrationBuilder.DropTable(
                 name: "Groups");

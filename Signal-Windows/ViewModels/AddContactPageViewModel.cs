@@ -54,7 +54,7 @@ namespace Signal_Windows.ViewModels
             ContactNumber = "";
             await Task.Run(() =>
             {
-                SignalDBContext.AddOrUpdateContactLocked(contact, MainPageVM);
+                SignalDBContext.InsertOrUpdateContactLocked(contact, MainPageVM);
             });
             UIEnabled = true;
         }

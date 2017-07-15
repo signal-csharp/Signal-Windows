@@ -109,6 +109,24 @@ namespace Signal_Windows.Migrations
                     b.ToTable("Groups");
                 });
 
+            modelBuilder.Entity("Signal_Windows.Models.SignalIdentity", b =>
+                {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("IdentityKey");
+
+                    b.Property<string>("Username");
+
+                    b.Property<uint>("VerifiedStatus");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Username");
+
+                    b.ToTable("Identities");
+                });
+
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
                 {
                     b.Property<ulong>("Id")

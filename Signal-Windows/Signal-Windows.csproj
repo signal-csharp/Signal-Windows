@@ -110,11 +110,12 @@
       <DependentUpon>ThreadView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Logging\LoggerProvider.cs" />
-    <Compile Include="Migrations\20170712165509_m.cs" />
-    <Compile Include="Migrations\20170712165509_m.designer.cs">
-      <DependentUpon>20170712165509_m.cs</DependentUpon>
+    <Compile Include="Migrations\20170714221830_m1.cs" />
+    <Compile Include="Migrations\20170714221830_m1.designer.cs">
+      <DependentUpon>20170714221830_m1.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\SignalDBContextModelSnapshot.cs" />
+    <Compile Include="Models\SignalIdentity.cs" />
     <Compile Include="Models\SignalAttachment.cs" />
     <Compile Include="Models\SignalGroup.cs" />
     <Compile Include="Models\SignalMessage.cs" />

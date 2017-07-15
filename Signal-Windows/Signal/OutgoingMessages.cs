@@ -58,6 +58,11 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
                 }
+                catch (libsignal.exceptions.UntrustedIdentityException e)
+                {
+                    SignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
+                    //TODO devise appropriate resend strategy
+                }
                 catch (Exception e)
                 {
                     Debug.WriteLine(e.Message);

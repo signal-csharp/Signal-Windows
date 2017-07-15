@@ -1,5 +1,8 @@
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
+using System;
+using System.Threading.Tasks;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -50,6 +53,17 @@ namespace Signal_Windows
             App.ViewModels.AddContactPageInstance.ContactName = "";
             App.ViewModels.AddContactPageInstance.ContactNumber = "";
             Frame.Navigate(typeof(AddContactPage));
+        }
+
+        public static async Task NotifyNewIdentity(string user)
+        {
+            var title = "Identity Key Change";
+            var content = "The identity key of " + user + " has changed. This happens when someone is attempting to intercept your communication, or when your contact re-registered on a different device.";
+            UICommand understood = new UICommand("I understand");
+            MessageDialog dialog = new MessageDialog(content, title);
+            dialog.Commands.Add(understood);
+            dialog.DefaultCommandIndex = 0;
+            var result = await dialog.ShowAsync();
         }
     }
 }

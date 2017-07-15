@@ -8,8 +8,8 @@ using Signal_Windows.Storage;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170712165509_m")]
-    partial class m
+    [Migration("20170714221830_m1")]
+    partial class m1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -110,6 +110,24 @@ namespace Signal_Windows.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Groups");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalIdentity", b =>
+                {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("IdentityKey");
+
+                    b.Property<string>("Username");
+
+                    b.Property<uint>("VerifiedStatus");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Username");
+
+                    b.ToTable("Identities");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>

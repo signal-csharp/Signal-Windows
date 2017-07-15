@@ -26,7 +26,7 @@ namespace Signal_Windows.ViewModels
                     Tuple<SignalMessage[], bool> t = DBQueue.Take(token);
                     foreach (SignalMessage message in t.Item1)
                     {
-                        SignalDBContext.SaveMessage(message, t.Item2);
+                        SignalDBContext.SaveMessageLocked(message, t.Item2);
                         if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
                         {
                             if (message.Attachments != null && message.Attachments.Count > 0)

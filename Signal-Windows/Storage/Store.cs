@@ -1,4 +1,4 @@
-﻿using libsignal;
+using libsignal;
 using libsignal.ecc;
 using libsignal.state;
 using libsignalservice.push;
@@ -82,14 +82,19 @@ namespace Signal_Windows.Storage
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            IdentityKeyStore.SaveIdentity(address, identityKey);
-            Save();
-            return true;
+            lock (Lock)
+            {
+                SignalDBContext.SaveIdentityLocked(address.Name, Base64.encodeBytes(identityKey.serialize()));
+                return true;
+            }
         }
 
         public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            return IdentityKeyStore.IsTrustedIdentity(address, identityKey);
+            lock (Lock)
+            {
+                return IdentityKeyStore.IsTrustedIdentity(address, identityKey);
+            }
         }
 
         public PreKeyRecord LoadPreKey(uint preKeyId)
@@ -242,37 +247,20 @@ namespace Signal_Windows.Storage
 
         public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            lock (Store.Lock)
+            string savedIdentity = SignalDBContext.GetIdentityLocked(address.Name);
+            if (savedIdentity == null)
             {
-                if (!_Store.ContainsKey(address.Name))
-                {
-                    return true;
-                }
-
-                List<IdentityKey> identities = _Store[address.Name];
-                foreach (var identity in identities)
-                {
-                    if (identity.Equals(identityKey))
-                    {
-                        return true;
-                    }
-                }
-                return false;
+                return true;
+            }
+            else
+            {
+                return savedIdentity == Base64.encodeBytes(identityKey.serialize());
             }
         }
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey) //TODO why bool
         {
-            lock (Store.Lock)
-            {
-                if (!_Store.ContainsKey(address.Name))
-                {
-                    _Store[address.Name] = new List<IdentityKey>();
-                }
-                _Store[address.Name].Add(identityKey);
-                Store.Instance.Save();
-                return true;
-            }
+            throw new NotImplementedException();
         }
     }
 

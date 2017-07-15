@@ -88,37 +88,46 @@ namespace Signal_Windows.ViewModels
 
         private SignalMessage HandleMessage(SignalServiceEnvelope envelope)
         {
-            var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
-            var content = cipher.decrypt(envelope);
-
-            if (content.Message != null)
+            try
             {
-                SignalServiceDataMessage message = content.Message;
-                if (message.isEndSession())
+                var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
+                var content = cipher.decrypt(envelope);
+
+                if (content.Message != null)
                 {
-                    SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
+                    SignalServiceDataMessage message = content.Message;
+                    if (message.isEndSession())
+                    {
+                        SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
+                    }
+                    else if (message.isGroupUpdate())
+                    {
+                        HandleGroupUpdateMessage(envelope, content, message);
+                    }
+                    else if (message.isExpirationUpdate())
+                    {
+                        //TODO
+                    }
+                    else
+                    {
+                        //TODO check both the db and the previous messages for duplicates
+                        return HandleSignalMessage(envelope, content, message);
+                    }
                 }
-                else if (message.isGroupUpdate())
-                {
-                    HandleGroupUpdateMessage(envelope, content, message);
-                }
-                else if (message.isExpirationUpdate())
+                else if (content.SynchronizeMessage != null)
                 {
                     //TODO
-                }
+                } //TODO callmessages
                 else
                 {
-                    //TODO check both the db and the previous messages for duplicates
-                    return HandleSignalMessage(envelope, content, message);
+                    Debug.WriteLine("HandleMessage got unrecognized message from " + envelope.getSource());
                 }
             }
-            else if (content.SynchronizeMessage != null)
+            catch (libsignal.exceptions.UntrustedIdentityException e)
             {
-                //TODO
-            } //TODO callmessages
-            else
-            {
-                Debug.WriteLine("HandleMessage got unrecognized message from " + envelope.getSource());
+                Debug.WriteLine("HandleMessage received message from changed identity");
+                SignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
+                HandleMessage(envelope);
             }
             return null;
         }
@@ -140,7 +149,7 @@ namespace Signal_Windows.ViewModels
                 {
                     foreach (var member in group.getMembers().ForceGetValue())
                     {
-                        SignalDBContext.AddOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, this).Id);
+                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, this).Id);
                     }
                 }
             }
