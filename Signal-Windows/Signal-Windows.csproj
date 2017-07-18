@@ -130,6 +130,7 @@
     <Compile Include="Storage\WhisperTrustStore.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
+    <Compile Include="ViewModels\LinkPageViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\RegisterPageViewModel.cs" />
     <Compile Include="ViewModels\StartPageViewModel.cs" />
@@ -137,6 +138,9 @@
     <Compile Include="ViewModels\ViewModelLocator.cs" />
     <Compile Include="Views\AddContactPage.xaml.cs">
       <DependentUpon>AddContactPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\LinkPage.xaml.cs">
+      <DependentUpon>LinkPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -184,6 +188,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\AddContactPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\LinkPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

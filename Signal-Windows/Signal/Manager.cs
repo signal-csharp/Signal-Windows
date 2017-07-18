@@ -25,7 +25,7 @@ namespace Signal_Windows.Signal
         private static string URL = "https://textsecure-service.whispersystems.org";
         private static TrustStore TRUST_STORE = new WhisperTrustStore();
         private SignalServiceUrl[] serviceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, TRUST_STORE) };
-        public const String USER_AGENT = "Signal-Windows";
+        public static String USER_AGENT = "Signal-Windows";
         public SignalServiceAccountManager accountManager;
         public Store SignalStore;
         private static uint PREKEY_MINIMUM_COUNT = 20;
@@ -43,17 +43,35 @@ namespace Signal_Windows.Signal
             try
             {
                 Load(username);
-                MessageReceiver = new SignalServiceMessageReceiver(Token, serviceUrls, new StaticCredentialsProvider(SignalStore.Username, SignalStore.Password, SignalStore.SignalingKey), USER_AGENT);
-                if (active)
+                if(SignalStore.Registered)
                 {
-                    Pipe = MessageReceiver.createMessagePipe();
+                    MessageReceiver = new SignalServiceMessageReceiver(Token, serviceUrls, new StaticCredentialsProvider(SignalStore.Username, SignalStore.Password, SignalStore.SignalingKey, SignalStore.DeviceId), USER_AGENT);
+                    if (active)
+                    {
+                        Pipe = MessageReceiver.createMessagePipe();
+                    }
+                    MessageSender = new SignalServiceMessageSender(Token, serviceUrls, SignalStore.Username, SignalStore.Password, SignalStore.DeviceId, SignalStore, Pipe, null, USER_AGENT);
                 }
-                MessageSender = new SignalServiceMessageSender(Token, serviceUrls, SignalStore.Username, SignalStore.Password, SignalStore, Pipe, null, USER_AGENT);
             }
             catch (Exception e)
             {
                 Debug.WriteLine(e);
             }
+        }
+
+        public Manager(string password, uint registrationId, NewDeviceLinkResult data, string signalingKey)
+        {
+            SignalStore = new Store(data.Identity, registrationId);
+            SignalStore.Registered = true;
+            SignalStore.Username = data.Number;
+            SignalStore.DeviceId = data.DeviceId;
+            SignalStore.Password = password;
+            SignalStore.Registered = true;
+            SignalStore.SignalingKey = signalingKey;
+            SignalStore.Registered = true;
+            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.Username, SignalStore.Password, SignalStore.DeviceId, USER_AGENT);
+            refreshPreKeys();
+            SignalStore.Save();
         }
 
         public void Shutdown()
@@ -92,19 +110,20 @@ namespace Signal_Windows.Signal
                 SignalStore.Registered = false;
                 SignalStore.Username = (string)LocalSettings.Values["Username"];
             }
-            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.Username, SignalStore.Password, USER_AGENT);
+            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.Username, SignalStore.Password, SignalStore.DeviceId, USER_AGENT);
         }
 
         public void Register(bool voiceVerification)
         {
             SignalStore.Password = Base64.encodeBytes(Util.getSecretBytes(18));
-            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.Username, SignalStore.Password, USER_AGENT);
+            accountManager = new SignalServiceAccountManager(serviceUrls, SignalStore.Username, SignalStore.Password, SignalStore.DeviceId, USER_AGENT);
             if (voiceVerification)
                 accountManager.requestVoiceVerificationCode();
             else
                 accountManager.requestSmsVerificationCode();
 
             SignalStore.Registered = false;
+            SignalStore.DeviceId = (int) SignalServiceAddress.DEFAULT_DEVICE_ID;
             SignalStore.Save();
         }
 

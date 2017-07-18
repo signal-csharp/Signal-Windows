@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight;
 using Signal_Windows.Signal;
 using Signal_Windows.Views;
 using System.Threading;

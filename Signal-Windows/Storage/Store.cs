@@ -25,7 +25,7 @@ namespace Signal_Windows.Storage
                                                 new IdentityKeyConverter(),
                                                 new ByteArrayConverter()};
 
-        public uint DeviceId { get; set; } = SignalServiceAddress.DEFAULT_DEVICE_ID;
+        public int DeviceId { get; set; } = (int)SignalServiceAddress.DEFAULT_DEVICE_ID;
         public String Username { get; set; }
         public String Password { get; set; }
         public String SignalingKey { get; set; }

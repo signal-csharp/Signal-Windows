@@ -31,6 +31,7 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<AddContactPageViewModel>();
             SimpleIoc.Default.Register<MainPageViewModel>();
             SimpleIoc.Default.Register<RegisterPageViewModel>();
+            SimpleIoc.Default.Register<LinkPageViewModel>();
         }
 
         // <summary>
@@ -68,6 +69,14 @@ namespace Signal_Windows.ViewModels
             get
             {
                 return ServiceLocator.Current.GetInstance<RegisterPageViewModel>();
+            }
+        }
+
+        public LinkPageViewModel LinkPageInstance
+        {
+            get
+            {
+                return ServiceLocator.Current.GetInstance<LinkPageViewModel>();
             }
         }
 
