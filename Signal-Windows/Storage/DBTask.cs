@@ -1,6 +1,5 @@
 using libsignalservice.messages;
 using Signal_Windows.Models;
-using Signal_Windows.Signal;
 using Signal_Windows.Storage;
 using System;
 using System.Collections.Concurrent;
@@ -27,7 +26,7 @@ namespace Signal_Windows.ViewModels
                     foreach (SignalMessage message in t.Item1)
                     {
                         SignalDBContext.SaveMessageLocked(message, t.Item2);
-                        if (message.Type == (uint)SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
+                        if (message.Type == SignalMessageType.Incoming || message.DeviceId != (int)LocalSettings.Values["DeviceId"])
                         {
                             if (message.Attachments != null && message.Attachments.Count > 0)
                             {
@@ -69,12 +68,12 @@ namespace Signal_Windows.ViewModels
                 {
                     try
                     {
-                        DirectoryInfo di = Directory.CreateDirectory(Manager.localFolder + @"\Attachments");
-                        using (var cipher = File.Open(Manager.localFolder + @"\Attachments\" + sa.FileName + ".cipher", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
-                        using (var plain = File.OpenWrite(Manager.localFolder + @"\Attachments\" + sa.FileName))
+                        DirectoryInfo di = Directory.CreateDirectory(App.LocalFolder.Path + @"\Attachments");
+                        using (var cipher = File.Open(App.LocalFolder.Path + @"\Attachments\" + sa.FileName + ".cipher", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+                        using (var plain = File.OpenWrite(App.LocalFolder.Path + @"\Attachments\" + sa.FileName))
                         {
-                            SignalManager.MessageReceiver.retrieveAttachment(new SignalServiceAttachmentPointer(sa.StorageId, sa.ContentType, sa.FileName, sa.Key, sa.Relay), plain, cipher);
-                            //TODO notify UI
+                            //TODO
+                            //SignalManager.MessageReceiver.retrieveAttachment(new SignalServiceAttachmentPointer(sa.StorageId, sa.ContentType, sa.FileName, sa.Key, sa.Relay), plain, cipher);
                         }
                     }
                     catch (Exception e)

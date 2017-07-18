@@ -1,5 +1,4 @@
 using GalaSoft.MvvmLight;
-using Signal_Windows.Signal;
 using Signal_Windows.Views;
 using System.Threading;
 using Windows.Storage;
@@ -11,21 +10,23 @@ namespace Signal_Windows.ViewModels
     {
         private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
         public CancellationTokenSource CancelSource = new CancellationTokenSource();
-        public Manager SignalManager;
         public string PhoneNumber { get; set; }
         public string ConfirmationCode { get; set; }
         public RegisterPage View { get; internal set; }
 
         internal void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
+            /*
             LocalSettings.Values["Username"] = PhoneNumber;
             LocalSettings.Values["DeviceId"] = 1;
             SignalManager = new Manager(CancelSource.Token, PhoneNumber, false);
             SignalManager.Register(false);
+            */
         }
 
         internal void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
+            /*
             if (SignalManager != null)
             {
                 string code = ConfirmationCode.Replace("-", "");
@@ -33,6 +34,7 @@ namespace Signal_Windows.ViewModels
                 LocalSettings.Values["Active"] = true;
                 View.NavigateForward();
             }
+            */
         }
     }
 }

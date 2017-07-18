@@ -1,8 +1,11 @@
+using libsignalservice.push;
+using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Storage;
@@ -17,9 +20,14 @@ namespace Signal_Windows
     /// </summary>
     sealed partial class App : Application
     {
-        private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
-        private StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
+        public static string URL = "https://textsecure-service.whispersystems.org";
+        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
+        public static StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
         public static ViewModelLocator ViewModels = (ViewModelLocator)Current.Resources["Locator"];
+        public static SignalStore Store;
+        public static string USER_AGENT = "Signal-Windows";
+        public static uint PREKEY_BATCH_SIZE = 100;
+        private Task<SignalStore> Init;
 
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
@@ -29,8 +37,19 @@ namespace Signal_Windows
         {
             this.InitializeComponent();
             this.Suspending += OnSuspending;
-            Debug.WriteLine("Signal-Windows " + LocalFolder.Path.ToString());
-            SignalDBContext.Migrate();
+            try
+            {
+                Init = Task.Run(() =>
+                {
+                    SignalDBContext.Migrate();
+                    return SignalDBContext.GetSignalStore();
+                });
+            }
+            catch(Exception e)
+            {
+                Debug.WriteLine(e.Message);
+                Debug.WriteLine(e.StackTrace);
+            }
         }
 
         /// <summary>
@@ -38,8 +57,9 @@ namespace Signal_Windows
         /// werden z. B. verwendet, wenn die Anwendung gestartet wird, um eine bestimmte Datei zu öffnen.
         /// </summary>
         /// <param name="e">Details über Startanforderung und -prozess.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs e)
+        protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
+            Debug.WriteLine("Signal-Windows " + LocalFolder.Path.ToString());
             Frame rootFrame = Window.Current.Content as Frame;
 
             // App-Initialisierung nicht wiederholen, wenn das Fenster bereits Inhalte enthält.
@@ -67,13 +87,14 @@ namespace Signal_Windows
                     // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
                     // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
                     // übergeben werden
-                    if (LocalSettings.Values["Active"] != null && (bool)LocalSettings.Values["Active"])
+                    Store = await Init;
+                    if(Store == null || !Store.Registered)
                     {
-                        rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                        rootFrame.Navigate(typeof(StartPage), e.Arguments);
                     }
                     else
                     {
-                        rootFrame.Navigate(typeof(StartPage), e.Arguments);
+                        rootFrame.Navigate(typeof(MainPage), e.Arguments);
                     }
                 }
                 // Sicherstellen, dass das aktuelle Fenster aktiv ist

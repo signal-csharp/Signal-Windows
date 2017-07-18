@@ -1,7 +1,10 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Signal_Windows.Storage;
+using Signal_Windows.Models;
 
 namespace Signal_Windows.Migrations
 {
@@ -118,7 +121,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("Username");
 
-                    b.Property<uint>("VerifiedStatus");
+                    b.Property<int>("VerifiedStatus");
 
                     b.HasKey("Id");
 
@@ -148,11 +151,11 @@ namespace Signal_Windows.Migrations
 
                     b.Property<long>("ReceivedTimestamp");
 
-                    b.Property<uint>("Status");
+                    b.Property<int>("Status");
 
                     b.Property<string>("ThreadID");
 
-                    b.Property<uint>("Type");
+                    b.Property<int>("Type");
 
                     b.HasKey("Id");
 
@@ -175,6 +178,74 @@ namespace Signal_Windows.Migrations
                     b.HasKey("rowid");
 
                     b.ToTable("Messages_fts");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalPreKey", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Key");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PreKeys");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalSession", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<uint>("DeviceId");
+
+                    b.Property<string>("Session");
+
+                    b.Property<string>("Username");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Sessions");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalSignedPreKey", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Key");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SignedPreKeys");
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalStore", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<uint>("DeviceId");
+
+                    b.Property<string>("IdentityKeyPair");
+
+                    b.Property<uint>("NextSignedPreKeyId");
+
+                    b.Property<string>("Password");
+
+                    b.Property<uint>("PreKeyIdOffset");
+
+                    b.Property<bool>("Registered");
+
+                    b.Property<uint>("RegistrationId");
+
+                    b.Property<string>("SignalingKey");
+
+                    b.Property<string>("Username");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Store");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>

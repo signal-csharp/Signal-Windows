@@ -81,22 +81,21 @@ namespace Signal_Windows.Controls
 
         private void SetSignalMessageStatusIcon(SignalMessage updatedMessage)
         {
-            uint status = Math.Max(Model.Status, updatedMessage.Status);
-            if (status == (uint)SignalMessageStatus.Pending)
+            if (updatedMessage.Status == SignalMessageStatus.Pending)
             {
                 Model.Status = (uint)SignalMessageStatus.Pending;
                 CheckVisibility = Visibility.Collapsed;
                 DoubleCheckVisibility = Visibility.Collapsed;
             }
-            else if (status == (uint)SignalMessageStatus.Confirmed)
+            else if (updatedMessage.Status == SignalMessageStatus.Confirmed)
             {
-                Model.Status = (uint)SignalMessageStatus.Confirmed;
+                Model.Status = SignalMessageStatus.Confirmed;
                 CheckVisibility = Visibility.Visible;
                 DoubleCheckVisibility = Visibility.Collapsed;
             }
-            else if (status == (uint)SignalMessageStatus.Received)
+            else if (updatedMessage.Status == SignalMessageStatus.Received)
             {
-                Model.Status = (uint)SignalMessageStatus.Received;
+                Model.Status = SignalMessageStatus.Received;
                 CheckVisibility = Visibility.Collapsed;
                 DoubleCheckVisibility = Visibility.Visible;
             }

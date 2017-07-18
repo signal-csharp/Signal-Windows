@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Signal_Windows.Migrations
@@ -53,7 +55,7 @@ namespace Signal_Windows.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     IdentityKey = table.Column<string>(nullable: true),
                     Username = table.Column<string>(nullable: true),
-                    VerifiedStatus = table.Column<uint>(nullable: false)
+                    VerifiedStatus = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -61,6 +63,82 @@ namespace Signal_Windows.Migrations
                 });
 
             migrationBuilder.Sql(@"CREATE VIRTUAL TABLE Messages_fts USING fts5(Content);");
+            /*
+             * migrationBuilder.CreateTable(
+                name: "Messages_fts",
+                columns: table => new
+                {
+                    rowid = table.Column<ulong>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Content = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Messages_fts", x => x.rowid);
+                });
+            */
+
+            migrationBuilder.CreateTable(
+                name: "PreKeys",
+                columns: table => new
+                {
+                    Id = table.Column<uint>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Key = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PreKeys", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Sessions",
+                columns: table => new
+                {
+                    Id = table.Column<uint>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DeviceId = table.Column<uint>(nullable: false),
+                    Session = table.Column<string>(nullable: true),
+                    Username = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Sessions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SignedPreKeys",
+                columns: table => new
+                {
+                    Id = table.Column<uint>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Key = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SignedPreKeys", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Store",
+                columns: table => new
+                {
+                    Id = table.Column<uint>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DeviceId = table.Column<uint>(nullable: false),
+                    IdentityKeyPair = table.Column<string>(nullable: true),
+                    NextSignedPreKeyId = table.Column<uint>(nullable: false),
+                    Password = table.Column<string>(nullable: true),
+                    PreKeyIdOffset = table.Column<uint>(nullable: false),
+                    Registered = table.Column<bool>(nullable: false),
+                    RegistrationId = table.Column<uint>(nullable: false),
+                    SignalingKey = table.Column<string>(nullable: true),
+                    Username = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Store", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
                 name: "GroupMemberships",
@@ -102,9 +180,9 @@ namespace Signal_Windows.Migrations
                     ReadConfirmations = table.Column<uint>(nullable: false),
                     Receipts = table.Column<uint>(nullable: false),
                     ReceivedTimestamp = table.Column<long>(nullable: false),
-                    Status = table.Column<uint>(nullable: false),
+                    Status = table.Column<int>(nullable: false),
                     ThreadID = table.Column<string>(nullable: true),
-                    Type = table.Column<uint>(nullable: false)
+                    Type = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -195,6 +273,18 @@ namespace Signal_Windows.Migrations
 
             migrationBuilder.DropTable(
                 name: "Identities");
+
+            migrationBuilder.DropTable(
+                name: "PreKeys");
+
+            migrationBuilder.DropTable(
+                name: "Sessions");
+
+            migrationBuilder.DropTable(
+                name: "SignedPreKeys");
+
+            migrationBuilder.DropTable(
+                name: "Store");
 
             migrationBuilder.DropTable(
                 name: "Groups");

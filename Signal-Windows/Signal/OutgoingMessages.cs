@@ -49,7 +49,7 @@ namespace Signal_Windows.ViewModels
                     SignalServiceDataMessage ssdm = messageBuilder.build();
                     if (!token.IsCancellationRequested)
                     {
-                        SignalManager.sendMessage(recipients, ssdm);
+                        MessageSender.sendMessage(recipients, ssdm);
                         SignalDBContext.UpdateMessageLocked(outgoingSignalMessage, this);
                     }
                 }

@@ -30,7 +30,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="20">
-            <Button HorizontalAlignment="Center" Foreground="#2190EA" Background="White" Click="Button_Click">Register a new Signal account</Button>
+            <Button HorizontalAlignment="Center" Foreground="#2190EA" Background="White" Click="Button_Click" IsEnabled="False">Register a new Signal account</Button>
             <TextBlock Foreground="White"  TextWrapping="WrapWholeWords"  Margin="0 15 0 0">Registering a new Signal account will terminate any previously registered accounts associated with your phone number, and unlink all slave devices.</TextBlock>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="20">

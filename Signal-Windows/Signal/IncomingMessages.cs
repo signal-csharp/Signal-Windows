@@ -29,7 +29,15 @@ namespace Signal_Windows.ViewModels
             {
                 while (Running)
                 {
-                    SignalManager.ReceiveBatch(this);
+                    try
+                    {
+                        Pipe.ReadBlocking(this);
+                    }
+                    catch(Exception e)
+                    {
+                        Debug.WriteLine(e.Message);
+                        Debug.WriteLine(e.StackTrace);
+                    }
                 }
             }
             catch (Exception) { }
@@ -90,7 +98,7 @@ namespace Signal_Windows.ViewModels
         {
             try
             {
-                var cipher = new SignalServiceCipher(new SignalServiceAddress((string)LocalSettings.Values["Username"]), SignalManager.SignalStore);
+                var cipher = new SignalServiceCipher(new SignalServiceAddress(App.Store.Username), new Store());
                 var content = cipher.decrypt(envelope);
 
                 if (content.Message != null)
@@ -98,7 +106,7 @@ namespace Signal_Windows.ViewModels
                     SignalServiceDataMessage message = content.Message;
                     if (message.isEndSession())
                     {
-                        SignalManager.SignalStore.DeleteAllSessions(envelope.getSource());
+                        SignalDBContext.DeleteAllSessions(envelope.getSource());
                     }
                     else if (message.isGroupUpdate())
                     {
@@ -178,7 +186,7 @@ namespace Signal_Windows.ViewModels
             List<SignalAttachment> attachments = new List<SignalAttachment>();
             SignalMessage message = new SignalMessage()
             {
-                Type = source == (string)LocalSettings.Values["Username"] ? (uint)SignalMessageType.Outgoing : (uint)SignalMessageType.Incoming,
+                Type = source == (string)LocalSettings.Values["Username"] ? SignalMessageType.Outgoing : SignalMessageType.Incoming,
                 Status = (uint)SignalMessageStatus.Pending,
                 Author = author,
                 Content = new SignalMessageContent() { Content = body },

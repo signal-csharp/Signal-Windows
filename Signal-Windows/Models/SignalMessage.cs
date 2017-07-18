@@ -7,8 +7,8 @@ namespace Signal_Windows.Models
     public class SignalMessage
     {
         public ulong Id { get; set; }
-        public uint Type { get; set; }
-        public uint Status { get; set; }
+        public SignalMessageType Type { get; set; }
+        public SignalMessageStatus Status { get; set; }
         public SignalMessageContent Content { get; set; }
         public string ThreadID { get; set; }
         public ulong? AuthorId { get; set; }
@@ -34,6 +34,8 @@ namespace Signal_Windows.Models
     {
         Pending = 0,
         Confirmed = 1,
-        Received = 2
+        Received = 2,
+        Failed_Identity = 3,
+        Failed_Network = 4
     }
 }

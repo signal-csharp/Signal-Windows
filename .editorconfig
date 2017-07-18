@@ -1,5 +1,5 @@
 ﻿root = true
 
 [*]
-end_of_line = lf
+end_of_line = crlf
 indent_size = 4

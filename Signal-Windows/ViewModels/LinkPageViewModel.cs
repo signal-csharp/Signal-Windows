@@ -4,7 +4,8 @@ using libsignal.util;
 using libsignalservice;
 using libsignalservice.push;
 using libsignalservice.util;
-using Signal_Windows.Signal;
+using Signal_Windows.Models;
+using Signal_Windows.Storage;
 using Signal_Windows.Views;
 using System;
 using System.Diagnostics;
@@ -17,15 +18,9 @@ namespace Signal_Windows.ViewModels
 {
     public class LinkPageViewModel : ViewModelBase
     {
-        public static ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
-
         public LinkPage View;
-        private static string URL = "https://textsecure-service.whispersystems.org";
-        private SignalServiceUrl[] serviceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
         private CancellationTokenSource CancelSource;
-
         private Visibility _QRVisible;
-
         public Visibility QRVisible
         {
             get
@@ -53,7 +48,7 @@ namespace Signal_Windows.ViewModels
                 {
                     string password = Base64.encodeBytes(Util.getSecretBytes(18));
                     IdentityKeyPair tmpIdentity = KeyHelper.generateIdentityKeyPair();
-                    SignalServiceAccountManager accountManager = new SignalServiceAccountManager(serviceUrls, CancelSource.Token, "Signal-Windows");
+                    SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, CancelSource.Token, "Signal-Windows");
                     string uuid = accountManager.GetNewDeviceUuid(CancelSource.Token);
                     Debug.WriteLine("received uuid=" + uuid);
                     string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.encodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
@@ -69,12 +64,29 @@ namespace Signal_Windows.ViewModels
                     string deviceName = "windowstest";
 
                     NewDeviceLinkResult result = accountManager.FinishNewDeviceRegistration(tmpIdentity, tmpSignalingKey, password, false, true, registrationId, deviceName);
-                    LocalSettings.Values["Username"] = result.Number;
-
-                    new Manager(password, (uint)registrationId, result, tmpSignalingKey);
+                    SignalStore store = new SignalStore()
+                    {
+                        DeviceId = (uint)result.DeviceId,
+                        IdentityKeyPair = Base64.encodeBytes(result.Identity.serialize()),
+                        NextSignedPreKeyId = 1,
+                        Password = password,
+                        PreKeyIdOffset = 1,
+                        Registered = true,
+                        RegistrationId = (uint)registrationId,
+                        SignalingKey = tmpSignalingKey,
+                        Username = result.Number
+                    };
+                    SignalDBContext.SaveOrUpdateSignalStore(store);
+                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        App.Store = store;
+                    }).AsTask().Wait();
+                    SignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int) store.DeviceId, App.USER_AGENT));
+                    store = SignalDBContext.GetSignalStore(); /* reload after prekey changes */
                     Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
+                        App.Store = store;
                         View.Finish(true);
                     }).AsTask().Wait();
                 }

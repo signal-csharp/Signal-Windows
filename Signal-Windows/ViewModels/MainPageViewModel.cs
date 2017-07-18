@@ -1,8 +1,8 @@
 using GalaSoft.MvvmLight;
+using libsignalservice;
 using libsignalservice.util;
 using Nito.AsyncEx;
 using Signal_Windows.Models;
-using Signal_Windows.Signal;
 using Signal_Windows.Storage;
 using System;
 using System.Collections.Generic;
@@ -25,12 +25,15 @@ namespace Signal_Windows.ViewModels
         public ThreadViewModel Thread { get; set; }
         public MainPage View;
         public SignalThread SelectedThread;
-        public Manager SignalManager = null;
         public volatile bool Running = true;
         private CancellationTokenSource CancelSource = new CancellationTokenSource();
         public AsyncManualResetEvent IncomingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent OutgoingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent DBOffSwitch = new AsyncManualResetEvent(false);
+
+        private SignalServiceMessagePipe Pipe;
+        private SignalServiceMessageSender MessageSender;
+        private SignalServiceMessageReceiver MessageReceiver;
 
         #region Contacts
 
@@ -83,10 +86,11 @@ namespace Signal_Windows.ViewModels
                         AddThreads(groups);
                         AddThreads(contacts);
                     });
-                    var manager = new Manager(CancelSource.Token, (string)LocalSettings.Values["Username"], true);
                     await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        SignalManager = manager;
+                        MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
+                        Pipe = MessageReceiver.createMessagePipe();
+                        MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
                         Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
                         Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
                         Task.Factory.StartNew(HandleDBQueue, TaskCreationOptions.LongRunning);
