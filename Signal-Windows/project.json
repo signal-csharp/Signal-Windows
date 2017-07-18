@@ -8,7 +8,8 @@
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.3.3",
     "Microsoft.Toolkit.Uwp.Notifications": "1.5.0",
     "MvvmLight": "5.3.0",
-    "Nito.AsyncEx": "4.0.1"
+    "Nito.AsyncEx": "4.0.1",
+    "ZXing.Net.Mobile": "2.2.9"
   },
   "frameworks": {
     "uap10.0": {}

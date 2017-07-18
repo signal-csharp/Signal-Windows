@@ -55,9 +55,10 @@ namespace Signal_Windows.Storage
         {
             try
             {
-                using (FileStream fs = File.Open(localFolder + @"\" + LocalSettings.Values["Username"] + "Store.json", FileMode.Truncate))
+                using (FileStream fs = File.Open(localFolder + @"\" + LocalSettings.Values["Username"] + "Store.json", FileMode.OpenOrCreate))
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
+                    fs.SetLength(0);
                     string s = JsonConvert.SerializeObject(this, Formatting.Indented, Converters);
                     sw.Write(s);
                 }

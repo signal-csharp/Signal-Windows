@@ -8,7 +8,24 @@
     mc:Ignorable="d"
     DataContext="{Binding LinkPageInstance, Source={StaticResource Locator}}">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <Color x:Key="SystemAltHighColor">#2190EA</Color>
+                    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{ThemeResource SystemAltHighColor}" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="SystemAltHighColor">#2190EA</Color>
+                    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{ThemeResource SystemAltHighColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
 
-    </Grid>
+    <StackPanel Padding="20" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <TextBlock Foreground="White" TextWrapping="WrapWholeWords">Signal-Windows is now preparing to get linked to your Signal master device. This might take a while.</TextBlock>
+        <TextBlock Foreground="White" TextWrapping="WrapWholeWords" Margin="0 20 0 0" Visibility="{x:Bind Vm.QRVisible, Mode=OneWay}">Scan this QR-Code with your master device to link this device:</TextBlock>
+        <Image x:Name="QRCode" Stretch="None" Visibility="{x:Bind Vm.QRVisible, Mode=OneWay}" />
+    </StackPanel>
 </Page>
