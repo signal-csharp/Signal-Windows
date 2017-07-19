@@ -180,8 +180,7 @@ namespace Signal_Windows.ViewModels
             }
             else
             {
-                var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
-                threadId = syncMessage.getDestination().ForceGetValue();
+                threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), this).ThreadId;
             }
 
             if (isSync)

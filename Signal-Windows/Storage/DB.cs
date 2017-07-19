@@ -119,6 +119,10 @@ namespace Signal_Windows.Storage
                         message.Receipts = (uint)receipts.Count;
                         ctx.EarlyReceipts.RemoveRange(receipts);
                     }
+                    if(message.Author != null)
+                    {
+                        message.Author = ctx.Contacts.Where(a => a.Id == message.Author.Id).Single();
+                    }
                     ctx.Messages.Add(message);
                     ctx.SaveChanges();
                 }
