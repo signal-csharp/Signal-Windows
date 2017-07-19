@@ -81,23 +81,39 @@ namespace Signal_Windows.Controls
 
         private void SetSignalMessageStatusIcon(SignalMessage updatedMessage)
         {
-            if (updatedMessage.Status == SignalMessageStatus.Pending)
+            if (updatedMessage.Type == SignalMessageType.Outgoing)
             {
-                Model.Status = (uint)SignalMessageStatus.Pending;
-                CheckVisibility = Visibility.Collapsed;
-                DoubleCheckVisibility = Visibility.Collapsed;
+                if (updatedMessage.Status == SignalMessageStatus.Pending)
+                {
+                    Model.Status = (uint)SignalMessageStatus.Pending;
+                    CheckVisibility = Visibility.Collapsed;
+                    DoubleCheckVisibility = Visibility.Collapsed;
+                }
+                else if (updatedMessage.Status == SignalMessageStatus.Confirmed)
+                {
+                    Model.Status = SignalMessageStatus.Confirmed;
+                    CheckVisibility = Visibility.Visible;
+                    DoubleCheckVisibility = Visibility.Collapsed;
+                }
+                else if (updatedMessage.Status == SignalMessageStatus.Received)
+                {
+                    Model.Status = SignalMessageStatus.Received;
+                    CheckVisibility = Visibility.Collapsed;
+                    DoubleCheckVisibility = Visibility.Visible;
+                }
             }
-            else if (updatedMessage.Status == SignalMessageStatus.Confirmed)
+            else if (updatedMessage.Type == SignalMessageType.Synced)
             {
-                Model.Status = SignalMessageStatus.Confirmed;
-                CheckVisibility = Visibility.Visible;
-                DoubleCheckVisibility = Visibility.Collapsed;
-            }
-            else if (updatedMessage.Status == SignalMessageStatus.Received)
-            {
-                Model.Status = SignalMessageStatus.Received;
-                CheckVisibility = Visibility.Collapsed;
-                DoubleCheckVisibility = Visibility.Visible;
+                if (updatedMessage.Receipts == 0)
+                {
+                    CheckVisibility = Visibility.Visible;
+                    DoubleCheckVisibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    CheckVisibility = Visibility.Collapsed;
+                    DoubleCheckVisibility = Visibility.Visible;
+                }
             }
         }
 

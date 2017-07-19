@@ -111,13 +111,18 @@ namespace Signal_Windows.ViewModels
                     }
                     else
                     {
-                        //TODO check both the db and the previous messages for duplicates
-                        return HandleSignalMessage(envelope, content, message);
+                        //TODO check both the db for duplicates
+                        return HandleSignalMessage(envelope, content, message, false);
                     }
                 }
                 else if (content.SynchronizeMessage != null)
                 {
-                    //TODO
+                    if (content.SynchronizeMessage.getSent().HasValue)
+                    {
+                        var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
+                        //TODO check both the db for duplicates
+                        return HandleSignalMessage(envelope, content, syncMessage.getMessage(), true);
+                    }
                 } //TODO callmessages
                 else
                 {
@@ -160,13 +165,14 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private SignalMessage HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
+        private SignalMessage HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync)
         {
-            string source = envelope.getSource();
-            string thread = dataMessage.getGroupInfo().HasValue ? Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId()) : source;
-            SignalContact author = SignalDBContext.GetOrCreateContactLocked(source, this);
-            string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
+            SignalMessageType type;
+            SignalContact author;
+            SignalMessageStatus status;
             string threadId;
+            string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
+
             if (dataMessage.getGroupInfo().HasValue)
             {
                 threadId = Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId());
@@ -174,16 +180,31 @@ namespace Signal_Windows.ViewModels
             }
             else
             {
-                threadId = source;
+                var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
+                threadId = syncMessage.getDestination().ForceGetValue();
             }
+
+            if (isSync)
+            {
+                type = SignalMessageType.Synced;
+                status = SignalMessageStatus.Confirmed;
+                author = null;
+            }
+            else
+            {
+                status = 0;
+                type = SignalMessageType.Incoming;
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), this);
+            }
+
             List<SignalAttachment> attachments = new List<SignalAttachment>();
             SignalMessage message = new SignalMessage()
             {
-                Type = source == (string)LocalSettings.Values["Username"] ? SignalMessageType.Outgoing : SignalMessageType.Incoming,
-                Status = (uint)SignalMessageStatus.Pending,
+                Type = type,
+                Status = status,
                 Author = author,
                 Content = new SignalMessageContent() { Content = body },
-                ThreadID = thread,
+                ThreadID = threadId,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = envelope.getTimestamp(),

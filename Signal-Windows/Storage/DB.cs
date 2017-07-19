@@ -104,15 +104,20 @@ namespace Signal_Windows.Storage
 
         #region Messages
 
-        public static void SaveMessageLocked(SignalMessage message, bool incoming)
+        public static void SaveMessageLocked(SignalMessage message)
         {
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    if (incoming)
+                    if (message.Type != SignalMessageType.Outgoing)
                     {
-                        message.Author = ctx.Contacts.Single(b => b.ThreadId == message.Author.ThreadId);
+                        var receipts = ctx.EarlyReceipts
+                        .Where(er => er.Timestamp == message.ComposedTimestamp)
+                        .ToList();
+
+                        message.Receipts = (uint)receipts.Count;
+                        ctx.EarlyReceipts.RemoveRange(receipts);
                     }
                     ctx.Messages.Add(message);
                     ctx.SaveChanges();
@@ -165,7 +170,7 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    m = ctx.Messages.SingleOrDefault(t => t.ComposedTimestamp == envelope.getTimestamp() && t.Author == null);
+                    m = ctx.Messages.SingleOrDefault(t => t.ComposedTimestamp == envelope.getTimestamp());
                     if (m != null)
                     {
                         m.Receipts++;
@@ -174,8 +179,17 @@ namespace Signal_Windows.Storage
                             m.Status = SignalMessageStatus.Received;
                             set_mark = true;
                         }
-                        ctx.SaveChanges();
                     }
+                    else
+                    {
+                        ctx.EarlyReceipts.Add(new SignalEarlyReceipt()
+                        {
+                            DeviceId = (uint)envelope.getSourceDevice(),
+                            Timestamp = envelope.getTimestamp(),
+                            Username = envelope.getSource()
+                        });
+                    }
+                    ctx.SaveChanges();
                 }
             }
             if (set_mark)

@@ -161,12 +161,16 @@ namespace Signal_Windows.ViewModels
                 {
                     await Task.Run(() =>
                     {
-                        SignalDBContext.SaveMessageLocked(message, true);
+                        SignalDBContext.SaveMessageLocked(message);
                     });
                     if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
                     {
                         Thread.Append(message);
                         View.ScrollToBottom();
+                        if (message.Type == SignalMessageType.Synced)
+                        {
+                            Thread.AddToCache(message);
+                        }
                     }
                 }
             }
@@ -180,7 +184,7 @@ namespace Signal_Windows.ViewModels
                 View.ScrollToBottom();
                 await Task.Run(() =>
                 {
-                    SignalDBContext.SaveMessageLocked(message, false);
+                    SignalDBContext.SaveMessageLocked(message);
                 });
                 if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
                 {
