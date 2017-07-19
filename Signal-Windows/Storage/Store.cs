@@ -1,14 +1,7 @@
 using libsignal;
-using libsignal.ecc;
 using libsignal.state;
-using libsignalservice.push;
 using libsignalservice.util;
-using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using Windows.Storage;
 
 namespace Signal_Windows.Storage
 {

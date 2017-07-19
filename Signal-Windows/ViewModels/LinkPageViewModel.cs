@@ -2,7 +2,6 @@ using GalaSoft.MvvmLight;
 using libsignal;
 using libsignal.util;
 using libsignalservice;
-using libsignalservice.push;
 using libsignalservice.util;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
@@ -11,7 +10,6 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
 using Windows.UI.Xaml;
 
 namespace Signal_Windows.ViewModels
@@ -21,6 +19,7 @@ namespace Signal_Windows.ViewModels
         public LinkPage View;
         private CancellationTokenSource CancelSource;
         private Visibility _QRVisible;
+
         public Visibility QRVisible
         {
             get
@@ -81,7 +80,7 @@ namespace Signal_Windows.ViewModels
                     {
                         App.Store = store;
                     }).AsTask().Wait();
-                    SignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int) store.DeviceId, App.USER_AGENT));
+                    SignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
                     store = SignalDBContext.GetSignalStore(); /* reload after prekey changes */
                     Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>

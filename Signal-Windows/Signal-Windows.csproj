@@ -130,7 +130,6 @@
     <Compile Include="Models\SignalSignedPreKey.cs" />
     <Compile Include="Models\SignalStore.cs" />
     <Compile Include="Models\SignalThread.cs" />
-    <Compile Include="Storage\DBTask.cs" />
     <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
     <Compile Include="Storage\Store.cs" />

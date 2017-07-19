@@ -45,7 +45,7 @@ namespace Signal_Windows
                     return SignalDBContext.GetSignalStore();
                 });
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Debug.WriteLine(e.Message);
                 Debug.WriteLine(e.StackTrace);
@@ -88,7 +88,7 @@ namespace Signal_Windows
                     // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
                     // übergeben werden
                     Store = await Init;
-                    if(Store == null || !Store.Registered)
+                    if (Store == null || !Store.Registered)
                     {
                         rootFrame.Navigate(typeof(StartPage), e.Arguments);
                     }
@@ -127,7 +127,6 @@ namespace Signal_Windows
                 ViewModels.MainPageInstance.Cancel();
                 await ViewModels.MainPageInstance.OutgoingOffSwitch.WaitAsync();
                 await ViewModels.MainPageInstance.IncomingOffSwitch.WaitAsync();
-                await ViewModels.MainPageInstance.DBOffSwitch.WaitAsync();
             }
             Debug.WriteLine("shutdown successful");
             //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden

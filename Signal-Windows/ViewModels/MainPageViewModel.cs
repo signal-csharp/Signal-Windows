@@ -21,7 +21,7 @@ namespace Signal_Windows.ViewModels
     public partial class MainPageViewModel : ViewModelBase, MessagePipeCallback
     {
         private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
-        private bool ActionInProgress = true;
+        private AsyncLock ActionInProgress = new AsyncLock();
         public ThreadViewModel Thread { get; set; }
         public MainPage View;
         public SignalThread SelectedThread;
@@ -29,7 +29,6 @@ namespace Signal_Windows.ViewModels
         private CancellationTokenSource CancelSource = new CancellationTokenSource();
         public AsyncManualResetEvent IncomingOffSwitch = new AsyncManualResetEvent(false);
         public AsyncManualResetEvent OutgoingOffSwitch = new AsyncManualResetEvent(false);
-        public AsyncManualResetEvent DBOffSwitch = new AsyncManualResetEvent(false);
 
         private SignalServiceMessagePipe Pipe;
         private SignalServiceMessageSender MessageSender;
@@ -75,6 +74,7 @@ namespace Signal_Windows.ViewModels
         public MainPageViewModel()
         {
             Thread = new ThreadViewModel(this);
+            var l = ActionInProgress.Lock(CancelSource.Token);
             try
             {
                 Task.Run(async () =>
@@ -93,9 +93,8 @@ namespace Signal_Windows.ViewModels
                         MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
                         Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
                         Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
-                        Task.Factory.StartNew(HandleDBQueue, TaskCreationOptions.LongRunning);
-                        ActionInProgress = false;
                     });
+                    l.Dispose();
                 });
             }
             catch (Exception e)
@@ -109,12 +108,10 @@ namespace Signal_Windows.ViewModels
         {
             try
             {
-                if (!ActionInProgress)
+                using (await ActionInProgress.LockAsync())
                 {
-                    ActionInProgress = true;
                     SelectedThread = (SignalThread)e.AddedItems[0];
                     await Thread.Load(SelectedThread);
-                    ActionInProgress = false;
                     View.ScrollToBottom();
                 }
             }
@@ -156,32 +153,40 @@ namespace Signal_Windows.ViewModels
 
         #region UIThread
 
-        public void UIHandleIncomingMessages(SignalMessage[] messages)
+        public async Task UIHandleIncomingMessages(SignalMessage[] messages)
         {
-            DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, true));
-            foreach (var message in messages)
+            using (await ActionInProgress.LockAsync())
             {
-                if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
+                foreach (var message in messages)
                 {
-                    Thread.Append(message);
-                    View.ScrollToBottom();
+                    await Task.Run(() =>
+                    {
+                        SignalDBContext.SaveMessageLocked(message, true);
+                    });
+                    if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
+                    {
+                        Thread.Append(message);
+                        View.ScrollToBottom();
+                    }
                 }
             }
         }
 
-        public void UIHandleOutgoingMessage(SignalMessage message)
+        public async Task UIHandleOutgoingMessage(SignalMessage message)
         {
-            SignalMessage[] messages = new SignalMessage[] { message };
-            Thread.Append(message);
-            View.ScrollToBottom();
-            DBQueue.Add(new Tuple<SignalMessage[], bool>(messages, false));
-        }
-
-        public void UIHandleOutgoingSaved(SignalMessage originalMessage)
-        {
-            if (SelectedThread != null && SelectedThread.ThreadId == originalMessage.ThreadID)
+            using (await ActionInProgress.LockAsync())
             {
-                Thread.AddToCache(originalMessage);
+                Thread.Append(message);
+                View.ScrollToBottom();
+                await Task.Run(() =>
+                {
+                    SignalDBContext.SaveMessageLocked(message, false);
+                });
+                if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
+                {
+                    Thread.AddToCache(message);
+                }
+                OutgoingQueue.Add(message);
             }
         }
 

@@ -76,7 +76,7 @@ namespace Signal_Windows.Storage
 
         #region Messages
 
-        internal static void SaveMessageLocked(SignalMessage message, bool incoming)
+        public static void SaveMessageLocked(SignalMessage message, bool incoming)
         {
             lock (DBLock)
             {
@@ -468,6 +468,7 @@ namespace Signal_Windows.Storage
         #endregion Identities
 
         #region Account
+
         public static SignalStore GetSignalStore()
         {
             lock (DBLock)
@@ -480,6 +481,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void SaveOrUpdateSignalStore(SignalStore store)
         {
             lock (DBLock)
@@ -487,7 +489,7 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     var old = ctx.Store.SingleOrDefault();
-                    if(old != null)
+                    if (old != null)
                     {
                         old.DeviceId = store.DeviceId;
                         old.IdentityKeyPair = store.IdentityKeyPair;
@@ -507,6 +509,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void UpdatePreKeyIdOffset(uint preKeyIdOffset)
         {
             lock (DBLock)
@@ -519,6 +522,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void UpdateNextSignedPreKeyId(uint nextSignedPreKeyId)
         {
             lock (DBLock)
@@ -531,19 +535,21 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static IdentityKeyPair GetIdentityKeyPair()
         {
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    var ikp =  ctx.Store
+                    var ikp = ctx.Store
                         .AsNoTracking()
                         .Single().IdentityKeyPair;
                     return new IdentityKeyPair(Base64.decode(ikp));
                 }
             }
         }
+
         public static uint GetLocalRegistrationId()
         {
             lock (DBLock)
@@ -556,9 +562,11 @@ namespace Signal_Windows.Storage
                 }
             }
         }
-        #endregion
+
+        #endregion Account
 
         #region Sessions
+
         public static SessionRecord LoadSession(SignalProtocolAddress address)
         {
             lock (DBLock)
@@ -569,7 +577,7 @@ namespace Signal_Windows.Storage
                         .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId)
                         .AsNoTracking()
                         .SingleOrDefault();
-                    if(session != null)
+                    if (session != null)
                     {
                         return new SessionRecord(Base64.decode(session.Session));
                     }
@@ -577,6 +585,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static List<uint> GetSubDeviceSessions(string name)
         {
             lock (DBLock)
@@ -590,7 +599,7 @@ namespace Signal_Windows.Storage
                     var s = new List<uint>();
                     foreach (var session in sessions)
                     {
-                        if(session.DeviceId != SignalServiceAddress.DEFAULT_DEVICE_ID)
+                        if (session.DeviceId != SignalServiceAddress.DEFAULT_DEVICE_ID)
                         {
                             s.Add(session.DeviceId);
                         }
@@ -599,6 +608,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
             lock (DBLock)
@@ -608,7 +618,7 @@ namespace Signal_Windows.Storage
                     var session = ctx.Sessions
                         .Where(s => s.DeviceId == address.DeviceId && s.Username == address.Name)
                         .SingleOrDefault();
-                    if(session != null)
+                    if (session != null)
                     {
                         session.Session = Base64.encodeBytes(record.serialize());
                     }
@@ -625,6 +635,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static bool ContainsSession(SignalProtocolAddress address)
         {
             lock (DBLock)
@@ -638,6 +649,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void DeleteSession(SignalProtocolAddress address)
         {
             lock (DBLock)
@@ -651,6 +663,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void DeleteAllSessions(string name)
         {
             lock (DBLock)
@@ -664,9 +677,11 @@ namespace Signal_Windows.Storage
                 }
             }
         }
-        #endregion
+
+        #endregion Sessions
 
         #region PreKeys
+
         public static PreKeyRecord LoadPreKey(uint preKeyId)
         {
             lock (DBLock)
@@ -681,6 +696,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void StorePreKey(uint preKeyId, PreKeyRecord record)
         {
             lock (DBLock)
@@ -696,6 +712,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static bool ContainsPreKey(uint preKeyId)
         {
             lock (DBLock)
@@ -709,6 +726,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void RemovePreKey(uint preKeyId)
         {
             lock (DBLock)
@@ -719,7 +737,7 @@ namespace Signal_Windows.Storage
                         .AsNoTracking()
                         .Where(b => b.Id == preKeyId)
                         .SingleOrDefault();
-                    if(preKey != null)
+                    if (preKey != null)
                     {
                         ctx.PreKeys.Remove(preKey);
                         ctx.SaveChanges();
@@ -727,6 +745,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static SignedPreKeyRecord LoadSignedPreKey(uint signedPreKeyId)
         {
             lock (DBLock)
@@ -741,6 +760,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static List<SignedPreKeyRecord> LoadSignedPreKeys()
         {
             lock (DBLock)
@@ -759,6 +779,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
         {
             lock (DBLock)
@@ -774,6 +795,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static bool ContainsSignedPreKey(uint signedPreKeyId)
         {
             lock (DBLock)
@@ -789,6 +811,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void RemoveSignedPreKey(uint id)
         {
             lock (DBLock)
@@ -804,6 +827,7 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
         public static void RefreshPreKeys(SignalServiceAccountManager accountManager) //TODO wrap in extra lock? enforce reload?
         {
             List<PreKeyRecord> oneTimePreKeys = GeneratePreKeys();
@@ -811,6 +835,7 @@ namespace Signal_Windows.Storage
             SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(GetIdentityKeyPair());
             accountManager.setPreKeys(GetIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
         }
+
         private static List<PreKeyRecord> GeneratePreKeys()
         {
             List<PreKeyRecord> records = new List<PreKeyRecord>();
@@ -826,6 +851,7 @@ namespace Signal_Windows.Storage
             UpdatePreKeyIdOffset((App.Store.PreKeyIdOffset + App.PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE);
             return records;
         }
+
         private static PreKeyRecord getOrGenerateLastResortPreKey()
         {
             if (ContainsPreKey(Medium.MAX_VALUE))
@@ -844,6 +870,7 @@ namespace Signal_Windows.Storage
             StorePreKey(Medium.MAX_VALUE, record);
             return record;
         }
+
         private static SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair)
         {
             try
@@ -861,6 +888,7 @@ namespace Signal_Windows.Storage
                 throw e;
             }
         }
-        #endregion
+
+        #endregion PreKeys
     }
 }

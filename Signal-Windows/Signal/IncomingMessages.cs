@@ -15,11 +15,6 @@ namespace Signal_Windows.ViewModels
     public partial class MainPageViewModel
     {
         /// <summary>
-        /// ResetEvent that indicates the end of the pending db transactions
-        /// </summary>
-        private AsyncManualResetEvent IncomingMessageSavedEvent = new AsyncManualResetEvent(false);
-
-        /// <summary>
         /// Reads, decrypts, handles and schedules storing and displaying of incoming messages from the pipe
         /// </summary>
         public void HandleIncomingMessages()
@@ -33,7 +28,7 @@ namespace Signal_Windows.ViewModels
                     {
                         Pipe.ReadBlocking(this);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Debug.WriteLine(e.Message);
                         Debug.WriteLine(e.StackTrace);
@@ -85,12 +80,10 @@ namespace Signal_Windows.ViewModels
             }
             if (messages.Count > 0)
             {
-                IncomingMessageSavedEvent.Reset();
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
                 {
-                    UIHandleIncomingMessages(messages.ToArray());
+                    await UIHandleIncomingMessages(messages.ToArray());
                 }).AsTask().Wait();
-                IncomingMessageSavedEvent.Wait(CancelSource.Token);
             }
         }
 
