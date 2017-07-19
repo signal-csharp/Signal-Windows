@@ -385,7 +385,7 @@ namespace Signal_Windows.Storage
                         c.CanReceive = contact.CanReceive;
                         c.AvatarFile = contact.AvatarFile;
                         c.LastActiveTimestamp = contact.LastActiveTimestamp;
-                        c.LastMessage = contact.LastMessage;
+                        c.Draft = contact.Draft;
                         c.Unread = contact.Unread;
                     }
                     ctx.SaveChanges();

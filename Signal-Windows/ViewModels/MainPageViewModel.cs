@@ -59,7 +59,7 @@ namespace Signal_Windows.ViewModels
             SignalThread uiThread = ThreadsDictionary[thread.ThreadId];
             uiThread.ThreadDisplayName = thread.ThreadDisplayName;
             uiThread.LastActiveTimestamp = thread.LastActiveTimestamp;
-            uiThread.LastMessage = thread.LastMessage;
+            uiThread.Draft = thread.Draft;
             uiThread.Unread = thread.Unread;
             uiThread.AvatarFile = thread.AvatarFile;
             uiThread.View.Reload();

@@ -46,7 +46,7 @@ namespace Signal_Windows.ViewModels
                 CanReceive = true,
                 AvatarFile = null,
                 LastActiveTimestamp = 0,
-                LastMessage = null,
+                Draft = null,
                 Color = "red",
                 Unread = 0
             };
