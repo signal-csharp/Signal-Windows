@@ -45,6 +45,10 @@ namespace Signal_Windows.ViewModels
             {
                 try
                 {
+                    /* clean the database from stale values */
+                    SignalDBContext.PurgeAccountData();
+
+                    /* link to master */
                     string password = Base64.encodeBytes(Util.getSecretBytes(18));
                     IdentityKeyPair tmpIdentity = KeyHelper.generateIdentityKeyPair();
                     SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, CancelSource.Token, "Signal-Windows");
@@ -76,12 +80,18 @@ namespace Signal_Windows.ViewModels
                         Username = result.Number
                     };
                     SignalDBContext.SaveOrUpdateSignalStore(store);
+
+                    /* reload registered state */
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         App.Store = store;
                     }).AsTask().Wait();
+
+                    /* create prekeys */
                     SignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
-                    store = SignalDBContext.GetSignalStore(); /* reload after prekey changes */
+
+                    /* reload again with prekeys and their offsets */
+                    store = SignalDBContext.GetSignalStore();
                     Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {

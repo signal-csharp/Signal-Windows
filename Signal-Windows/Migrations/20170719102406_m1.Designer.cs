@@ -9,7 +9,7 @@ using Signal_Windows.Models;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170718152130_m1")]
+    [Migration("20170719102406_m1")]
     partial class m1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -74,9 +74,9 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("Color");
 
-                    b.Property<long>("LastActiveTimestamp");
+                    b.Property<string>("Draft");
 
-                    b.Property<string>("LastMessage");
+                    b.Property<long>("LastActiveTimestamp");
 
                     b.Property<string>("ThreadDisplayName");
 
@@ -89,6 +89,26 @@ namespace Signal_Windows.Migrations
                     b.ToTable("Contacts");
                 });
 
+            modelBuilder.Entity("Signal_Windows.Models.SignalEarlyReceipt", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<uint>("DeviceId");
+
+                    b.Property<long>("Timestamp");
+
+                    b.Property<string>("Username");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("Username");
+
+                    b.ToTable("EarlyReceipts");
+                });
+
             modelBuilder.Entity("Signal_Windows.Models.SignalGroup", b =>
                 {
                     b.Property<ulong>("Id")
@@ -98,9 +118,9 @@ namespace Signal_Windows.Migrations
 
                     b.Property<bool>("CanReceive");
 
-                    b.Property<long>("LastActiveTimestamp");
+                    b.Property<string>("Draft");
 
-                    b.Property<string>("LastMessage");
+                    b.Property<long>("LastActiveTimestamp");
 
                     b.Property<string>("ThreadDisplayName");
 

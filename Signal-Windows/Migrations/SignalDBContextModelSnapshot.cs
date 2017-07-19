@@ -1,7 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Signal_Windows.Storage;
+using Signal_Windows.Models;
 
 namespace Signal_Windows.Migrations
 {
@@ -70,9 +73,9 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("Color");
 
-                    b.Property<long>("LastActiveTimestamp");
+                    b.Property<string>("Draft");
 
-                    b.Property<string>("LastMessage");
+                    b.Property<long>("LastActiveTimestamp");
 
                     b.Property<string>("ThreadDisplayName");
 
@@ -85,6 +88,26 @@ namespace Signal_Windows.Migrations
                     b.ToTable("Contacts");
                 });
 
+            modelBuilder.Entity("Signal_Windows.Models.SignalEarlyReceipt", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<uint>("DeviceId");
+
+                    b.Property<long>("Timestamp");
+
+                    b.Property<string>("Username");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("Username");
+
+                    b.ToTable("EarlyReceipts");
+                });
+
             modelBuilder.Entity("Signal_Windows.Models.SignalGroup", b =>
                 {
                     b.Property<ulong>("Id")
@@ -94,9 +117,9 @@ namespace Signal_Windows.Migrations
 
                     b.Property<bool>("CanReceive");
 
-                    b.Property<long>("LastActiveTimestamp");
+                    b.Property<string>("Draft");
 
-                    b.Property<string>("LastMessage");
+                    b.Property<long>("LastActiveTimestamp");
 
                     b.Property<string>("ThreadDisplayName");
 

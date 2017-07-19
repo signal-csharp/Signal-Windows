@@ -33,6 +33,7 @@ namespace Signal_Windows.Storage
         public DbSet<SignalPreKey> PreKeys { get; set; }
         public DbSet<SignalSignedPreKey> SignedPreKeys { get; set; }
         public DbSet<SignalSession> Sessions { get; set; }
+        public DbSet<SignalEarlyReceipt> EarlyReceipts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -58,6 +59,12 @@ namespace Signal_Windows.Storage
 
             modelBuilder.Entity<SignalIdentity>()
                 .HasIndex(si => si.Username);
+
+            modelBuilder.Entity<SignalEarlyReceipt>()
+                .HasIndex(er => er.Username);
+
+            modelBuilder.Entity<SignalEarlyReceipt>()
+                .HasIndex(er => er.DeviceId);
         }
 
         public static void Migrate()
@@ -70,6 +77,27 @@ namespace Signal_Windows.Storage
                     var serviceProvider = ctx.GetInfrastructure<IServiceProvider>();
                     var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
                     loggerFactory.AddProvider(new SqlLoggerProvider());
+                }
+            }
+        }
+
+        public static void PurgeAccountData()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM Store;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'Store';");
+
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM SignedPreKeys;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'SignedPreKeys';");
+
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM PreKeys;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'PreKeys';");
+
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM Sessions;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'Sessions';");
                 }
             }
         }
