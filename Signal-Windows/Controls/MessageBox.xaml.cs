@@ -57,7 +57,7 @@ namespace Signal_Windows.Controls
             }
             else
             {
-                if (Model.ThreadID[0] != '+')
+                if (Model.ThreadId[0] != '+')
                 {
                     HeaderVisibility = Visibility.Visible;
                     ContactName = Model.Author.ThreadDisplayName;

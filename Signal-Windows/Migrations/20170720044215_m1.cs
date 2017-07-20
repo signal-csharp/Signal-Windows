@@ -16,6 +16,7 @@ namespace Signal_Windows.Migrations
                     CanReceive = table.Column<bool>(nullable: false),
                     Color = table.Column<string>(nullable: true),
                     Draft = table.Column<string>(nullable: true),
+                    ExpiresInSeconds = table.Column<uint>(nullable: false),
                     LastActiveTimestamp = table.Column<long>(nullable: false),
                     ThreadDisplayName = table.Column<string>(nullable: true),
                     ThreadId = table.Column<string>(nullable: true),
@@ -50,6 +51,7 @@ namespace Signal_Windows.Migrations
                     AvatarFile = table.Column<string>(nullable: true),
                     CanReceive = table.Column<bool>(nullable: false),
                     Draft = table.Column<string>(nullable: true),
+                    ExpiresInSeconds = table.Column<uint>(nullable: false),
                     LastActiveTimestamp = table.Column<long>(nullable: false),
                     ThreadDisplayName = table.Column<string>(nullable: true),
                     ThreadId = table.Column<string>(nullable: true),
@@ -190,11 +192,11 @@ namespace Signal_Windows.Migrations
                     ComposedTimestamp = table.Column<long>(nullable: false),
                     Contentrowid = table.Column<ulong>(nullable: true),
                     DeviceId = table.Column<uint>(nullable: false),
-                    ReadConfirmations = table.Column<uint>(nullable: false),
+                    ExpiresAt = table.Column<uint>(nullable: false),
                     Receipts = table.Column<uint>(nullable: false),
                     ReceivedTimestamp = table.Column<long>(nullable: false),
                     Status = table.Column<int>(nullable: false),
-                    ThreadID = table.Column<string>(nullable: true),
+                    ThreadId = table.Column<string>(nullable: true),
                     Type = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
@@ -206,12 +208,14 @@ namespace Signal_Windows.Migrations
                         principalTable: "Contacts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    /*
                     table.ForeignKey(
                         name: "FK_Messages_Messages_fts_Contentrowid",
                         column: x => x.Contentrowid,
                         principalTable: "Messages_fts",
                         principalColumn: "rowid",
                         onDelete: ReferentialAction.Restrict);
+                    */
                 });
 
             migrationBuilder.CreateTable(
@@ -226,7 +230,7 @@ namespace Signal_Windows.Migrations
                     MessageId = table.Column<ulong>(nullable: false),
                     Relay = table.Column<string>(nullable: true),
                     SentFileName = table.Column<string>(nullable: true),
-                    Status = table.Column<uint>(nullable: false),
+                    Status = table.Column<int>(nullable: false),
                     StorageId = table.Column<ulong>(nullable: false)
                 },
                 constraints: table =>
@@ -281,9 +285,24 @@ namespace Signal_Windows.Migrations
                 column: "Contentrowid");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_ThreadID",
+                name: "IX_Messages_ThreadId",
                 table: "Messages",
-                column: "ThreadID");
+                column: "ThreadId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PreKeys_Id",
+                table: "PreKeys",
+                column: "Id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sessions_DeviceId",
+                table: "Sessions",
+                column: "DeviceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sessions_Username",
+                table: "Sessions",
+                column: "Username");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

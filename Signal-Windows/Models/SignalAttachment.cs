@@ -11,7 +11,7 @@ namespace Signal_Windows.Models
         public string FileName { get; set; }
         public string SentFileName { get; set; }
         public string ContentType { get; set; }
-        public uint Status { get; set; }
+        public SignalAttachmentStatus Status { get; set; }
         public byte[] Key { get; set; }
         public string Relay { get; set; }
         public ulong StorageId { get; set; }
@@ -23,6 +23,9 @@ namespace Signal_Windows.Models
     public enum SignalAttachmentStatus
     {
         Default = 0,
-        Finished = 1
+        Finished = 1,
+        InProgress = 2,
+        Failed = 3,
+        Failed_Permanently = 4
     }
 }

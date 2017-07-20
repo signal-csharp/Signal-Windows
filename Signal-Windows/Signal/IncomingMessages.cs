@@ -61,11 +61,7 @@ namespace Signal_Windows.ViewModels
                     }
                     else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
                     {
-                        SignalMessage sm = HandleMessage(envelope);
-                        if (sm != null)
-                        {
-                            messages.Add(sm);
-                        }
+                        HandleMessage(envelope);
                     }
                     else
                     {
@@ -78,16 +74,9 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine(e.StackTrace);
                 }
             }
-            if (messages.Count > 0)
-            {
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-                {
-                    await UIHandleIncomingMessages(messages.ToArray());
-                }).AsTask().Wait();
-            }
         }
 
-        private SignalMessage HandleMessage(SignalServiceEnvelope envelope)
+        private void HandleMessage(SignalServiceEnvelope envelope)
         {
             try
             {
@@ -107,12 +96,23 @@ namespace Signal_Windows.ViewModels
                     }
                     else if (message.isExpirationUpdate())
                     {
-                        //TODO
+                        string threadid;
+                        if (message.getGroupInfo().HasValue)
+                        {
+                            threadid = Base64.encodeBytes(message.getGroupInfo().ForceGetValue().getGroupId());
+                            SignalDBContext.GetOrCreateGroupLocked(threadid, this);
+                        }
+                        else
+                        {
+                            threadid = envelope.getSource();
+                            SignalDBContext.GetOrCreateContactLocked(threadid, this);
+                        }
+                        SignalDBContext.UpdateExpiresInLocked(new SignalThread() { ThreadId = threadid }, (uint)message.getExpiresInSeconds());
                     }
                     else
                     {
                         //TODO check both the db for duplicates
-                        return HandleSignalMessage(envelope, content, message, false);
+                        HandleSignalMessage(envelope, content, message, false);
                     }
                 }
                 else if (content.SynchronizeMessage != null)
@@ -121,7 +121,7 @@ namespace Signal_Windows.ViewModels
                     {
                         var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
                         //TODO check both the db for duplicates
-                        return HandleSignalMessage(envelope, content, syncMessage.getMessage(), true);
+                        HandleSignalMessage(envelope, content, syncMessage.getMessage(), true);
                     }
                 } //TODO callmessages
                 else
@@ -135,7 +135,6 @@ namespace Signal_Windows.ViewModels
                 SignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
                 HandleMessage(envelope);
             }
-            return null;
         }
 
         private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
@@ -165,7 +164,7 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private SignalMessage HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync)
+        private void HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync)
         {
             SignalMessageType type;
             SignalContact author;
@@ -203,7 +202,7 @@ namespace Signal_Windows.ViewModels
                 Status = status,
                 Author = author,
                 Content = new SignalMessageContent() { Content = body },
-                ThreadID = threadId,
+                ThreadId = threadId,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = envelope.getTimestamp(),
@@ -231,7 +230,10 @@ namespace Signal_Windows.ViewModels
                 }
             }
             Debug.WriteLine("received message: " + message.Content);
-            return message;
+            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+            {
+                await UIHandleIncomingMessage(message);
+            }).AsTask().Wait();
         }
     }
 }

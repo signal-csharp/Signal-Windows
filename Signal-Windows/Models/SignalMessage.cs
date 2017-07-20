@@ -10,14 +10,14 @@ namespace Signal_Windows.Models
         public SignalMessageType Type { get; set; }
         public SignalMessageStatus Status { get; set; }
         public SignalMessageContent Content { get; set; }
-        public string ThreadID { get; set; }
+        public string ThreadId { get; set; }
         public ulong? AuthorId { get; set; }
         public SignalContact Author { get; set; }
         public uint DeviceId { get; set; }
         public uint Receipts { get; set; }
-        public uint ReadConfirmations { get; set; }
         public long ReceivedTimestamp { get; set; }
         public long ComposedTimestamp { get; set; }
+        public uint ExpiresAt { get; set; }
         public uint AttachmentsCount { get; set; }
         public List<SignalAttachment> Attachments { get; set; }
         [NotMapped] public MessageBox View { get; set; }

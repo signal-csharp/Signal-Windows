@@ -31,11 +31,14 @@ namespace Signal_Windows.ViewModels
                 try
                 {
                     outgoingSignalMessage = OutgoingQueue.Take(token);
-                    Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(outgoingSignalMessage.Content.Content).withTimestamp(outgoingSignalMessage.ComposedTimestamp);
+                    Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                        .withBody(outgoingSignalMessage.Content.Content)
+                        .withTimestamp(outgoingSignalMessage.ComposedTimestamp)
+                        .withExpiration((int)outgoingSignalMessage.ExpiresAt);
                     List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                    if (outgoingSignalMessage.ThreadID[0] == '+')
+                    if (outgoingSignalMessage.ThreadId[0] == '+')
                     {
-                        recipients.Add(new SignalServiceAddress(outgoingSignalMessage.ThreadID));
+                        recipients.Add(new SignalServiceAddress(outgoingSignalMessage.ThreadId));
                     }
                     else
                     {

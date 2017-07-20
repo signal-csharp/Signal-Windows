@@ -7,10 +7,6 @@ using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Signal_Windows.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.ViewModels;
 using System;
@@ -43,7 +39,7 @@ namespace Signal_Windows.Storage
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<SignalMessage>()
-                .HasIndex(m => m.ThreadID);
+                .HasIndex(m => m.ThreadId);
 
             modelBuilder.Entity<SignalMessage>()
                 .HasIndex(m => m.AuthorId);
@@ -60,6 +56,15 @@ namespace Signal_Windows.Storage
             modelBuilder.Entity<SignalIdentity>()
                 .HasIndex(si => si.Username);
 
+            modelBuilder.Entity<SignalSession>()
+                .HasIndex(s => s.Username);
+
+            modelBuilder.Entity<SignalSession>()
+                .HasIndex(s => s.DeviceId);
+
+            modelBuilder.Entity<SignalPreKey>()
+                .HasIndex(pk => pk.Id);
+
             modelBuilder.Entity<SignalEarlyReceipt>()
                 .HasIndex(er => er.Username);
 
@@ -74,9 +79,11 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     ctx.Database.Migrate();
+                    /*
                     var serviceProvider = ctx.GetInfrastructure<IServiceProvider>();
                     var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
                     loggerFactory.AddProvider(new SqlLoggerProvider());
+                    */
                 }
             }
         }
@@ -110,7 +117,7 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    if (message.Type != SignalMessageType.Outgoing)
+                    if (message.Type == SignalMessageType.Synced)
                     {
                         var receipts = ctx.EarlyReceipts
                         .Where(er => er.Timestamp == message.ComposedTimestamp)
@@ -119,9 +126,23 @@ namespace Signal_Windows.Storage
                         message.Receipts = (uint)receipts.Count;
                         ctx.EarlyReceipts.RemoveRange(receipts);
                     }
-                    if(message.Author != null)
+                    if (message.Author != null)
                     {
                         message.Author = ctx.Contacts.Where(a => a.Id == message.Author.Id).Single();
+                    }
+                    if (message.ThreadId.StartsWith("+"))
+                    {
+                        var contact = ctx.Contacts
+                            .Where(c => c.ThreadId == message.ThreadId)
+                            .Single();
+                        message.ExpiresAt = contact.ExpiresInSeconds;
+                    }
+                    else
+                    {
+                        var group = ctx.Groups
+                            .Where(c => c.ThreadId == message.ThreadId)
+                            .Single();
+                        message.ExpiresAt = group.ExpiresInSeconds;
                     }
                     ctx.Messages.Add(message);
                     ctx.SaveChanges();
@@ -136,7 +157,7 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     return ctx.Messages
-                        .Where(m => m.ThreadID == thread.ThreadId)
+                        .Where(m => m.ThreadId == thread.ThreadId)
                         .Include(m => m.Content)
                         .Include(m => m.Author)
                         .Include(m => m.Attachments)
@@ -222,6 +243,41 @@ namespace Signal_Windows.Storage
         }
 
         #endregion Attachments
+
+        #region Threads
+
+        public static void UpdateExpiresInLocked(SignalThread thread, uint exp)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    if (thread.ThreadId.StartsWith("+"))
+                    {
+                        var contact = ctx.Contacts
+                            .Where(c => c.ThreadId == thread.ThreadId)
+                            .SingleOrDefault();
+                        if (contact != null)
+                        {
+                            contact.ExpiresInSeconds = exp;
+                        }
+                    }
+                    else
+                    {
+                        var group = ctx.Groups
+                            .Where(c => c.ThreadId == thread.ThreadId)
+                            .SingleOrDefault();
+                        if (group != null)
+                        {
+                            group.ExpiresInSeconds = exp;
+                        }
+                    }
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        #endregion Threads
 
         #region Groups
 

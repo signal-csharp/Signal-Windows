@@ -122,25 +122,41 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        internal void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        internal async Task TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.Enter)
             {
                 TextBox t = (TextBox)sender;
                 if (t.Text != "")
                 {
+                    var text = t.Text;
+                    t.Text = "";
                     var now = Util.CurrentTimeMillis();
-                    SignalMessage sm = new SignalMessage()
+                    SignalMessage message = new SignalMessage()
                     {
                         Author = null,
                         ComposedTimestamp = now,
-                        Content = new SignalMessageContent() { Content = t.Text },
-                        ThreadID = SelectedThread.ThreadId,
+                        Content = new SignalMessageContent() { Content = text },
+                        ThreadId = SelectedThread.ThreadId,
                         ReceivedTimestamp = now,
                         Type = 0
                     };
-                    UIHandleOutgoingMessage(sm);
-                    t.Text = "";
+                    using (await ActionInProgress.LockAsync())
+                    {
+                        Thread.Append(message);
+                        View.ScrollToBottom();
+                        await Task.Run(() =>
+                        {
+                            SignalDBContext.SaveMessageLocked(message);
+                        });
+                        if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                        {
+                            Thread.AddToCache(message);
+                        }
+                        OutgoingQueue.Add(message);
+                        var after = Util.CurrentTimeMillis();
+                        Debug.WriteLine("ms until out queue: " + (after - now));
+                    }
                 }
             }
         }
@@ -153,50 +169,29 @@ namespace Signal_Windows.ViewModels
 
         #region UIThread
 
-        public async Task UIHandleIncomingMessages(SignalMessage[] messages)
+        public async Task UIHandleIncomingMessage(SignalMessage message)
         {
             using (await ActionInProgress.LockAsync())
             {
-                foreach (var message in messages)
+                await Task.Run(() =>
                 {
-                    await Task.Run(() =>
+                    SignalDBContext.SaveMessageLocked(message);
+                });
+                if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                {
+                    Thread.Append(message);
+                    View.ScrollToBottom();
+                    if (message.Type == SignalMessageType.Synced)
                     {
-                        SignalDBContext.SaveMessageLocked(message);
-                    });
-                    if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
-                    {
-                        Thread.Append(message);
-                        View.ScrollToBottom();
-                        if (message.Type == SignalMessageType.Synced)
-                        {
-                            Thread.AddToCache(message);
-                        }
+                        Thread.AddToCache(message);
                     }
                 }
             }
         }
 
-        public async Task UIHandleOutgoingMessage(SignalMessage message)
-        {
-            using (await ActionInProgress.LockAsync())
-            {
-                Thread.Append(message);
-                View.ScrollToBottom();
-                await Task.Run(() =>
-                {
-                    SignalDBContext.SaveMessageLocked(message);
-                });
-                if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadID)
-                {
-                    Thread.AddToCache(message);
-                }
-                OutgoingQueue.Add(message);
-            }
-        }
-
         public void UIHandleSuccessfullSend(SignalMessage updatedMessage)
         {
-            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadID)
+            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
             {
                 Thread.UpdateMessageBox(updatedMessage);
             }
@@ -204,7 +199,7 @@ namespace Signal_Windows.ViewModels
 
         public void UIHandleReceiptReceived(SignalMessage updatedMessage)
         {
-            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadID)
+            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
             {
                 Thread.UpdateMessageBox(updatedMessage);
             }

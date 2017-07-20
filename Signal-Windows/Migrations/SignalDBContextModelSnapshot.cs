@@ -48,7 +48,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("SentFileName");
 
-                    b.Property<uint>("Status");
+                    b.Property<int>("Status");
 
                     b.Property<ulong>("StorageId");
 
@@ -71,6 +71,8 @@ namespace Signal_Windows.Migrations
                     b.Property<string>("Color");
 
                     b.Property<string>("Draft");
+
+                    b.Property<uint>("ExpiresInSeconds");
 
                     b.Property<long>("LastActiveTimestamp");
 
@@ -115,6 +117,8 @@ namespace Signal_Windows.Migrations
                     b.Property<bool>("CanReceive");
 
                     b.Property<string>("Draft");
+
+                    b.Property<uint>("ExpiresInSeconds");
 
                     b.Property<long>("LastActiveTimestamp");
 
@@ -162,7 +166,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<uint>("DeviceId");
 
-                    b.Property<uint>("ReadConfirmations");
+                    b.Property<uint>("ExpiresAt");
 
                     b.Property<uint>("Receipts");
 
@@ -170,7 +174,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<int>("Status");
 
-                    b.Property<string>("ThreadID");
+                    b.Property<string>("ThreadId");
 
                     b.Property<int>("Type");
 
@@ -180,7 +184,7 @@ namespace Signal_Windows.Migrations
 
                     b.HasIndex("Contentrowid");
 
-                    b.HasIndex("ThreadID");
+                    b.HasIndex("ThreadId");
 
                     b.ToTable("Messages");
                 });
@@ -206,6 +210,8 @@ namespace Signal_Windows.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Id");
+
                     b.ToTable("PreKeys");
                 });
 
@@ -221,6 +227,10 @@ namespace Signal_Windows.Migrations
                     b.Property<string>("Username");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("Username");
 
                     b.ToTable("Sessions");
                 });
