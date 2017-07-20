@@ -24,6 +24,7 @@
   </Applications>
   <Capabilities>
     <Capability Name="internetClient" />
+    <uap:Capability Name="contacts" />
   </Capabilities>
   <Extensions>
     <Extension Category="windows.certificates">
