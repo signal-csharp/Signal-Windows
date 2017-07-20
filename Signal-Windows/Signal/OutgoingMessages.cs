@@ -35,25 +35,30 @@ namespace Signal_Windows.ViewModels
                         .withBody(outgoingSignalMessage.Content.Content)
                         .withTimestamp(outgoingSignalMessage.ComposedTimestamp)
                         .withExpiration((int)outgoingSignalMessage.ExpiresAt);
-                    List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
                     if (outgoingSignalMessage.ThreadId[0] == '+')
                     {
-                        recipients.Add(new SignalServiceAddress(outgoingSignalMessage.ThreadId));
+                        SignalServiceDataMessage ssdm = messageBuilder.build();
+                        if (!token.IsCancellationRequested)
+                        {
+                            MessageSender.sendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), ssdm);
+                            SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
+                        }
                     }
                     else
                     {
+                        List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
                         SignalGroup g = (SignalGroup)SelectedThread;
                         foreach (GroupMembership sc in g.GroupMemberships)
                         {
                             recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
                         }
                         messageBuilder = messageBuilder.asGroupMessage(new SignalServiceGroup(Base64.decode(g.ThreadId)));
-                    }
-                    SignalServiceDataMessage ssdm = messageBuilder.build();
-                    if (!token.IsCancellationRequested)
-                    {
-                        MessageSender.sendMessage(recipients, ssdm);
-                        SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
+                        SignalServiceDataMessage ssdm = messageBuilder.build();
+                        if (!token.IsCancellationRequested)
+                        {
+                            MessageSender.sendMessage(recipients, ssdm);
+                            SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
+                        }
                     }
                 }
                 catch (OperationCanceledException e)
