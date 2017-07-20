@@ -73,7 +73,7 @@ namespace Signal_Windows.Controls
                 HorizontalAlignment = HorizontalAlignment.Left;
                 FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;
             }
-            DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.ReceivedTimestamp / 1000);
+            DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.ComposedTimestamp / 1000);
             DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
             FancyTimestamp = dt.ToString();
             SetSignalMessageStatusIcon(Model);
