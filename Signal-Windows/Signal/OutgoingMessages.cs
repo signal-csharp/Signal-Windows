@@ -53,7 +53,7 @@ namespace Signal_Windows.ViewModels
                     if (!token.IsCancellationRequested)
                     {
                         MessageSender.sendMessage(recipients, ssdm);
-                        SignalDBContext.UpdateMessageLocked(outgoingSignalMessage, this);
+                        SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
                     }
                 }
                 catch (OperationCanceledException e)

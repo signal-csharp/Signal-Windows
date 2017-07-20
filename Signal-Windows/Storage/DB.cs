@@ -166,7 +166,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void UpdateMessageLocked(SignalMessage outgoingSignalMessage, MainPageViewModel mpvm)
+        public static void UpdateMessageStatus(SignalMessage outgoingSignalMessage, MainPageViewModel mpvm)
         {
             SignalMessage m;
             lock (DBLock)
@@ -176,14 +176,21 @@ namespace Signal_Windows.Storage
                     m = ctx.Messages.Single(t => t.ComposedTimestamp == outgoingSignalMessage.ComposedTimestamp && t.Author == null);
                     if (m != null)
                     {
-                        m.Status = SignalMessageStatus.Confirmed;
+                        if(m.Receipts == 0)
+                        {
+                            m.Status = SignalMessageStatus.Confirmed;
+                        }
+                        else
+                        {
+                            m.Status = SignalMessageStatus.Received;
+                        }
                         ctx.SaveChanges();
                     }
                 }
             }
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
-                mpvm.UIHandleSuccessfullSend(m);
+                mpvm.UIUpdateMessageBox(m);
             }).AsTask().Wait();
         }
 
@@ -221,7 +228,7 @@ namespace Signal_Windows.Storage
             {
                 Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
-                    mpvm.UIHandleReceiptReceived(m);
+                    mpvm.UIUpdateMessageBox(m);
                 }).AsTask().Wait();
             }
         }

@@ -189,15 +189,7 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void UIHandleSuccessfullSend(SignalMessage updatedMessage)
-        {
-            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
-            {
-                Thread.UpdateMessageBox(updatedMessage);
-            }
-        }
-
-        public void UIHandleReceiptReceived(SignalMessage updatedMessage)
+        public void UIUpdateMessageBox(SignalMessage updatedMessage)
         {
             if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
             {
