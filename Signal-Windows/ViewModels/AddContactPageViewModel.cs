@@ -84,19 +84,24 @@ namespace Signal_Windows.ViewModels
                 // The contact we just got doesn't contain the contact picture so we need to fetch it
                 // see https://stackoverflow.com/questions/33401625/cant-get-contact-profile-images-in-uwp
                 ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
-                Contact realContact = await contactStore.GetContactAsync(contact.Id);
-                if (realContact.SourceDisplayPicture != null)
+                // If we do not have access to contacts the ContactStore will be null, we can still use the contact the user
+                // seleceted however
+                if (contactStore != null)
                 {
-                    using (var stream = await realContact.SourceDisplayPicture.OpenReadAsync())
+                    Contact realContact = await contactStore.GetContactAsync(contact.Id);
+                    if (realContact.SourceDisplayPicture != null)
                     {
-                        BitmapImage bitmapImage = new BitmapImage();
-                        await bitmapImage.SetSourceAsync(stream);
-                        ContactPhoto = bitmapImage;
+                        using (var stream = await realContact.SourceDisplayPicture.OpenReadAsync())
+                        {
+                            BitmapImage bitmapImage = new BitmapImage();
+                            await bitmapImage.SetSourceAsync(stream);
+                            ContactPhoto = bitmapImage;
+                        }
                     }
-                }
-                else
-                {
-                    ContactPhoto = null;
+                    else
+                    {
+                        ContactPhoto = null;
+                    }
                 }
                 ContactName = contact.Name;
                 if (contact.Phones.Count > 0)
