@@ -178,7 +178,14 @@ namespace Signal_Windows.ViewModels
             }
             else
             {
-                threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), this).ThreadId;
+                if(isSync)
+                {
+                    threadId = SignalDBContext.GetOrCreateContactLocked(content.SynchronizeMessage.getSent().ForceGetValue().getDestination().ForceGetValue(), this).ThreadId;
+                }
+                else
+                {
+                    threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), this).ThreadId;
+                }
             }
 
             if (isSync)
