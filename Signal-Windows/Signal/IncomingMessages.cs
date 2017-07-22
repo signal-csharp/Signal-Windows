@@ -169,22 +169,27 @@ namespace Signal_Windows.ViewModels
             SignalContact author;
             SignalMessageStatus status;
             string threadId;
+            long composedTimestamp;
             string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
 
             if (dataMessage.getGroupInfo().HasValue)
             {
                 threadId = Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId());
                 SignalDBContext.GetOrCreateGroupLocked(threadId, this);
+                composedTimestamp = envelope.getTimestamp();
             }
             else
             {
                 if(isSync)
                 {
-                    threadId = SignalDBContext.GetOrCreateContactLocked(content.SynchronizeMessage.getSent().ForceGetValue().getDestination().ForceGetValue(), this).ThreadId;
+                    var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                    threadId = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), this).ThreadId;
+                    composedTimestamp = sent.getTimestamp();
                 }
                 else
                 {
                     threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), this).ThreadId;
+                    composedTimestamp = envelope.getTimestamp();
                 }
             }
 
@@ -211,7 +216,7 @@ namespace Signal_Windows.ViewModels
                 ThreadId = threadId,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,
-                ComposedTimestamp = envelope.getTimestamp(),
+                ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = Util.CurrentTimeMillis(),
                 AttachmentsCount = (uint)attachments.Count,
                 Attachments = attachments
