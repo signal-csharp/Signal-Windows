@@ -25,11 +25,10 @@ namespace Signal_Windows.ViewModels
         public ThreadViewModel Thread { get; set; }
         public MainPage View;
         public SignalThread SelectedThread;
-        public volatile bool Running = true;
-        private CancellationTokenSource CancelSource = new CancellationTokenSource();
-        public AsyncManualResetEvent IncomingOffSwitch = new AsyncManualResetEvent(false);
-        public AsyncManualResetEvent OutgoingOffSwitch = new AsyncManualResetEvent(false);
-
+        private volatile bool Running = true;
+        private Task IncomingMessagesTask;
+        private Task OutgoingMessagesTask;
+        private CancellationTokenSource CancelSource;
         private SignalServiceMessagePipe Pipe;
         private SignalServiceMessageSender MessageSender;
         private SignalServiceMessageReceiver MessageReceiver;
@@ -73,7 +72,14 @@ namespace Signal_Windows.ViewModels
 
         public MainPageViewModel()
         {
+            App.MainPageActive = true;
             Thread = new ThreadViewModel(this);
+            Init();
+        }
+
+        public void Init()
+        {
+            CancelSource = new CancellationTokenSource();
             var l = ActionInProgress.Lock(CancelSource.Token);
             try
             {
@@ -83,16 +89,32 @@ namespace Signal_Windows.ViewModels
                     List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
                     await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        AddThreads(groups);
-                        AddThreads(contacts);
+                        try
+                        {
+                            AddThreads(groups);
+                            AddThreads(contacts);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(e.StackTrace);
+                        }
                     });
                     await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
-                        Pipe = MessageReceiver.createMessagePipe();
-                        MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
-                        Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
-                        Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
+                        try
+                        {
+                            MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
+                            Pipe = MessageReceiver.createMessagePipe();
+                            MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
+                            IncomingMessagesTask = Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
+                            OutgoingMessagesTask = Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(e.StackTrace);
+                        }
                     });
                     l.Dispose();
                 });
@@ -102,6 +124,16 @@ namespace Signal_Windows.ViewModels
                 Debug.WriteLine(e.Message);
                 Debug.WriteLine(e.StackTrace);
             }
+        }
+
+        public async Task Shutdown()
+        {
+            Running = false;
+            App.MainPageActive = false;
+            var l = await ActionInProgress.LockAsync();
+            CancelSource.Cancel();
+            await IncomingMessagesTask;
+            await OutgoingMessagesTask;
         }
 
         internal async void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -159,12 +191,6 @@ namespace Signal_Windows.ViewModels
                     }
                 }
             }
-        }
-
-        internal void Cancel()
-        {
-            Running = false;
-            CancelSource.Cancel();
         }
 
         #region UIThread

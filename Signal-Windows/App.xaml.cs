@@ -25,6 +25,7 @@ namespace Signal_Windows
         public static StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
         public static ViewModelLocator ViewModels = (ViewModelLocator)Current.Resources["Locator"];
         public static SignalStore Store;
+        public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
         private Task<SignalStore> Init;
@@ -122,11 +123,12 @@ namespace Signal_Windows
         private async void OnSuspending(object sender, SuspendingEventArgs e)
         {
             var deferral = e.SuspendingOperation.GetDeferral();
-            if (ViewModels.MainPageInstance != null)
+            if(MainPageActive)
             {
-                ViewModels.MainPageInstance.Cancel();
-                await ViewModels.MainPageInstance.OutgoingOffSwitch.WaitAsync();
-                await ViewModels.MainPageInstance.IncomingOffSwitch.WaitAsync();
+                if (ViewModels.MainPageInstance != null)
+                {
+                    await ViewModels.MainPageInstance.Shutdown();
+                }
             }
             Debug.WriteLine("shutdown successful");
             //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden

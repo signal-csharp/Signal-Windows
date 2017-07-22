@@ -30,11 +30,6 @@ namespace Signal_Windows
             }
         }
 
-        private void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            Vm.TextBox_KeyDown(sender, e);
-        }
-
         private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ThreadView.Vm.WelcomeVisibility = Visibility.Collapsed;

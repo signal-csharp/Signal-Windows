@@ -27,9 +27,9 @@ namespace Signal_Windows.Controls
             SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f);
         }
 
-        private void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            Vm.MainPageVm.TextBox_KeyDown(sender, e);
+            await Vm.MainPageVm.TextBox_KeyDown(sender, e);
         }
     }
 }

@@ -996,7 +996,7 @@ namespace Signal_Windows.Storage
                 {
                     return LoadPreKey(Medium.MAX_VALUE);
                 }
-                catch (InvalidKeyIdException e)
+                catch (InvalidKeyIdException)
                 {
                     RemovePreKey(Medium.MAX_VALUE);
                 }

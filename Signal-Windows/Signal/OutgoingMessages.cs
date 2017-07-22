@@ -80,7 +80,6 @@ namespace Signal_Windows.ViewModels
                 }
             }
             Debug.WriteLine("HandleOutgoingMessages finished");
-            OutgoingOffSwitch.Set();
         }
     }
 }

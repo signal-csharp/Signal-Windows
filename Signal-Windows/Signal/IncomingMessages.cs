@@ -36,7 +36,6 @@ namespace Signal_Windows.ViewModels
                 }
             }
             catch (Exception) { }
-            IncomingOffSwitch.Set();
             Debug.WriteLine("HandleIncomingMessages finished");
         }
 
