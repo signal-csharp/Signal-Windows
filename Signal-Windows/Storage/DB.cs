@@ -176,7 +176,7 @@ namespace Signal_Windows.Storage
                     m = ctx.Messages.Single(t => t.ComposedTimestamp == outgoingSignalMessage.ComposedTimestamp && t.Author == null);
                     if (m != null)
                     {
-                        if(m.Receipts == 0)
+                        if (m.Receipts == 0)
                         {
                             m.Status = SignalMessageStatus.Confirmed;
                         }
@@ -676,10 +676,23 @@ namespace Signal_Windows.Storage
 
         #region Sessions
 
+        private static string GetSessionCacheIndex(string username, uint deviceid)
+        {
+            return username + @"\" + deviceid;
+        }
+
+        private static Dictionary<string, SessionRecord> SessionsCache = new Dictionary<string, SessionRecord>();
+
         public static SessionRecord LoadSession(SignalProtocolAddress address)
         {
+            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
+            SessionRecord record;
             lock (DBLock)
             {
+                if (SessionsCache.TryGetValue(index, out record))
+                {
+                    return record;
+                }
                 using (var ctx = new SignalDBContext())
                 {
                     var session = ctx.Sessions
@@ -688,9 +701,14 @@ namespace Signal_Windows.Storage
                         .SingleOrDefault();
                     if (session != null)
                     {
-                        return new SessionRecord(Base64.decode(session.Session));
+                        record = new SessionRecord(Base64.decode(session.Session));
                     }
-                    return new SessionRecord();
+                    else
+                    {
+                        record = new SessionRecord();
+                    }
+                    SessionsCache[index] = record;
+                    return record;
                 }
             }
         }
@@ -720,6 +738,7 @@ namespace Signal_Windows.Storage
 
         public static void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
+            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -740,6 +759,7 @@ namespace Signal_Windows.Storage
                             Username = address.Name
                         });
                     }
+                    SessionsCache[index] = record;
                     ctx.SaveChanges();
                 }
             }
@@ -761,8 +781,10 @@ namespace Signal_Windows.Storage
 
         public static void DeleteSession(SignalProtocolAddress address)
         {
+            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
             lock (DBLock)
             {
+                SessionsCache.Remove(index);
                 using (var ctx = new SignalDBContext())
                 {
                     var sessions = ctx.Sessions
@@ -780,7 +802,12 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     var sessions = ctx.Sessions
-                        .Where(s => s.Username == name);
+                        .Where(s => s.Username == name)
+                        .ToList();
+                    foreach (var session in sessions)
+                    {
+                        SessionsCache.Remove(GetSessionCacheIndex(name, session.DeviceId));
+                    }
                     ctx.Sessions.RemoveRange(sessions);
                     ctx.SaveChanges();
                 }
