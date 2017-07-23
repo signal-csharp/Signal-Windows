@@ -16,7 +16,6 @@ namespace Signal_Windows.ViewModels
     public class AddContactPageViewModel : ViewModelBase
     {
         public MainPageViewModel MainPageVM;
-
         private ImageSource _ContactPhoto = null;
 
         public ImageSource ContactPhoto
@@ -26,7 +25,6 @@ namespace Signal_Windows.ViewModels
         }
 
         private string _ContactName = "";
-
         public string ContactName
         {
             get { return _ContactName; }
@@ -34,7 +32,6 @@ namespace Signal_Windows.ViewModels
         }
 
         private string _ContactNumber = "";
-
         public string ContactNumber
         {
             get { return _ContactNumber; }
@@ -42,7 +39,6 @@ namespace Signal_Windows.ViewModels
         }
 
         private bool _UIEnabled = true;
-
         public bool UIEnabled
         {
             get { return _UIEnabled; }
@@ -107,17 +103,20 @@ namespace Signal_Windows.ViewModels
                 if (contact.Phones.Count > 0)
                 {
                     var originalNumber = contact.Phones[0].Number;
-                    // need a better way of determining the "default" country code here
-                    var formattedPhoneNumber = PhoneNumberFormatter.formatE164("1", originalNumber);
-                    if (string.IsNullOrEmpty(formattedPhoneNumber))
+                    if (originalNumber[0] != '+')
                     {
-                        ContactNumber = originalNumber;
-                        MessageDialog message = new MessageDialog("Please format the number in E.164 format.", "Could not format number");
-                        await message.ShowAsync();
-                    }
-                    else
-                    {
-                        ContactNumber = formattedPhoneNumber;
+                        // need a better way of determining the "default" country code here
+                        var formattedPhoneNumber = PhoneNumberFormatter.formatE164("1", originalNumber);
+                        if (string.IsNullOrEmpty(formattedPhoneNumber))
+                        {
+                            ContactNumber = originalNumber;
+                            MessageDialog message = new MessageDialog("Please format the number in E.164 format.", "Could not format number");
+                            await message.ShowAsync();
+                        }
+                        else
+                        {
+                            ContactNumber = formattedPhoneNumber;
+                        }
                     }
                 }
             }
