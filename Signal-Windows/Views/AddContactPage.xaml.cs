@@ -15,6 +15,7 @@ namespace Signal_Windows.Views
         public AddContactPage()
         {
             this.InitializeComponent();
+            Vm.View = this;
         }
 
         public AddContactPageViewModel Vm
@@ -45,9 +46,7 @@ namespace Signal_Windows.Views
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            // Should add a back button using Windows.UI.Core.SystemNavigationManager
-            // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Core.SystemNavigationManager
-            Frame.GoBack();
+            Vm.BackButton_Click(sender, e);
         }
     }
 }

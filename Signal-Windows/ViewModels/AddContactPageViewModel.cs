@@ -10,12 +10,14 @@ using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
+using Signal_Windows.Views;
 
 namespace Signal_Windows.ViewModels
 {
     public class AddContactPageViewModel : ViewModelBase
     {
         public MainPageViewModel MainPageVM;
+        public AddContactPage View;
         private ImageSource _ContactPhoto = null;
 
         public ImageSource ContactPhoto
@@ -45,80 +47,98 @@ namespace Signal_Windows.ViewModels
             set { _UIEnabled = value; RaisePropertyChanged(nameof(UIEnabled)); }
         }
 
+        internal void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(UIEnabled)
+            {
+                // Should add a back button using Windows.UI.Core.SystemNavigationManager
+                // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Core.SystemNavigationManager
+                View.Frame.GoBack();
+            }
+        }
+
         internal async void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            UIEnabled = false;
-            Debug.WriteLine("creating contact {0} ({1})", ContactName, ContactNumber);
-            SignalContact contact = new SignalContact()
+            if(UIEnabled)
             {
-                ThreadDisplayName = ContactName,
-                ThreadId = ContactNumber,
-                CanReceive = true,
-                AvatarFile = null,
-                LastActiveTimestamp = 0,
-                Draft = null,
-                Color = "red",
-                Unread = 0
-            };
-            ContactName = "";
-            ContactNumber = "";
-            await Task.Run(() =>
-            {
-                SignalDBContext.InsertOrUpdateContactLocked(contact, MainPageVM);
-            });
-            UIEnabled = true;
+                UIEnabled = false;
+                Debug.WriteLine("creating contact {0} ({1})", ContactName, ContactNumber);
+                SignalContact contact = new SignalContact()
+                {
+                    ThreadDisplayName = ContactName,
+                    ThreadId = ContactNumber,
+                    CanReceive = true,
+                    AvatarFile = null,
+                    LastActiveTimestamp = 0,
+                    Draft = null,
+                    Color = "red",
+                    Unread = 0
+                };
+                ContactName = "";
+                ContactNumber = "";
+                await Task.Run(() =>
+                {
+                    SignalDBContext.InsertOrUpdateContactLocked(contact, MainPageVM);
+                });
+                UIEnabled = true;
+            }
         }
 
         internal async void PickButton_Click(object sender, RoutedEventArgs e)
         {
-            ContactPicker contactPicker = new ContactPicker();
-            contactPicker.SelectionMode = ContactSelectionMode.Fields;
-            contactPicker.DesiredFieldsWithContactFieldType.Add(ContactFieldType.PhoneNumber);
-            var contact = await contactPicker.PickContactAsync();
-            if (contact != null)
+            if (UIEnabled)
             {
-                // The contact we just got doesn't contain the contact picture so we need to fetch it
-                // see https://stackoverflow.com/questions/33401625/cant-get-contact-profile-images-in-uwp
-                ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
-                // If we do not have access to contacts the ContactStore will be null, we can still use the contact the user
-                // seleceted however
-                if (contactStore != null)
+                UIEnabled = false;
+                ContactPicker contactPicker = new ContactPicker();
+                contactPicker.SelectionMode = ContactSelectionMode.Fields;
+                contactPicker.DesiredFieldsWithContactFieldType.Add(ContactFieldType.PhoneNumber);
+                var contact = await contactPicker.PickContactAsync();
+                if (contact != null)
                 {
-                    Contact realContact = await contactStore.GetContactAsync(contact.Id);
-                    if (realContact.SourceDisplayPicture != null)
+                    // The contact we just got doesn't contain the contact picture so we need to fetch it
+                    // see https://stackoverflow.com/questions/33401625/cant-get-contact-profile-images-in-uwp
+                    ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
+                    // If we do not have access to contacts the ContactStore will be null, we can still use the contact the user
+                    // seleceted however
+                    if (contactStore != null)
                     {
-                        using (var stream = await realContact.SourceDisplayPicture.OpenReadAsync())
+                        Contact realContact = await contactStore.GetContactAsync(contact.Id);
+                        if (realContact.SourceDisplayPicture != null)
                         {
-                            BitmapImage bitmapImage = new BitmapImage();
-                            await bitmapImage.SetSourceAsync(stream);
-                            ContactPhoto = bitmapImage;
-                        }
-                    }
-                    else
-                    {
-                        ContactPhoto = null;
-                    }
-                }
-                ContactName = contact.Name;
-                if (contact.Phones.Count > 0)
-                {
-                    var originalNumber = contact.Phones[0].Number;
-                    if (originalNumber[0] != '+')
-                    {
-                        // need a better way of determining the "default" country code here
-                        var formattedPhoneNumber = PhoneNumberFormatter.formatE164("1", originalNumber);
-                        if (string.IsNullOrEmpty(formattedPhoneNumber))
-                        {
-                            ContactNumber = originalNumber;
-                            MessageDialog message = new MessageDialog("Please format the number in E.164 format.", "Could not format number");
-                            await message.ShowAsync();
+                            using (var stream = await realContact.SourceDisplayPicture.OpenReadAsync())
+                            {
+                                BitmapImage bitmapImage = new BitmapImage();
+                                await bitmapImage.SetSourceAsync(stream);
+                                ContactPhoto = bitmapImage;
+                            }
                         }
                         else
                         {
-                            ContactNumber = formattedPhoneNumber;
+                            ContactPhoto = null;
+                        }
+                    }
+                    ContactName = contact.Name;
+                    if (contact.Phones.Count > 0)
+                    {
+                        var originalNumber = contact.Phones[0].Number;
+                        if (originalNumber[0] != '+')
+                        {
+                            // need a better way of determining the "default" country code here
+                            var formattedPhoneNumber = PhoneNumberFormatter.formatE164("1", originalNumber);
+                            if (string.IsNullOrEmpty(formattedPhoneNumber))
+                            {
+                                ContactNumber = originalNumber;
+                                MessageDialog message = new MessageDialog("Please format the number in E.164 format.", "Could not format number");
+                                await message.ShowAsync();
+                            }
+                            else
+                            {
+                                ContactNumber = formattedPhoneNumber;
+                            }
                         }
                     }
                 }
+                UIEnabled = true;
             }
         }
     }
