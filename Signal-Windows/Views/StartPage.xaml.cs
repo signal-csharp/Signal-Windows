@@ -1,6 +1,8 @@
 using Signal_Windows.ViewModels;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
 
 // Die Elementvorlage "Leere Seite" wird unter https://go.microsoft.com/fwlink/?LinkId=234238 dokumentiert.
 
@@ -22,6 +24,12 @@ namespace Signal_Windows.Views
             {
                 return (StartPageViewModel)DataContext;
             }
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            Utils.DisableBackButton();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

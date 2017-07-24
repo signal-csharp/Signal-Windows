@@ -1,4 +1,5 @@
 using Signal_Windows.ViewModels;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
@@ -26,11 +27,18 @@ namespace Signal_Windows.Views
             }
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs ev)
         {
-            base.OnNavigatedTo(e);
+            base.OnNavigatedTo(ev);
+            Utils.EnableBackButton(Vm.BackButton_Click);
             // probably not the best way to do this
             Vm.ContactPhoto = null;
+        }
+
+        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        {
+            base.OnNavigatingFrom(e);
+            Utils.DisableBackButton(Vm.BackButton_Click);
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
@@ -42,11 +50,6 @@ namespace Signal_Windows.Views
         private void PickButton_Click(object sender, RoutedEventArgs e)
         {
             Vm.PickButton_Click(sender, e);
-        }
-
-        private void BackButton_Click(object sender, RoutedEventArgs e)
-        {
-            Vm.BackButton_Click(sender, e);
         }
     }
 }
