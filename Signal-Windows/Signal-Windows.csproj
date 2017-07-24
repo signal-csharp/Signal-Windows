@@ -134,7 +134,6 @@
     <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
     <Compile Include="Storage\Store.cs" />
-    <Compile Include="Storage\WhisperTrustStore.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
     <Compile Include="ViewModels\LinkPageViewModel.cs" />

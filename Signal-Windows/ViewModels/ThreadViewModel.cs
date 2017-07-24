@@ -33,6 +33,8 @@ namespace Signal_Windows.ViewModels
         {
             CanSend = false;
             DisposeCurrentThread();
+            WelcomeVisibility = Visibility.Collapsed;
+            MainVisibility = Visibility.Visible;
             ThreadTitle = thread.ThreadDisplayName;
             var before = Util.CurrentTimeMillis();
             var messages = await Task.Run(() =>
