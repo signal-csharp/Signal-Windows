@@ -1,7 +1,9 @@
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -20,6 +22,58 @@ namespace Signal_Windows
         {
             this.InitializeComponent();
             Vm.View = this;
+            Loaded += MainPage_Loaded;
+            Unloaded += MainPage_Unloaded;
+        }
+
+        private void MainPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            Frame.SizeChanged -= Frame_SizeChanged;
+        }
+
+        private void MainPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            Frame.SizeChanged += Frame_SizeChanged;
+        }
+
+        private MainPageStyle GetViewStyle(Size s)
+        {
+            if(s.Width <= 640)
+            {
+                return MainPageStyle.Narrow;
+            }
+            else
+            {
+                return MainPageStyle.Wide;
+            }
+        }
+
+        private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            var oldStyle = GetViewStyle(e.PreviousSize);
+            var newStyle = GetViewStyle(e.NewSize);
+            if(oldStyle != newStyle)
+            {
+                Debug.WriteLine("new style "+newStyle);
+                if (newStyle == MainPageStyle.Narrow)
+                {
+                    if (Vm.SelectedThread != null)
+                    {
+                        Vm.ThreadListVisibility = Visibility.Collapsed;
+                        Vm.ThreadVisibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        Vm.ThreadListVisibility = Visibility.Visible;
+                        Vm.ThreadVisibility = Visibility.Collapsed;
+                    }
+                }
+                else if (newStyle == MainPageStyle.Wide)
+                {
+                    Vm.ThreadListVisibility = Visibility.Visible;
+                    Vm.ThreadVisibility = Visibility.Visible;
+                }
+            }
         }
 
         public MainPageViewModel Vm
@@ -32,8 +86,6 @@ namespace Signal_Windows
 
         private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ThreadView.Vm.WelcomeVisibility = Visibility.Collapsed;
-            ThreadView.Vm.MainVisibility = Visibility.Visible;
             Vm.ContactsList_SelectionChanged(sender, e);
         }
 
@@ -60,5 +112,11 @@ namespace Signal_Windows
             dialog.DefaultCommandIndex = 0;
             var result = await dialog.ShowAsync();
         }
+    }
+
+    public enum MainPageStyle
+    {
+        Narrow,
+        Wide
     }
 }

@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using static libsignalservice.SignalServiceMessagePipe;
@@ -20,7 +21,20 @@ namespace Signal_Windows.ViewModels
 {
     public partial class MainPageViewModel : ViewModelBase, MessagePipeCallback
     {
-        private ApplicationDataContainer LocalSettings = ApplicationData.Current.LocalSettings;
+        private Visibility _ThreadListVisibility;
+        public Visibility ThreadListVisibility
+        {
+            get { return _ThreadListVisibility; }
+            set { _ThreadListVisibility = value; RaisePropertyChanged(nameof(ThreadListVisibility)); }
+        }
+
+        private Visibility _ThreadVisibility;
+        public Visibility ThreadVisibility
+        {
+            get { return _ThreadVisibility; }
+            set { _ThreadVisibility = value; RaisePropertyChanged(nameof(ThreadVisibility)); }
+        }
+
         private AsyncLock ActionInProgress = new AsyncLock();
         public ThreadViewModel Thread { get; set; }
         public MainPage View;
