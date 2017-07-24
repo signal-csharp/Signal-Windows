@@ -75,7 +75,10 @@ namespace Signal_Windows.ViewModels
 
         public void AddToCache(SignalMessage sm)
         {
-            OutgoingCache[sm.Id] = sm.View;
+            if(sm.View != null)
+            {
+                OutgoingCache[sm.Id] = sm.View;
+            }
         }
 
         private string _ThreadTitle;
