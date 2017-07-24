@@ -3,6 +3,7 @@ using libsignalservice.util;
 using Signal_Windows.Controls;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -78,6 +79,10 @@ namespace Signal_Windows.ViewModels
             if(sm.View != null)
             {
                 OutgoingCache[sm.Id] = sm.View;
+            }
+            else
+            {
+                throw new Exception("Attempt to add null view to OutgoingCache");
             }
         }
 
