@@ -1,4 +1,6 @@
 ﻿using System;
+using Windows.Foundation;
+using Windows.UI.Core;
 using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows
@@ -57,5 +59,45 @@ namespace Signal_Windows
                 default: return Default;
             }
         }
+
+        public static void EnableBackButton()
+        {
+            SystemNavigationManager.GetForCurrentView().AppViewBackButtonVisibility = AppViewBackButtonVisibility.Visible;
+        }
+
+        public static void EnableBackButton(EventHandler<BackRequestedEventArgs> handler)
+        {
+            SystemNavigationManager.GetForCurrentView().AppViewBackButtonVisibility = AppViewBackButtonVisibility.Visible;
+            SystemNavigationManager.GetForCurrentView().BackRequested += handler;
+        }
+
+        public static void DisableBackButton()
+        {
+            SystemNavigationManager.GetForCurrentView().AppViewBackButtonVisibility = AppViewBackButtonVisibility.Collapsed;
+        }
+
+        public static void DisableBackButton(EventHandler<BackRequestedEventArgs> handler)
+        {
+            SystemNavigationManager.GetForCurrentView().AppViewBackButtonVisibility = AppViewBackButtonVisibility.Collapsed;
+            SystemNavigationManager.GetForCurrentView().BackRequested -= handler;
+        }
+
+        public static PageStyle GetViewStyle(Size s)
+        {
+            if (s.Width <= 640)
+            {
+                return PageStyle.Narrow;
+            }
+            else
+            {
+                return PageStyle.Wide;
+            }
+        }
+    }
+
+    public enum PageStyle
+    {
+        Narrow,
+        Wide
     }
 }

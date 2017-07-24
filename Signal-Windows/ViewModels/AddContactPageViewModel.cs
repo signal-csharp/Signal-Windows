@@ -11,6 +11,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using Signal_Windows.Views;
+using Windows.UI.Core;
 
 namespace Signal_Windows.ViewModels
 {
@@ -47,12 +48,10 @@ namespace Signal_Windows.ViewModels
             set { _UIEnabled = value; RaisePropertyChanged(nameof(UIEnabled)); }
         }
 
-        internal void BackButton_Click(object sender, RoutedEventArgs e)
+        internal void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
             if(UIEnabled)
             {
-                // Should add a back button using Windows.UI.Core.SystemNavigationManager
-                // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Core.SystemNavigationManager
                 View.Frame.GoBack();
             }
         }

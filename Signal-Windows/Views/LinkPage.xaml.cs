@@ -1,4 +1,5 @@
 using Signal_Windows.ViewModels;
+using Windows.UI.Core;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using ZXing.Mobile;
@@ -26,9 +27,10 @@ namespace Signal_Windows.Views
             }
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs navEvent)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            base.OnNavigatedTo(navEvent);
+            base.OnNavigatedTo(e);
+            Utils.DisableBackButton();
             Vm.Init();
             Vm.BeginLinking();
         }

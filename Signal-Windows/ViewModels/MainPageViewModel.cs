@@ -16,6 +16,8 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using static libsignalservice.SignalServiceMessagePipe;
+using Windows.UI.Core;
+using Windows.Foundation;
 
 namespace Signal_Windows.ViewModels
 {
@@ -33,6 +35,13 @@ namespace Signal_Windows.ViewModels
         {
             get { return _ThreadVisibility; }
             set { _ThreadVisibility = value; RaisePropertyChanged(nameof(ThreadVisibility)); }
+        }
+
+        private bool _ThreadListAlignRight;
+        public bool ThreadListAlignRight
+        {
+            get { return _ThreadListAlignRight;  }
+            set { _ThreadListAlignRight = value; RaisePropertyChanged(nameof(ThreadListAlignRight)); }
         }
 
         private AsyncLock ActionInProgress = new AsyncLock();
@@ -65,6 +74,46 @@ namespace Signal_Windows.ViewModels
         {
             Threads.Add(contact);
             ThreadsDictionary[contact.ThreadId] = contact;
+        }
+
+        public void SwitchToStyle(PageStyle newStyle)
+        {
+            if (newStyle == PageStyle.Narrow)
+            {
+                if (SelectedThread != null)
+                {
+                    Utils.EnableBackButton(BackButton_Click);
+                    ThreadListVisibility = Visibility.Collapsed;
+                    ThreadVisibility = Visibility.Visible;
+                    ThreadListAlignRight = false;
+                }
+                else
+                {
+                    Utils.DisableBackButton();
+                    ThreadListVisibility = Visibility.Visible;
+                    ThreadVisibility = Visibility.Collapsed;
+                    View.Unselect();
+                    ThreadListAlignRight = true;
+                }
+            }
+            else if (newStyle == PageStyle.Wide)
+            {
+                Utils.DisableBackButton(BackButton_Click);
+                ThreadListVisibility = Visibility.Visible;
+                ThreadVisibility = Visibility.Visible;
+                ThreadListAlignRight = false;
+            }
+        }
+
+        internal async void BackButton_Click(object sender, BackRequestedEventArgs e)
+        {
+            using (await ActionInProgress.LockAsync())
+            {
+                SelectedThread = null;
+                Thread.DisposeCurrentThread();
+                SwitchToStyle(View.GetCurrentViewStyle());
+                //Utils.DisableBackButton(BackButton_Click);
+            }
         }
 
         public void UIUpdateThread(SignalThread thread)
@@ -152,19 +201,35 @@ namespace Signal_Windows.ViewModels
 
         internal async void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            try
+            if(e.AddedItems.Count == 1)
             {
-                using (await ActionInProgress.LockAsync())
+                try
                 {
-                    SelectedThread = (SignalThread)e.AddedItems[0];
-                    await Thread.Load(SelectedThread);
-                    View.ScrollToBottom();
+                    using (await ActionInProgress.LockAsync())
+                    {
+                        SelectedThread = (SignalThread)e.AddedItems[0];
+                        var style = View.GetCurrentViewStyle();
+                        if(style == PageStyle.Narrow)
+                        {
+                            ThreadListAlignRight = false;
+                            Utils.EnableBackButton(BackButton_Click);
+                            ThreadListVisibility = Visibility.Collapsed;
+                            ThreadVisibility = Visibility.Visible;
+                            await Thread.Load(SelectedThread);
+                            View.ScrollToBottom();
+                        }
+                        else
+                        {
+                            await Thread.Load(SelectedThread);
+                            View.ScrollToBottom();
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                Debug.WriteLine(ex.StackTrace);
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    Debug.WriteLine(ex.StackTrace);
+                }
             }
         }
 

@@ -11,7 +11,7 @@
     DataContext="{Binding MainPageInstance, Source={StaticResource Locator}}">
 
     <RelativePanel Name="MainPanel">
-        <ScrollViewer Name="ContactsPanelScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" Visibility="{x:Bind Vm.ThreadListVisibility, Mode=OneWay}">
+        <ScrollViewer Name="ContactsPanelScrollViewer" RelativePanel.AlignLeftWithPanel="True"  RelativePanel.AlignRightWithPanel="{x:Bind Vm.ThreadListAlignRight, Mode=OneWay}" MaxWidth="640" VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" Visibility="{x:Bind Vm.ThreadListVisibility, Mode=OneWay}">
             <StackPanel>
                 <SymbolIcon Symbol="AddFriend" HorizontalAlignment="Right" Name="AddFriendSymbol" Tapped="AddFriendSymbol_Tapped" Margin="0 0 0 5" />
                 <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">

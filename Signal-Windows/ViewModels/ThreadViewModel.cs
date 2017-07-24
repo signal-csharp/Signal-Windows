@@ -53,7 +53,7 @@ namespace Signal_Windows.ViewModels
             CanSend = thread.CanReceive;
         }
 
-        private void DisposeCurrentThread()
+        public void DisposeCurrentThread()
         {
             Messages.Clear();
             OutgoingCache.Clear();

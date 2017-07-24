@@ -4,10 +4,12 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Navigation;
 
 // Die Elementvorlage "Leere Seite" wird unter https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x407 dokumentiert.
 
@@ -34,45 +36,26 @@ namespace Signal_Windows
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             Frame.SizeChanged += Frame_SizeChanged;
+            Vm.SwitchToStyle(GetCurrentViewStyle());
         }
 
-        private MainPageStyle GetViewStyle(Size s)
+        public PageStyle GetCurrentViewStyle()
         {
-            if(s.Width <= 640)
-            {
-                return MainPageStyle.Narrow;
-            }
-            else
-            {
-                return MainPageStyle.Wide;
-            }
+            return Utils.GetViewStyle(new Size(ActualWidth, ActualHeight));
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
         }
 
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            var oldStyle = GetViewStyle(e.PreviousSize);
-            var newStyle = GetViewStyle(e.NewSize);
+            var oldStyle = Utils.GetViewStyle(e.PreviousSize);
+            var newStyle = Utils.GetViewStyle(e.NewSize);
             if(oldStyle != newStyle)
             {
-                Debug.WriteLine("new style "+newStyle);
-                if (newStyle == MainPageStyle.Narrow)
-                {
-                    if (Vm.SelectedThread != null)
-                    {
-                        Vm.ThreadListVisibility = Visibility.Collapsed;
-                        Vm.ThreadVisibility = Visibility.Visible;
-                    }
-                    else
-                    {
-                        Vm.ThreadListVisibility = Visibility.Visible;
-                        Vm.ThreadVisibility = Visibility.Collapsed;
-                    }
-                }
-                else if (newStyle == MainPageStyle.Wide)
-                {
-                    Vm.ThreadListVisibility = Visibility.Visible;
-                    Vm.ThreadVisibility = Visibility.Visible;
-                }
+                Vm.SwitchToStyle(newStyle);
             }
         }
 
@@ -112,11 +95,10 @@ namespace Signal_Windows
             dialog.DefaultCommandIndex = 0;
             var result = await dialog.ShowAsync();
         }
-    }
 
-    public enum MainPageStyle
-    {
-        Narrow,
-        Wide
+        public void Unselect()
+        {
+            ContactsList.SelectedItem = null;
+        }
     }
 }
