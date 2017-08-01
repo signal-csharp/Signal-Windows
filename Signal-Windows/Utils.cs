@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using Windows.Foundation;
 using Windows.UI.Core;
 using Windows.UI.Xaml.Media;
@@ -99,5 +102,31 @@ namespace Signal_Windows
     {
         Narrow,
         Wide
+    }
+
+    public class RangeObservableCollection<T> : ObservableCollection<T>
+    {
+        // credits to Pete Ohanlon: https://peteohanlon.wordpress.com/2008/10/22/bulk-loading-in-observablecollection/
+        private bool _suppressNotification = false;
+
+        protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+        {
+            if (!_suppressNotification)
+                base.OnCollectionChanged(e);
+        }
+
+        public void AddRange(IEnumerable<T> list)
+        {
+            if (list == null)
+                throw new ArgumentNullException("list");
+
+            _suppressNotification = true;
+            foreach (T item in list)
+            {
+                Add(item);
+            }
+            _suppressNotification = false;
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
     }
 }

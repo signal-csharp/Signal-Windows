@@ -24,7 +24,7 @@ namespace Signal_Windows.Controls
         public void ScrollToBottm()
         {
             SelectedMessagesScrollViewer.UpdateLayout();
-            SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f);
+            SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f, true);
         }
 
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)

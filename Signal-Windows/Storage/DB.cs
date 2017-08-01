@@ -156,12 +156,16 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    return ctx.Messages
+                    var messages = ctx.Messages
                         .Where(m => m.ThreadId == thread.ThreadId)
                         .Include(m => m.Content)
                         .Include(m => m.Author)
                         .Include(m => m.Attachments)
+                        .OrderByDescending(m => m.Id)
+                        .Take(200)
                         .AsNoTracking().ToList();
+                    messages.Reverse();
+                    return messages;
                 }
             }
         }

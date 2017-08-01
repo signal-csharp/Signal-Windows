@@ -15,7 +15,7 @@ namespace Signal_Windows.ViewModels
     public class ThreadViewModel : ViewModelBase
     {
         public MainPageViewModel MainPageVm;
-        public ObservableCollection<SignalMessage> Messages = new ObservableCollection<SignalMessage>();
+        public RangeObservableCollection<SignalMessage> Messages = new RangeObservableCollection<SignalMessage>();
         private Dictionary<ulong, MessageBox> OutgoingCache = new Dictionary<ulong, MessageBox>();
 
         public ThreadViewModel(MainPageViewModel mainPageVm)
@@ -43,10 +43,7 @@ namespace Signal_Windows.ViewModels
                 return SignalDBContext.GetMessagesLocked(thread, this);
             });
             var after1 = Util.CurrentTimeMillis();
-            foreach (var m in messages)
-            {
-                Messages.Add(m);
-            }
+            Messages.AddRange(messages);
             var after2 = Util.CurrentTimeMillis();
             Debug.WriteLine("db query: " + (after1 - before));
             Debug.WriteLine("ui: " + (after2 - after1));
