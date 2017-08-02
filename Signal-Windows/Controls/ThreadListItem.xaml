@@ -8,6 +8,12 @@
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="400">
-
-    <TextBlock Text="{x:Bind DisplayName, Mode=OneWay}" />
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0" Name="ConversationDisplayName" />
+        <TextBlock Grid.Column="1" Name="UnreadString" />
+    </Grid>
 </UserControl>

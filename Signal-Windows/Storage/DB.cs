@@ -288,6 +288,38 @@ namespace Signal_Windows.Storage
             }
         }
 
+        public static void UpdateUnread(string threadId, uint unread, MainPageViewModel mpvm)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var contact = ctx.Contacts
+                        .Where(c => c.ThreadId == threadId)
+                        .SingleOrDefault();
+                    if (contact == null)
+                    {
+                        var group = ctx.Groups
+                            .Where(g => g.ThreadId == threadId)
+                            .Single();
+                        group.Unread = unread;
+                    }
+                    else
+                    {
+                        contact.Unread = unread;
+                    }
+                    ctx.SaveChanges();
+                }
+                if (mpvm != null)
+                {
+                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        //mpvm.AddThread(dbgroup); TODO support for received read messages
+                    }).AsTask().Wait();
+                }
+            }
+        }
+
         #endregion Threads
 
         #region Groups
@@ -314,7 +346,7 @@ namespace Signal_Windows.Storage
                             ThreadDisplayName = "Unknown group",
                             LastActiveTimestamp = Util.CurrentTimeMillis(),
                             AvatarFile = null,
-                            Unread = 1,
+                            Unread = 0,
                             CanReceive = false,
                             GroupMemberships = new List<GroupMembership>()
                         };
@@ -355,7 +387,7 @@ namespace Signal_Windows.Storage
                             ThreadDisplayName = displayname,
                             LastActiveTimestamp = Util.CurrentTimeMillis(),
                             AvatarFile = avatarfile,
-                            Unread = 1,
+                            Unread = 0,
                             CanReceive = canReceive,
                             GroupMemberships = new List<GroupMembership>()
                         };
@@ -366,7 +398,6 @@ namespace Signal_Windows.Storage
                         dbgroup.ThreadDisplayName = displayname;
                         dbgroup.LastActiveTimestamp = Util.CurrentTimeMillis();
                         dbgroup.AvatarFile = avatarfile;
-                        dbgroup.Unread = 1;
                         dbgroup.CanReceive = true;
                     }
                     ctx.SaveChanges();

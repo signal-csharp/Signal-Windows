@@ -82,16 +82,7 @@ namespace Signal_Windows.ViewModels
         public void UIUpdateThread(SignalThread thread)
         {
             SignalThread uiThread = ThreadsDictionary[thread.ThreadId];
-            uiThread.ThreadDisplayName = thread.ThreadDisplayName;
-            uiThread.LastActiveTimestamp = thread.LastActiveTimestamp;
-            uiThread.Draft = thread.Draft;
-            uiThread.Unread = thread.Unread;
-            uiThread.AvatarFile = thread.AvatarFile;
-            uiThread.View.Reload();
-            if (SelectedThread != null && uiThread.ThreadId == SelectedThread.ThreadId)
-            {
-                View.Thread.Update(thread);
-            }
+            uiThread.View.Update(thread);
         }
 
         #endregion Contacts
@@ -228,11 +219,9 @@ namespace Signal_Windows.ViewModels
         {
             using (await ActionInProgress.LockAsync())
             {
-                await Task.Run(() =>
-                {
-                    SignalDBContext.SaveMessageLocked(message);
-                });
-                if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                var thread = ThreadsDictionary[message.ThreadId];
+                uint unread = thread.Unread;
+                if (SelectedThread == thread)
                 {
                     View.Thread.Append(message);
                     View.Thread.ScrollToBottom();
@@ -241,6 +230,20 @@ namespace Signal_Windows.ViewModels
                         View.Thread.AddToCache(message);
                     }
                 }
+                else
+                {
+                    unread++;
+                    thread.Unread = unread;
+                    ThreadsDictionary[message.ThreadId].View.UnreadCount = unread;
+                    await Task.Run(() =>
+                    {
+                        SignalDBContext.UpdateUnread(message.ThreadId, unread, null);
+                    });
+                }
+                await Task.Run(() =>
+                {
+                    SignalDBContext.SaveMessageLocked(message);
+                });
             }
         }
 

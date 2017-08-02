@@ -16,6 +16,11 @@
                 <StackPanel>
                     <SymbolIcon Symbol="AddFriend" HorizontalAlignment="Right" Name="AddFriendSymbol" Tapped="AddFriendSymbol_Tapped" Margin="0 0 0 5" />
                     <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <controls:ThreadListItem />

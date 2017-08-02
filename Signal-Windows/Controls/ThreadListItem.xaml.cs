@@ -11,6 +11,12 @@ namespace Signal_Windows.Controls
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        public ThreadListItem()
+        {
+            this.InitializeComponent();
+            this.DataContextChanged += ThreadListItem_DataContextChanged;
+        }
+
         public SignalThread Model
         {
             get
@@ -23,24 +29,26 @@ namespace Signal_Windows.Controls
             }
         }
 
-        private string _DisplayName;
+        private uint _UnreadCount;
 
-        public string DisplayName
+        public uint UnreadCount
         {
             get
             {
-                return _DisplayName;
+                return _UnreadCount;
             }
             set
             {
-                _DisplayName = value;
+                _UnreadCount = value;
+                if (value != 0)
+                {
+                    UnreadString.Text = value.ToString();
+                }
+                else
+                {
+                    UnreadString.Text = "";
+                }
             }
-        }
-
-        public ThreadListItem()
-        {
-            this.InitializeComponent();
-            this.DataContextChanged += ThreadListItem_DataContextChanged;
         }
 
         private void ThreadListItem_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
@@ -48,15 +56,15 @@ namespace Signal_Windows.Controls
             if (Model != null)
             {
                 Model.View = this;
-                DisplayName = Model.ThreadDisplayName;
-                Reload();
+                ConversationDisplayName.Text = Model.ThreadDisplayName;
+                UnreadCount = Model.Unread;
             }
         }
 
-        public void Reload()
+        public void Update(SignalThread thread)
         {
-            DisplayName = Model.ThreadDisplayName;
-            PropertyChanged(this, new PropertyChangedEventArgs("DisplayName"));
+            ConversationDisplayName.Text = thread.ThreadDisplayName;
+            UnreadCount = thread.Unread;
         }
     }
 }

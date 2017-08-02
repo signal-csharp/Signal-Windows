@@ -119,8 +119,16 @@ namespace Signal_Windows.ViewModels
                     if (content.SynchronizeMessage.getSent().HasValue)
                     {
                         var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
+                        var dataMessage = syncMessage.getMessage();
                         //TODO check both the db for duplicates
-                        HandleSignalMessage(envelope, content, syncMessage.getMessage(), true);
+                        if (dataMessage.isGroupUpdate())
+                        {
+                            HandleGroupUpdateMessage(envelope, content, dataMessage);
+                        }
+                        else
+                        {
+                            HandleSignalMessage(envelope, content, dataMessage, true);
+                        }
                     }
                 } //TODO callmessages
                 else
@@ -142,7 +150,7 @@ namespace Signal_Windows.ViewModels
             {
                 SignalServiceGroup group = dataMessage.getGroupInfo().ForceGetValue();
                 SignalGroup g = new SignalGroup();
-                string displayname = null;
+                string displayname = "Unknown group";
                 string avatarfile = null;
                 if (group.getName().HasValue)
                 {
