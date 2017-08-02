@@ -10,39 +10,21 @@
     mc:Ignorable="d"
     DataContext="{Binding MainPageInstance, Source={StaticResource Locator}}">
 
-    <RelativePanel Name="MainPanel">
-        <ScrollViewer Name="ContactsPanelScrollViewer" RelativePanel.AlignLeftWithPanel="True"  RelativePanel.AlignRightWithPanel="{x:Bind Vm.ThreadListAlignRight, Mode=OneWay}" MaxWidth="640" VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" Visibility="{x:Bind Vm.ThreadListVisibility, Mode=OneWay}">
-            <StackPanel>
-                <SymbolIcon Symbol="AddFriend" HorizontalAlignment="Right" Name="AddFriendSymbol" Tapped="AddFriendSymbol_Tapped" Margin="0 0 0 5" />
-                <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <controls:ThreadListItem />
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </StackPanel>
-        </ScrollViewer>
-        <controls:ThreadView x:Name="ThreadView" RelativePanel.RightOf="ContactsPanelScrollViewer" RelativePanel.AlignTopWithPanel="True" RelativePanel.AlignRightWithPanel="True" RelativePanel.AlignBottomWithPanel="True" Padding="10 10 10 10" DataContext="{x:Bind Vm.Thread}" Visibility="{x:Bind Vm.ThreadVisibility, Mode=OneWay}" />
-        <!--<VisualStateManager.VisualStateGroups>
-            <VisualStateGroup>
-                <VisualState x:Name="MyVisualStateHide">
-                    <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="0"></AdaptiveTrigger>
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="ThreadListGrid.Visibility" Value="Collapsed"></Setter>
-                    </VisualState.Setters>
-                </VisualState>
-                <VisualState x:Name="MyVisualStateShow">
-                    <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="720"></AdaptiveTrigger>
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="ThreadListGrid.Visibility" Value="Visible"></Setter>
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups>-->
-    </RelativePanel>
+    <SplitView Name="MainPanel" CompactPaneLength="0" OpenPaneLength="640">
+        <SplitView.Pane>
+            <ScrollViewer Name="ContactsPanelScrollViewer" HorizontalAlignment="Left" MaxWidth="640" Padding="0 0 15 0">
+                <StackPanel>
+                    <SymbolIcon Symbol="AddFriend" HorizontalAlignment="Right" Name="AddFriendSymbol" Tapped="AddFriendSymbol_Tapped" Margin="0 0 0 5" />
+                    <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <controls:ThreadListItem />
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </ScrollViewer>
+        </SplitView.Pane>
+        <controls:ThreadView x:Name="ThreadView" Padding="10 10 10 10" />
+    </SplitView>
 </Page>

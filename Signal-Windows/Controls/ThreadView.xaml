@@ -9,16 +9,16 @@
     d:DesignHeight="300"
     d:DesignWidth="400">
 
-    <Grid x:Name="MainGrid">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" Name="UnselectedBlock">Select a contact and go!</TextBlock>
-        <TextBlock Grid.Row="0" Visibility="{x:Bind Vm.MainVisibility, Mode=OneWay}" Name="TitleBlock" Text="{x:Bind Vm.ThreadTitle}" IsTextSelectionEnabled="True" HorizontalAlignment="Center" />
-        <ScrollViewer Grid.Row="1" Visibility="{x:Bind  Vm.MainVisibility, Mode=OneWay}" Name="SelectedMessagesScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 14 0">
-            <ItemsControl Name="SelectedMessagesList" ItemsSource="{x:Bind Vm.Messages}">
+        <TextBlock Grid.Row="0" Name="UnselectedBlock" HorizontalAlignment="Center" Padding="0 0 14 0">Select a contact and go!</TextBlock>
+        <TextBlock Grid.Row="0" Name="TitleBlock" IsTextSelectionEnabled="True" HorizontalAlignment="Center" />
+        <ScrollViewer Grid.Row="1" Name="SelectedMessagesScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 14 0">
+            <ItemsControl Name="SelectedMessagesList" ItemsSource="{x:Bind Messages}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Vertical" />
@@ -31,6 +31,6 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
-        <TextBox Grid.Row="2" Visibility="{x:Bind  Vm.MainVisibility, Mode=OneWay}" IsEnabled="{x:Bind Vm.CanSend, Mode=OneWay}" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
+        <TextBox Grid.Row="2" Name="InputTextBox" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
     </Grid>
 </UserControl>

@@ -10,27 +10,19 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
 using Windows.System;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using static libsignalservice.SignalServiceMessagePipe;
-using Windows.UI.Core;
-using Windows.Foundation;
 
 namespace Signal_Windows.ViewModels
 {
     public partial class MainPageViewModel : ViewModelBase, MessagePipeCallback
     {
-        private Visibility _ThreadListVisibility;
-        public Visibility ThreadListVisibility
-        {
-            get { return _ThreadListVisibility; }
-            set { _ThreadListVisibility = value; RaisePropertyChanged(nameof(ThreadListVisibility)); }
-        }
-
         private Visibility _ThreadVisibility;
+
         public Visibility ThreadVisibility
         {
             get { return _ThreadVisibility; }
@@ -38,14 +30,14 @@ namespace Signal_Windows.ViewModels
         }
 
         private bool _ThreadListAlignRight;
+
         public bool ThreadListAlignRight
         {
-            get { return _ThreadListAlignRight;  }
+            get { return _ThreadListAlignRight; }
             set { _ThreadListAlignRight = value; RaisePropertyChanged(nameof(ThreadListAlignRight)); }
         }
 
         private AsyncLock ActionInProgress = new AsyncLock();
-        public ThreadViewModel Thread { get; set; }
         public MainPage View;
         public SignalThread SelectedThread;
         private volatile bool Running = true;
@@ -76,43 +68,14 @@ namespace Signal_Windows.ViewModels
             ThreadsDictionary[contact.ThreadId] = contact;
         }
 
-        public void SwitchToStyle(PageStyle newStyle)
-        {
-            if (newStyle == PageStyle.Narrow)
-            {
-                if (SelectedThread != null)
-                {
-                    Utils.EnableBackButton(BackButton_Click);
-                    ThreadListVisibility = Visibility.Collapsed;
-                    ThreadVisibility = Visibility.Visible;
-                    ThreadListAlignRight = false;
-                }
-                else
-                {
-                    Utils.DisableBackButton();
-                    ThreadListVisibility = Visibility.Visible;
-                    ThreadVisibility = Visibility.Collapsed;
-                    View.Unselect();
-                    ThreadListAlignRight = true;
-                }
-            }
-            else if (newStyle == PageStyle.Wide)
-            {
-                Utils.DisableBackButton(BackButton_Click);
-                ThreadListVisibility = Visibility.Visible;
-                ThreadVisibility = Visibility.Visible;
-                ThreadListAlignRight = false;
-            }
-        }
-
         internal async void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
             using (await ActionInProgress.LockAsync())
             {
                 SelectedThread = null;
-                Thread.DisposeCurrentThread();
-                SwitchToStyle(View.GetCurrentViewStyle());
-                //Utils.DisableBackButton(BackButton_Click);
+                View.Thread.DisposeCurrentThread();
+                View.SwitchToStyle(View.GetCurrentViewStyle());
+                Utils.DisableBackButton(BackButton_Click);
             }
         }
 
@@ -127,7 +90,7 @@ namespace Signal_Windows.ViewModels
             uiThread.View.Reload();
             if (SelectedThread != null && uiThread.ThreadId == SelectedThread.ThreadId)
             {
-                Thread.Update(thread);
+                View.Thread.Update(thread);
             }
         }
 
@@ -136,7 +99,6 @@ namespace Signal_Windows.ViewModels
         public MainPageViewModel()
         {
             App.MainPageActive = true;
-            Thread = new ThreadViewModel(this);
             Init();
         }
 
@@ -201,28 +163,16 @@ namespace Signal_Windows.ViewModels
 
         internal async void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(e.AddedItems.Count == 1)
+            if (e.AddedItems.Count == 1)
             {
                 try
                 {
                     using (await ActionInProgress.LockAsync())
                     {
                         SelectedThread = (SignalThread)e.AddedItems[0];
-                        var style = View.GetCurrentViewStyle();
-                        if(style == PageStyle.Narrow)
-                        {
-                            ThreadListAlignRight = false;
-                            Utils.EnableBackButton(BackButton_Click);
-                            ThreadListVisibility = Visibility.Collapsed;
-                            ThreadVisibility = Visibility.Visible;
-                            await Thread.Load(SelectedThread);
-                            View.ScrollToBottom();
-                        }
-                        else
-                        {
-                            await Thread.Load(SelectedThread);
-                            View.ScrollToBottom();
-                        }
+                        await View.Thread.Load(SelectedThread);
+                        View.SwitchToStyle(View.GetCurrentViewStyle());
+                        View.Thread.ScrollToBottom();
                     }
                 }
                 catch (Exception ex)
@@ -254,15 +204,15 @@ namespace Signal_Windows.ViewModels
                     };
                     using (await ActionInProgress.LockAsync())
                     {
-                        Thread.Append(message);
-                        View.ScrollToBottom();
+                        View.Thread.Append(message);
+                        View.Thread.ScrollToBottom();
                         await Task.Run(() =>
                         {
                             SignalDBContext.SaveMessageLocked(message);
                         });
                         if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
                         {
-                            Thread.AddToCache(message);
+                            View.Thread.AddToCache(message);
                         }
                         OutgoingQueue.Add(message);
                         var after = Util.CurrentTimeMillis();
@@ -284,11 +234,11 @@ namespace Signal_Windows.ViewModels
                 });
                 if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
                 {
-                    Thread.Append(message);
-                    View.ScrollToBottom();
+                    View.Thread.Append(message);
+                    View.Thread.ScrollToBottom();
                     if (message.Type == SignalMessageType.Synced)
                     {
-                        Thread.AddToCache(message);
+                        View.Thread.AddToCache(message);
                     }
                 }
             }
@@ -298,7 +248,7 @@ namespace Signal_Windows.ViewModels
         {
             if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
             {
-                Thread.UpdateMessageBox(updatedMessage);
+                View.Thread.UpdateMessageBox(updatedMessage);
             }
         }
 

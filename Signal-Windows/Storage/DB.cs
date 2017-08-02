@@ -150,7 +150,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static List<SignalMessage> GetMessagesLocked(SignalThread thread, ThreadViewModel threadViewModel)
+        public static List<SignalMessage> GetMessagesLocked(SignalThread thread)
         {
             lock (DBLock)
             {

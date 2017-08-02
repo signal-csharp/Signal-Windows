@@ -123,7 +123,7 @@ namespace Signal_Windows
         private async void OnSuspending(object sender, SuspendingEventArgs e)
         {
             var deferral = e.SuspendingOperation.GetDeferral();
-            if(MainPageActive)
+            if (MainPageActive)
             {
                 if (ViewModels.MainPageInstance != null)
                 {

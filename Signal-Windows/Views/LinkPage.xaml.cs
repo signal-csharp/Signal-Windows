@@ -1,5 +1,4 @@
 using Signal_Windows.ViewModels;
-using Windows.UI.Core;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using ZXing.Mobile;

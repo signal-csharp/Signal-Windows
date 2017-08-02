@@ -1,10 +1,9 @@
+using Signal_Windows.Controls;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
-using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -36,7 +35,33 @@ namespace Signal_Windows
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             Frame.SizeChanged += Frame_SizeChanged;
-            Vm.SwitchToStyle(GetCurrentViewStyle());
+            SwitchToStyle(GetCurrentViewStyle());
+            MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
+        }
+
+        public void SwitchToStyle(PageStyle newStyle)
+        {
+            if (newStyle == PageStyle.Narrow)
+            {
+                ContactsPanelScrollViewer.Width = ActualWidth;
+                if (Vm.SelectedThread != null)
+                {
+                    Utils.EnableBackButton(Vm.BackButton_Click);
+                    MainPanel.IsPaneOpen = false;
+                    MainPanel.CompactPaneLength = 0;
+                }
+                else
+                {
+                    Unselect();
+                    MainPanel.IsPaneOpen = true;
+                }
+            }
+            else if (newStyle == PageStyle.Wide)
+            {
+                Utils.DisableBackButton(Vm.BackButton_Click);
+                MainPanel.IsPaneOpen = false;
+                MainPanel.CompactPaneLength = ContactsPanelScrollViewer.Width = 180;
+            }
         }
 
         public PageStyle GetCurrentViewStyle()
@@ -53,9 +78,13 @@ namespace Signal_Windows
         {
             var oldStyle = Utils.GetViewStyle(e.PreviousSize);
             var newStyle = Utils.GetViewStyle(e.NewSize);
-            if(oldStyle != newStyle)
+            if (oldStyle != newStyle)
             {
-                Vm.SwitchToStyle(newStyle);
+                SwitchToStyle(newStyle);
+            }
+            if (newStyle == PageStyle.Narrow)
+            {
+                ContactsPanelScrollViewer.Width = ActualWidth;
             }
         }
 
@@ -67,14 +96,17 @@ namespace Signal_Windows
             }
         }
 
+        public ThreadView Thread
+        {
+            get
+            {
+                return ThreadView;
+            }
+        }
+
         private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Vm.ContactsList_SelectionChanged(sender, e);
-        }
-
-        public void ScrollToBottom()
-        {
-            ThreadView.ScrollToBottm();
         }
 
         private void AddFriendSymbol_Tapped(object sender, TappedRoutedEventArgs e)

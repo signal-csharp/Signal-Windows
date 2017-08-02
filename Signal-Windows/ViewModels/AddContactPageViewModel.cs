@@ -1,17 +1,17 @@
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
 using libsignalservice.util;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
+using Signal_Windows.Views;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Contacts;
+using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
-using Signal_Windows.Views;
-using Windows.UI.Core;
 
 namespace Signal_Windows.ViewModels
 {
@@ -28,6 +28,7 @@ namespace Signal_Windows.ViewModels
         }
 
         private string _ContactName = "";
+
         public string ContactName
         {
             get { return _ContactName; }
@@ -35,6 +36,7 @@ namespace Signal_Windows.ViewModels
         }
 
         private string _ContactNumber = "";
+
         public string ContactNumber
         {
             get { return _ContactNumber; }
@@ -42,6 +44,7 @@ namespace Signal_Windows.ViewModels
         }
 
         private bool _UIEnabled = true;
+
         public bool UIEnabled
         {
             get { return _UIEnabled; }
@@ -50,7 +53,7 @@ namespace Signal_Windows.ViewModels
 
         internal void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
-            if(UIEnabled)
+            if (UIEnabled)
             {
                 View.Frame.GoBack();
             }
@@ -58,7 +61,7 @@ namespace Signal_Windows.ViewModels
 
         internal async void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            if(UIEnabled)
+            if (UIEnabled)
             {
                 UIEnabled = false;
                 Debug.WriteLine("creating contact {0} ({1})", ContactName, ContactNumber);
