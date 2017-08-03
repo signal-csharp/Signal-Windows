@@ -132,5 +132,10 @@ namespace Signal_Windows
         {
             ContactsList.SelectedItem = null;
         }
+
+        public void ReselectTop()
+        {
+            ContactsList.SelectedIndex = 0;
+        }
     }
 }

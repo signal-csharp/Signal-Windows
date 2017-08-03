@@ -179,7 +179,7 @@ namespace Signal_Windows.ViewModels
 
         internal async void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count == 1)
+            if (e.AddedItems.Count == 1 && SelectedThread != e.AddedItems[0])
             {
                 try
                 {
@@ -257,8 +257,17 @@ namespace Signal_Windows.ViewModels
         public void MoveThreadToTop(SignalThread thread)
         {
             var n = Threads.IndexOf(thread);
+            bool selected = false;
+            if (SelectedThread == thread)
+            {
+                selected = true;
+            }
             Threads.RemoveAt(n);
             Threads.Insert(0, thread);
+            if (selected)
+            {
+                View.ReselectTop();
+            }
         }
 
         #region UIThread
