@@ -50,7 +50,10 @@ namespace Signal_Windows.ViewModels
                         SignalGroup g = (SignalGroup)SelectedThread;
                         foreach (GroupMembership sc in g.GroupMemberships)
                         {
-                            recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
+                            if(sc.Contact.ThreadId != App.Store.Username)
+                            {
+                                recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
+                            }
                         }
                         messageBuilder = messageBuilder.asGroupMessage(new SignalServiceGroup(Base64.decode(g.ThreadId)));
                         SignalServiceDataMessage ssdm = messageBuilder.build();
