@@ -308,6 +308,7 @@ namespace Signal_Windows.Storage
                     else
                     {
                         contact.Unread = unread;
+                        contact.LastActiveTimestamp = timestamp;
                     }
                     ctx.SaveChanges();
                 }
