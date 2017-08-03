@@ -81,6 +81,7 @@ namespace Signal_Windows.ViewModels
             {
                 var cipher = new SignalServiceCipher(new SignalServiceAddress(App.Store.Username), new Store());
                 var content = cipher.decrypt(envelope);
+                long timestamp = Util.CurrentTimeMillis();
 
                 if (content.Message != null)
                 {
@@ -91,7 +92,7 @@ namespace Signal_Windows.ViewModels
                     }
                     else if (message.isGroupUpdate())
                     {
-                        HandleGroupUpdateMessage(envelope, content, message);
+                        HandleGroupUpdateMessage(envelope, content, message, timestamp);
                     }
                     else if (message.isExpirationUpdate())
                     {
@@ -99,19 +100,19 @@ namespace Signal_Windows.ViewModels
                         if (message.getGroupInfo().HasValue)
                         {
                             threadid = Base64.encodeBytes(message.getGroupInfo().ForceGetValue().getGroupId());
-                            SignalDBContext.GetOrCreateGroupLocked(threadid, this);
+                            SignalDBContext.GetOrCreateGroupLocked(threadid, timestamp, this);
                         }
                         else
                         {
                             threadid = envelope.getSource();
-                            SignalDBContext.GetOrCreateContactLocked(threadid, this);
+                            SignalDBContext.GetOrCreateContactLocked(threadid, timestamp, this);
                         }
                         SignalDBContext.UpdateExpiresInLocked(new SignalThread() { ThreadId = threadid }, (uint)message.getExpiresInSeconds());
                     }
                     else
                     {
                         //TODO check both the db for duplicates
-                        HandleSignalMessage(envelope, content, message, false);
+                        HandleSignalMessage(envelope, content, message, false, timestamp);
                     }
                 }
                 else if (content.SynchronizeMessage != null)
@@ -123,11 +124,11 @@ namespace Signal_Windows.ViewModels
                         //TODO check both the db for duplicates
                         if (dataMessage.isGroupUpdate())
                         {
-                            HandleGroupUpdateMessage(envelope, content, dataMessage);
+                            HandleGroupUpdateMessage(envelope, content, dataMessage, timestamp);
                         }
                         else
                         {
-                            HandleSignalMessage(envelope, content, dataMessage, true);
+                            HandleSignalMessage(envelope, content, dataMessage, true, timestamp);
                         }
                     }
                 } //TODO callmessages
@@ -144,7 +145,7 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage)
+        private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, long timestamp)
         {
             if (dataMessage.getGroupInfo().HasValue) //TODO check signal droid: group messages have different types!
             {
@@ -156,12 +157,12 @@ namespace Signal_Windows.ViewModels
                 {
                     displayname = group.getName().ForceGetValue();
                 }
-                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, true, this);
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, true, timestamp, this);
                 if (group.getMembers().HasValue)
                 {
                     foreach (var member in group.getMembers().ForceGetValue())
                     {
-                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, this).Id);
+                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, timestamp, this).Id);
                     }
                 }
             }
@@ -171,7 +172,7 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private void HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync)
+        private void HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
         {
             SignalMessageType type;
             SignalContact author;
@@ -183,7 +184,7 @@ namespace Signal_Windows.ViewModels
             if (dataMessage.getGroupInfo().HasValue)
             {
                 threadId = Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId());
-                SignalDBContext.GetOrCreateGroupLocked(threadId, this);
+                SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp, this);
                 composedTimestamp = envelope.getTimestamp();
             }
             else
@@ -191,12 +192,12 @@ namespace Signal_Windows.ViewModels
                 if (isSync)
                 {
                     var sent = content.SynchronizeMessage.getSent().ForceGetValue();
-                    threadId = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), this).ThreadId;
+                    threadId = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), timestamp, this).ThreadId;
                     composedTimestamp = sent.getTimestamp();
                 }
                 else
                 {
-                    threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), this).ThreadId;
+                    threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this).ThreadId;
                     composedTimestamp = envelope.getTimestamp();
                 }
             }
@@ -211,7 +212,7 @@ namespace Signal_Windows.ViewModels
             {
                 status = 0;
                 type = SignalMessageType.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), this);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
             }
 
             List<SignalAttachment> attachments = new List<SignalAttachment>();
@@ -225,7 +226,7 @@ namespace Signal_Windows.ViewModels
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = composedTimestamp,
-                ReceivedTimestamp = Util.CurrentTimeMillis(),
+                ReceivedTimestamp = timestamp,
                 AttachmentsCount = (uint)attachments.Count,
                 Attachments = attachments
             };

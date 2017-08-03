@@ -234,10 +234,11 @@ namespace Signal_Windows.ViewModels
                 {
                     unread++;
                     thread.Unread = unread;
+                    thread.LastActiveTimestamp = message.ReceivedTimestamp;
                     ThreadsDictionary[message.ThreadId].View.UnreadCount = unread;
                     await Task.Run(() =>
                     {
-                        SignalDBContext.UpdateUnread(message.ThreadId, unread, null);
+                        SignalDBContext.UpdateConversationLocked(message.ThreadId, unread, message.ReceivedTimestamp);
                     });
                 }
                 await Task.Run(() =>

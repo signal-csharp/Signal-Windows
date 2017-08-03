@@ -288,7 +288,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void UpdateUnread(string threadId, uint unread, MainPageViewModel mpvm)
+        public static void UpdateConversationLocked(string threadId, uint unread, long timestamp)
         {
             lock (DBLock)
             {
@@ -303,19 +303,13 @@ namespace Signal_Windows.Storage
                             .Where(g => g.ThreadId == threadId)
                             .Single();
                         group.Unread = unread;
+                        group.LastActiveTimestamp = timestamp;
                     }
                     else
                     {
                         contact.Unread = unread;
                     }
                     ctx.SaveChanges();
-                }
-                if (mpvm != null)
-                {
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        //mpvm.AddThread(dbgroup); TODO support for received read messages
-                    }).AsTask().Wait();
                 }
             }
         }
@@ -324,7 +318,7 @@ namespace Signal_Windows.Storage
 
         #region Groups
 
-        public static SignalGroup GetOrCreateGroupLocked(string groupId, MainPageViewModel mpvm)
+        public static SignalGroup GetOrCreateGroupLocked(string groupId, long timestamp, MainPageViewModel mpvm)
         {
             SignalGroup dbgroup;
             bool is_new = false;
@@ -344,7 +338,7 @@ namespace Signal_Windows.Storage
                         {
                             ThreadId = groupId,
                             ThreadDisplayName = "Unknown group",
-                            LastActiveTimestamp = Util.CurrentTimeMillis(),
+                            LastActiveTimestamp = timestamp,
                             AvatarFile = null,
                             Unread = 0,
                             CanReceive = false,
@@ -365,7 +359,7 @@ namespace Signal_Windows.Storage
             return dbgroup;
         }
 
-        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, bool canReceive, MainPageViewModel mpvm)
+        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, bool canReceive, long timestamp, MainPageViewModel mpvm)
         {
             SignalGroup dbgroup;
             bool is_new = false;
@@ -385,7 +379,7 @@ namespace Signal_Windows.Storage
                         {
                             ThreadId = groupId,
                             ThreadDisplayName = displayname,
-                            LastActiveTimestamp = Util.CurrentTimeMillis(),
+                            LastActiveTimestamp = timestamp,
                             AvatarFile = avatarfile,
                             Unread = 0,
                             CanReceive = canReceive,
@@ -396,7 +390,7 @@ namespace Signal_Windows.Storage
                     else
                     {
                         dbgroup.ThreadDisplayName = displayname;
-                        dbgroup.LastActiveTimestamp = Util.CurrentTimeMillis();
+                        dbgroup.LastActiveTimestamp = timestamp;
                         dbgroup.AvatarFile = avatarfile;
                         dbgroup.CanReceive = true;
                     }
@@ -472,7 +466,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static SignalContact GetOrCreateContactLocked(string username, MainPageViewModel mpvm)
+        public static SignalContact GetOrCreateContactLocked(string username, long timestamp, MainPageViewModel mpvm)
         {
             SignalContact contact;
             bool is_new = false;
@@ -490,7 +484,8 @@ namespace Signal_Windows.Storage
                         {
                             ThreadId = username,
                             ThreadDisplayName = username,
-                            CanReceive = true
+                            CanReceive = true,
+                            LastActiveTimestamp = timestamp
                             //TODO pick random color
                         };
                         ctx.Contacts.Add(contact);

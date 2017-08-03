@@ -1,5 +1,4 @@
 using Signal_Windows.Models;
-using System.ComponentModel;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -7,10 +6,8 @@ using Windows.UI.Xaml.Controls;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class ThreadListItem : UserControl, INotifyPropertyChanged
+    public sealed partial class ThreadListItem : UserControl
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-
         public ThreadListItem()
         {
             this.InitializeComponent();
