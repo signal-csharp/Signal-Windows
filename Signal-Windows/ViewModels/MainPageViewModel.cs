@@ -53,15 +53,6 @@ namespace Signal_Windows.ViewModels
         public ObservableCollection<SignalThread> Threads = new ObservableCollection<SignalThread>();
         private Dictionary<string, SignalThread> ThreadsDictionary = new Dictionary<string, SignalThread>();
 
-        public void AddThreads(IEnumerable<SignalThread> contacts)
-        {
-            foreach (SignalThread thread in contacts)
-            {
-                Threads.Add(thread);
-                ThreadsDictionary[thread.ThreadId] = thread;
-            }
-        }
-
         public void AddThread(SignalThread contact)
         {
             Threads.Add(contact);
@@ -107,8 +98,42 @@ namespace Signal_Windows.ViewModels
                     {
                         try
                         {
-                            AddThreads(groups);
-                            AddThreads(contacts);
+                            int amountContacts = contacts.Count;
+                            int amountGroups = groups.Count;
+                            int contactsIdx = 0;
+                            int groupsIdx = 0;
+                            while (contactsIdx < amountContacts || groupsIdx < amountGroups)
+                            {
+                                if (contactsIdx < amountContacts)
+                                {
+                                    SignalThread contact = contacts[contactsIdx];
+                                    if (groupsIdx < amountGroups)
+                                    {
+                                        SignalThread group = groups[groupsIdx];
+                                        if (contact.LastActiveTimestamp > group.LastActiveTimestamp)
+                                        {
+                                            contactsIdx++;
+                                            AddThread(contact);
+                                        }
+                                        else
+                                        {
+                                            groupsIdx++;
+                                            AddThread(group);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        contactsIdx++;
+                                        AddThread(contact);
+                                    }
+                                }
+                                else if (groupsIdx < amountGroups)
+                                {
+                                    SignalThread group = groups[groupsIdx];
+                                    groupsIdx++;
+                                    AddThread(group);
+                                }
+                            }
                         }
                         catch (Exception e)
                         {
@@ -182,41 +207,58 @@ namespace Signal_Windows.ViewModels
 
         internal async Task TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == VirtualKey.Enter)
+            try
             {
-                TextBox t = (TextBox)sender;
-                if (t.Text != "")
+                if (e.Key == VirtualKey.Enter)
                 {
-                    var text = t.Text;
-                    t.Text = "";
-                    var now = Util.CurrentTimeMillis();
-                    SignalMessage message = new SignalMessage()
+                    TextBox t = (TextBox)sender;
+                    if (t.Text != "")
                     {
-                        Author = null,
-                        ComposedTimestamp = now,
-                        Content = new SignalMessageContent() { Content = text },
-                        ThreadId = SelectedThread.ThreadId,
-                        ReceivedTimestamp = now,
-                        Type = 0
-                    };
-                    using (await ActionInProgress.LockAsync())
-                    {
-                        View.Thread.Append(message);
-                        View.Thread.ScrollToBottom();
-                        await Task.Run(() =>
+                        var text = t.Text;
+                        t.Text = "";
+                        var now = Util.CurrentTimeMillis();
+                        SignalMessage message = new SignalMessage()
                         {
-                            SignalDBContext.SaveMessageLocked(message);
-                        });
-                        if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                            Author = null,
+                            ComposedTimestamp = now,
+                            Content = new SignalMessageContent() { Content = text },
+                            ThreadId = SelectedThread.ThreadId,
+                            ReceivedTimestamp = now,
+                            Type = 0
+                        };
+                        using (await ActionInProgress.LockAsync())
                         {
-                            View.Thread.AddToCache(message);
+                            View.Thread.Append(message);
+                            View.Thread.ScrollToBottom();
+                            MoveThreadToTop(SelectedThread);
+                            await Task.Run(() =>
+                            {
+                                SignalDBContext.SaveMessageLocked(message);
+                            });
+                            if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                            {
+                                View.Thread.AddToCache(message);
+                            }
+                            OutgoingQueue.Add(message);
+                            var after = Util.CurrentTimeMillis();
+                            Debug.WriteLine("ms until out queue: " + (after - now));
                         }
-                        OutgoingQueue.Add(message);
-                        var after = Util.CurrentTimeMillis();
-                        Debug.WriteLine("ms until out queue: " + (after - now));
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                Debug.WriteLine(ex.Message);
+                Debug.WriteLine(ex.StackTrace);
+            }
+        }
+
+        public void MoveThreadToTop(SignalThread thread)
+        {
+            var n = Threads.IndexOf(thread);
+            Threads.RemoveAt(n);
+            Threads.Insert(0, thread);
         }
 
         #region UIThread
@@ -231,6 +273,7 @@ namespace Signal_Windows.ViewModels
                 {
                     SignalDBContext.SaveMessageLocked(message);
                 });
+                MoveThreadToTop(thread);
                 if (SelectedThread == thread)
                 {
                     View.Thread.Append(message);

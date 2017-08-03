@@ -467,6 +467,7 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     return ctx.Groups
+                        .OrderByDescending(g => g.LastActiveTimestamp)
                         .Include(g => g.GroupMemberships)
                         .ThenInclude(gm => gm.Contact)
                         .AsNoTracking()
@@ -486,8 +487,9 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     return ctx.Contacts
-                    .AsNoTracking()
-                    .ToList();
+                        .OrderByDescending(c => c.LastActiveTimestamp)
+                        .AsNoTracking()
+                        .ToList();
                 }
             }
         }
