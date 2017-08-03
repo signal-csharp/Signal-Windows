@@ -314,6 +314,31 @@ namespace Signal_Windows.Storage
             }
         }
 
+        public static void ClearUnreadLocked(string threadId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var contact = ctx.Contacts
+                        .Where(c => c.ThreadId == threadId)
+                        .SingleOrDefault();
+                    if (contact == null)
+                    {
+                        var group = ctx.Groups
+                            .Where(g => g.ThreadId == threadId)
+                            .Single();
+                        group.Unread = 0;
+                    }
+                    else
+                    {
+                        contact.Unread = 0;
+                    }
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
         #endregion Threads
 
         #region Groups

@@ -163,6 +163,12 @@ namespace Signal_Windows.ViewModels
                         SelectedThread = (SignalThread)e.AddedItems[0];
                         await View.Thread.Load(SelectedThread);
                         View.SwitchToStyle(View.GetCurrentViewStyle());
+                        await Task.Run(() =>
+                        {
+                            SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
+                        });
+                        ThreadsDictionary[SelectedThread.ThreadId].Unread = 0;
+                        ThreadsDictionary[SelectedThread.ThreadId].View.UnreadCount = 0;
                         View.Thread.ScrollToBottom();
                     }
                 }
