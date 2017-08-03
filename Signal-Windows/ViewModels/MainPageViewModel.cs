@@ -227,6 +227,10 @@ namespace Signal_Windows.ViewModels
             {
                 var thread = ThreadsDictionary[message.ThreadId];
                 uint unread = thread.Unread;
+                await Task.Run(() =>
+                {
+                    SignalDBContext.SaveMessageLocked(message);
+                });
                 if (SelectedThread == thread)
                 {
                     View.Thread.Append(message);
@@ -238,7 +242,7 @@ namespace Signal_Windows.ViewModels
                 }
                 else
                 {
-                    if(message.Type == SignalMessageType.Incoming)
+                    if (message.Type == SignalMessageType.Incoming)
                     {
                         unread++;
                         thread.Unread = unread;
@@ -250,10 +254,6 @@ namespace Signal_Windows.ViewModels
                         });
                     }
                 }
-                await Task.Run(() =>
-                {
-                    SignalDBContext.SaveMessageLocked(message);
-                });
             }
         }
 
