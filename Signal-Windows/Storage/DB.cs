@@ -117,6 +117,7 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
+                    long timestamp;
                     if (message.Type == SignalMessageType.Synced)
                     {
                         var receipts = ctx.EarlyReceipts
@@ -128,14 +129,19 @@ namespace Signal_Windows.Storage
                     }
                     if (message.Author != null)
                     {
+                        timestamp = message.ReceivedTimestamp;
                         message.Author = ctx.Contacts.Where(a => a.Id == message.Author.Id).Single();
+                    }
+                    else
+                    {
+                        timestamp = message.ComposedTimestamp;
                     }
                     if (message.ThreadId.StartsWith("+"))
                     {
                         var contact = ctx.Contacts
                             .Where(c => c.ThreadId == message.ThreadId)
                             .Single();
-                        message.ExpiresAt = contact.ExpiresInSeconds;
+                        contact.LastActiveTimestamp = timestamp;
                     }
                     else
                     {
@@ -143,6 +149,7 @@ namespace Signal_Windows.Storage
                             .Where(c => c.ThreadId == message.ThreadId)
                             .Single();
                         message.ExpiresAt = group.ExpiresInSeconds;
+                        group.LastActiveTimestamp = timestamp;
                     }
                     ctx.Messages.Add(message);
                     ctx.SaveChanges();
@@ -288,7 +295,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void UpdateConversationLocked(string threadId, uint unread, long timestamp)
+        public static void UpdateConversationLocked(string threadId, uint unread)
         {
             lock (DBLock)
             {
@@ -303,12 +310,10 @@ namespace Signal_Windows.Storage
                             .Where(g => g.ThreadId == threadId)
                             .Single();
                         group.Unread = unread;
-                        group.LastActiveTimestamp = timestamp;
                     }
                     else
                     {
                         contact.Unread = unread;
-                        contact.LastActiveTimestamp = timestamp;
                     }
                     ctx.SaveChanges();
                 }
