@@ -131,6 +131,14 @@ namespace Signal_Windows.ViewModels
                             HandleSignalMessage(envelope, content, dataMessage, true, timestamp);
                         }
                     }
+                    else if (content.SynchronizeMessage.getRead().HasValue)
+                    {
+                        var readMessages = content.SynchronizeMessage.getRead().ForceGetValue();
+                        foreach (var readMessage in readMessages)
+                        {
+                            //TODO
+                        }
+                    }
                 } //TODO callmessages
                 else
                 {
