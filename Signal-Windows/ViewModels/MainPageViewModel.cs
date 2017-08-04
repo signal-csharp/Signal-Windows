@@ -256,14 +256,12 @@ namespace Signal_Windows.ViewModels
 
         public void MoveThreadToTop(SignalThread thread)
         {
-            var n = Threads.IndexOf(thread);
             bool selected = false;
             if (SelectedThread == thread)
             {
                 selected = true;
             }
-            Threads.RemoveAt(n);
-            Threads.Insert(0, thread);
+            Threads.Move(Threads.IndexOf(thread), 0);
             if (selected)
             {
                 View.ReselectTop();
@@ -282,7 +280,6 @@ namespace Signal_Windows.ViewModels
                 {
                     SignalDBContext.SaveMessageLocked(message);
                 });
-                MoveThreadToTop(thread);
                 if (SelectedThread == thread)
                 {
                     View.Thread.Append(message);
@@ -300,6 +297,7 @@ namespace Signal_Windows.ViewModels
                         thread.Unread = unread;
                         thread.LastActiveTimestamp = message.ReceivedTimestamp;
                         ThreadsDictionary[message.ThreadId].View.UnreadCount = unread;
+                        MoveThreadToTop(thread);
                         await Task.Run(() =>
                         {
                             SignalDBContext.UpdateConversationLocked(message.ThreadId, unread);

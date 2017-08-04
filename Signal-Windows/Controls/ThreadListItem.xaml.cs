@@ -1,4 +1,7 @@
 using Signal_Windows.Models;
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -6,8 +9,9 @@ using Windows.UI.Xaml.Controls;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class ThreadListItem : UserControl
+    public sealed partial class ThreadListItem : UserControl, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
         public ThreadListItem()
         {
             this.InitializeComponent();
@@ -27,7 +31,6 @@ namespace Signal_Windows.Controls
         }
 
         private uint _UnreadCount;
-
         public uint UnreadCount
         {
             get
@@ -37,13 +40,21 @@ namespace Signal_Windows.Controls
             set
             {
                 _UnreadCount = value;
-                if (value != 0)
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("UnreadString"));
+            }
+        }
+
+        public string UnreadString
+        {
+            get
+            {
+                if (UnreadCount != 0)
                 {
-                    UnreadString.Text = value.ToString();
+                    return UnreadCount.ToString();
                 }
                 else
                 {
-                    UnreadString.Text = "";
+                    return "";
                 }
             }
         }
@@ -60,6 +71,8 @@ namespace Signal_Windows.Controls
 
         public void Update(SignalThread thread)
         {
+            Model.ThreadDisplayName = thread.ThreadDisplayName;
+            Model.LastActiveTimestamp = thread.LastActiveTimestamp;
             ConversationDisplayName.Text = thread.ThreadDisplayName;
             UnreadCount = thread.Unread;
         }
