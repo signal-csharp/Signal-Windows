@@ -170,7 +170,7 @@ namespace Signal_Windows.ViewModels
                 {
                     foreach (var member in group.Members)
                     {
-                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, timestamp, this).Id);
+                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, 0, this).Id);
                     }
                 }
             }
