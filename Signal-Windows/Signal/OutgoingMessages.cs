@@ -31,16 +31,18 @@ namespace Signal_Windows.ViewModels
                 try
                 {
                     outgoingSignalMessage = OutgoingQueue.Take(token);
-                    Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                        .withBody(outgoingSignalMessage.Content.Content)
-                        .withTimestamp(outgoingSignalMessage.ComposedTimestamp)
-                        .withExpiration((int)outgoingSignalMessage.ExpiresAt);
+                    SignalServiceDataMessage message = new SignalServiceDataMessage()
+                    {
+                        Body = outgoingSignalMessage.Content.Content,
+                        Timestamp = outgoingSignalMessage.ComposedTimestamp,
+                        ExpiresInSeconds = (int)outgoingSignalMessage.ExpiresAt
+                    };
+
                     if (outgoingSignalMessage.ThreadId[0] == '+')
                     {
-                        SignalServiceDataMessage ssdm = messageBuilder.build();
                         if (!token.IsCancellationRequested)
                         {
-                            MessageSender.sendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), ssdm);
+                            MessageSender.sendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
                             SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
                         }
                     }
@@ -55,11 +57,14 @@ namespace Signal_Windows.ViewModels
                                 recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
                             }
                         }
-                        messageBuilder = messageBuilder.asGroupMessage(new SignalServiceGroup(Base64.decode(g.ThreadId)));
-                        SignalServiceDataMessage ssdm = messageBuilder.build();
+                        message.Group = new SignalServiceGroup()
+                        {
+                            GroupId = Base64.decode(g.ThreadId),
+                            Type = SignalServiceGroup.GroupType.DELIVER
+                        };
                         if (!token.IsCancellationRequested)
                         {
-                            MessageSender.sendMessage(recipients, ssdm);
+                            MessageSender.sendMessage(recipients, message);
                             SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
                         }
                     }

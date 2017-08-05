@@ -86,20 +86,20 @@ namespace Signal_Windows.ViewModels
                 if (content.Message != null)
                 {
                     SignalServiceDataMessage message = content.Message;
-                    if (message.isEndSession())
+                    if (message.EndSession)
                     {
                         SignalDBContext.DeleteAllSessions(envelope.getSource());
                     }
-                    else if (message.isGroupUpdate())
+                    else if (message.IsGroupUpdate())
                     {
                         HandleGroupUpdateMessage(envelope, content, message, timestamp);
                     }
-                    else if (message.isExpirationUpdate())
+                    else if (message.ExpirationUpdate)
                     {
                         string threadid;
-                        if (message.getGroupInfo().HasValue)
+                        if (message.Group != null)
                         {
-                            threadid = Base64.encodeBytes(message.getGroupInfo().ForceGetValue().getGroupId());
+                            threadid = Base64.encodeBytes(message.Group.GroupId);
                             SignalDBContext.GetOrCreateGroupLocked(threadid, timestamp, this);
                         }
                         else
@@ -107,7 +107,7 @@ namespace Signal_Windows.ViewModels
                             threadid = envelope.getSource();
                             SignalDBContext.GetOrCreateContactLocked(threadid, timestamp, this);
                         }
-                        SignalDBContext.UpdateExpiresInLocked(new SignalThread() { ThreadId = threadid }, (uint)message.getExpiresInSeconds());
+                        SignalDBContext.UpdateExpiresInLocked(new SignalThread() { ThreadId = threadid }, (uint)message.ExpiresInSeconds);
                     }
                     else
                     {
@@ -122,7 +122,7 @@ namespace Signal_Windows.ViewModels
                         var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
                         var dataMessage = syncMessage.getMessage();
                         //TODO check both the db for duplicates
-                        if (dataMessage.isGroupUpdate())
+                        if (dataMessage.IsGroupUpdate())
                         {
                             HandleGroupUpdateMessage(envelope, content, dataMessage, timestamp);
                         }
@@ -155,20 +155,20 @@ namespace Signal_Windows.ViewModels
 
         private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, long timestamp)
         {
-            if (dataMessage.getGroupInfo().HasValue) //TODO check signal droid: group messages have different types!
+            if (dataMessage.Group != null) //TODO check signal droid: group messages have different types!
             {
-                SignalServiceGroup group = dataMessage.getGroupInfo().ForceGetValue();
+                SignalServiceGroup group = dataMessage.Group;
                 SignalGroup g = new SignalGroup();
                 string displayname = "Unknown group";
                 string avatarfile = null;
-                if (group.getName().HasValue)
+                if (group.Name != null)
                 {
-                    displayname = group.getName().ForceGetValue();
+                    displayname = group.Name;
                 }
-                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.getGroupId()), displayname, avatarfile, true, timestamp, this);
-                if (group.getMembers().HasValue)
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.GroupId), displayname, avatarfile, true, timestamp, this);
+                if (group.Members != null)
                 {
-                    foreach (var member in group.getMembers().ForceGetValue())
+                    foreach (var member in group.Members)
                     {
                         SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, timestamp, this).Id);
                     }
@@ -187,12 +187,27 @@ namespace Signal_Windows.ViewModels
             SignalMessageStatus status;
             string threadId;
             long composedTimestamp;
-            string body = dataMessage.getBody().HasValue ? dataMessage.getBody().ForceGetValue() : "";
+            string body = dataMessage.Body != null ? dataMessage.Body : "";
 
-            if (dataMessage.getGroupInfo().HasValue)
+            if (dataMessage.Group != null)
             {
-                threadId = Base64.encodeBytes(dataMessage.getGroupInfo().ForceGetValue().getGroupId());
-                SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp, this);
+                var rawId = dataMessage.Group.GroupId;
+                threadId = Base64.encodeBytes(rawId);
+                var g = SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp, this);
+                if (!g.CanReceive && envelope.getSourceAddress().getNumber() == App.Store.Username)
+                {
+                    SignalServiceGroup group = new SignalServiceGroup()
+                    {
+                        Type = SignalServiceGroup.GroupType.REQUEST_INFO,
+                        GroupId = rawId
+                    };
+                    SignalServiceDataMessage requestInfoMessage = new SignalServiceDataMessage()
+                    {
+                        Group = group,
+                        Timestamp = Util.CurrentTimeMillis()
+                    };
+                    MessageSender.sendMessage(envelope.getSourceAddress(), requestInfoMessage);
+                }
                 composedTimestamp = envelope.getTimestamp();
             }
             else
@@ -238,9 +253,9 @@ namespace Signal_Windows.ViewModels
                 AttachmentsCount = (uint)attachments.Count,
                 Attachments = attachments
             };
-            if (dataMessage.getAttachments().HasValue)
+            if (dataMessage.Attachments != null)
             {
-                var receivedAttachments = dataMessage.getAttachments().ForceGetValue();
+                var receivedAttachments = dataMessage.Attachments;
                 foreach (var receivedAttachment in receivedAttachments)
                 {
                     var pointer = receivedAttachment.asPointer();

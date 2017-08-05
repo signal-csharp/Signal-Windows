@@ -73,7 +73,12 @@ namespace Signal_Windows.ViewModels
         public void UIUpdateThread(SignalThread thread)
         {
             SignalThread uiThread = ThreadsDictionary[thread.ThreadId];
+            uiThread.CanReceive = thread.CanReceive;
             uiThread.View.Update(thread);
+            if (SelectedThread == uiThread)
+            {
+                View.Thread.Update(thread);
+            }
         }
 
         #endregion Contacts
