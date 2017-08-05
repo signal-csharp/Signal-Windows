@@ -49,8 +49,8 @@ namespace Signal_Windows.Controls
             if (Model.Author == null)
             {
                 HeaderVisibility = Visibility.Collapsed;
-                Background = Utils.Outgoing;
-                TextColor = Utils.GetSolidColorBrush(255, "#454545");
+                Background = Utils.BackgroundOutgoing;
+                TextColor = Utils.ForegroundOutgoing;
                 TimestampColor = Utils.GetSolidColorBrush(127, "#454545");
                 HorizontalAlignment = HorizontalAlignment.Right;
                 FooterPanel.HorizontalAlignment = HorizontalAlignment.Right;
@@ -68,7 +68,7 @@ namespace Signal_Windows.Controls
                 }
                 Background = Utils.GetBrushFromColor(Model.Author.Color);
                 ContactNameColor = Utils.GetSolidColorBrush(204, "#ffffff");
-                TextColor = Utils.GetSolidColorBrush(255, "#ffffff");
+                TextColor = Utils.ForegroundIncoming;
                 TimestampColor = Utils.GetSolidColorBrush(127, "#ffffff");
                 HorizontalAlignment = HorizontalAlignment.Left;
                 FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;

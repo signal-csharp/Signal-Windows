@@ -11,12 +11,17 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="50" />
             <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Name="UnselectedBlock" HorizontalAlignment="Center" Padding="0 0 14 0">Select a contact and go!</TextBlock>
-        <TextBlock Grid.Row="0" Name="TitleBlock" IsTextSelectionEnabled="True" HorizontalAlignment="Center" />
+        <Border Grid.Row="0" Background="{x:Bind HeaderBackground, Mode=OneWay}">
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Name="Displayname" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadDisplayName, Mode=OneWay}" />
+                <TextBlock Name="Separator" xml:space="preserve" Visibility="{x:Bind SeparatorVisibility, Mode=OneWay}">&#160;&#160;&#x2022;&#160;&#160;</TextBlock>
+                <TextBlock Name="Username" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadUsername, Mode=OneWay}" Visibility="{x:Bind ThreadUsernameVisibility, Mode=OneWay}" />
+            </StackPanel>
+        </Border>
         <ScrollViewer Grid.Row="1" Name="SelectedMessagesScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 14 0">
             <ItemsControl Name="SelectedMessagesList" ItemsSource="{x:Bind Messages}">
                 <ItemsControl.ItemsPanel>

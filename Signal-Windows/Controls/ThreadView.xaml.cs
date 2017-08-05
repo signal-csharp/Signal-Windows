@@ -4,24 +4,71 @@ using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Media;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class ThreadView : UserControl
+    public sealed partial class ThreadView : UserControl, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public RangeObservableCollection<SignalMessage> Messages = new RangeObservableCollection<SignalMessage>();
         private Dictionary<ulong, MessageBox> OutgoingCache = new Dictionary<ulong, MessageBox>();
+
+        private string _ThreadDisplayName;
+
+        public string ThreadDisplayName
+        {
+            get { return _ThreadDisplayName; }
+            set { _ThreadDisplayName = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ThreadDisplayName))); }
+        }
+
+        private string _ThreadUsername;
+
+        public string ThreadUsername
+        {
+            get { return _ThreadUsername; }
+            set { _ThreadUsername = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ThreadUsername))); }
+        }
+
+        private Visibility _ThreadUsernameVisibility;
+
+        public Visibility ThreadUsernameVisibility
+        {
+            get { return _ThreadUsernameVisibility; }
+            set { _ThreadUsernameVisibility = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ThreadUsernameVisibility))); }
+        }
+
+        private Visibility _SeparatorVisiblity;
+
+        public Visibility SeparatorVisibility
+        {
+            get { return _SeparatorVisiblity; }
+            set { _SeparatorVisiblity = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SeparatorVisibility))); }
+        }
+
+        private Brush _HeaderBackground;
+
+        public Brush HeaderBackground
+        {
+            get { return _HeaderBackground; }
+            set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
+        }
 
         public ThreadView()
         {
             this.InitializeComponent();
-            InputTextBox.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+            Displayname.Foreground = Utils.ForegroundIncoming;
+            Separator.Foreground = Utils.ForegroundIncoming;
+            Username.Foreground = Utils.ForegroundIncoming;
         }
 
         public MainPageViewModel GetMainPageVm()
@@ -32,6 +79,7 @@ namespace Signal_Windows.Controls
         public void Update(SignalThread thread)
         {
             InputTextBox.IsEnabled = thread.CanReceive;
+            ThreadDisplayName = thread.ThreadDisplayName;
         }
 
         public void ScrollToBottom()
@@ -44,10 +92,29 @@ namespace Signal_Windows.Controls
         {
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();
-            UnselectedBlock.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-            TitleBlock.Visibility = Windows.UI.Xaml.Visibility.Visible;
-            SelectedMessagesScrollViewer.Visibility = Windows.UI.Xaml.Visibility.Visible;
-            InputTextBox.Visibility = Windows.UI.Xaml.Visibility.Visible;
+            ThreadDisplayName = thread.ThreadDisplayName;
+            ThreadUsername = thread.ThreadId;
+            if (thread is SignalContact)
+            {
+                SignalContact contact = (SignalContact)thread;
+                HeaderBackground = Utils.GetBrushFromColor(contact.Color);
+                if (ThreadUsername != ThreadDisplayName)
+                {
+                    ThreadUsernameVisibility = Visibility.Visible;
+                    SeparatorVisibility = Visibility.Visible;
+                }
+                else
+                {
+                    ThreadUsernameVisibility = Visibility.Collapsed;
+                    SeparatorVisibility = Visibility.Collapsed;
+                }
+            }
+            else
+            {
+                HeaderBackground = Utils.Blue;
+                ThreadUsernameVisibility = Visibility.Collapsed;
+                SeparatorVisibility = Visibility.Collapsed;
+            }
             var before = Util.CurrentTimeMillis();
             var messages = await Task.Run(() =>
             {
@@ -65,10 +132,6 @@ namespace Signal_Windows.Controls
         {
             Messages.Clear();
             OutgoingCache.Clear();
-            UnselectedBlock.Visibility = Windows.UI.Xaml.Visibility.Visible;
-            TitleBlock.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-            SelectedMessagesScrollViewer.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-            InputTextBox.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
         }
 
         public void UpdateMessageBox(SignalMessage updatedMessage)

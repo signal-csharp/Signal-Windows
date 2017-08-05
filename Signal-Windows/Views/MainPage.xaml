@@ -30,6 +30,9 @@
                 </StackPanel>
             </ScrollViewer>
         </SplitView.Pane>
-        <controls:ThreadView x:Name="ThreadView" Padding="10 10 10 10" />
+        <Grid>
+            <controls:Welcome Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" />
+            <controls:ThreadView Grid.Row="0" Visibility="{x:Bind Vm.ThreadVisibility, Mode=OneWay}" x:Name="ThreadView" />
+        </Grid>
     </SplitView>
 </Page>

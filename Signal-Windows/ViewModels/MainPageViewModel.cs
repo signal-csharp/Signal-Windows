@@ -21,12 +21,20 @@ namespace Signal_Windows.ViewModels
 {
     public partial class MainPageViewModel : ViewModelBase, MessagePipeCallback
     {
-        private Visibility _ThreadVisibility;
+        private Visibility _ThreadVisibility = Visibility.Collapsed;
 
         public Visibility ThreadVisibility
         {
             get { return _ThreadVisibility; }
             set { _ThreadVisibility = value; RaisePropertyChanged(nameof(ThreadVisibility)); }
+        }
+
+        private Visibility _WelcomeVisibility;
+
+        public Visibility WelcomeVisibility
+        {
+            get { return _WelcomeVisibility; }
+            set { _WelcomeVisibility = value; RaisePropertyChanged(nameof(WelcomeVisibility)); }
         }
 
         private bool _ThreadListAlignRight;
@@ -65,6 +73,8 @@ namespace Signal_Windows.ViewModels
             {
                 SelectedThread = null;
                 View.Thread.DisposeCurrentThread();
+                ThreadVisibility = Visibility.Collapsed;
+                WelcomeVisibility = Visibility.Visible;
                 View.SwitchToStyle(View.GetCurrentViewStyle());
                 Utils.DisableBackButton(BackButton_Click);
             }
@@ -190,6 +200,8 @@ namespace Signal_Windows.ViewModels
                 {
                     using (await ActionInProgress.LockAsync())
                     {
+                        WelcomeVisibility = Visibility.Collapsed;
+                        ThreadVisibility = Visibility.Visible;
                         SelectedThread = (SignalThread)e.AddedItems[0];
                         await View.Thread.Load(SelectedThread);
                         View.SwitchToStyle(View.GetCurrentViewStyle());
@@ -307,7 +319,8 @@ namespace Signal_Windows.ViewModels
                         {
                             SignalDBContext.UpdateConversationLocked(message.ThreadId, unread);
                         });
-                    } else if (message.Type == SignalMessageType.Synced)
+                    }
+                    else if (message.Type == SignalMessageType.Synced)
                     {
                         unread = 0;
                         await Task.Run(() =>

@@ -52,7 +52,7 @@ namespace Signal_Windows.ViewModels
                         SignalGroup g = (SignalGroup)SelectedThread;
                         foreach (GroupMembership sc in g.GroupMemberships)
                         {
-                            if(sc.Contact.ThreadId != App.Store.Username)
+                            if (sc.Contact.ThreadId != App.Store.Username)
                             {
                                 recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
                             }

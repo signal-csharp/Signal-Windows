@@ -27,7 +27,9 @@ namespace Signal_Windows
         public static SolidColorBrush Blue_Grey = GetSolidColorBrush(255, "#607D8B");
         public static SolidColorBrush Grey = GetSolidColorBrush(255, "#999999");
         public static SolidColorBrush Default = GetSolidColorBrush(255, "#2090ea");
-        public static SolidColorBrush Outgoing = GetSolidColorBrush(255, "#f3f3f3");
+        public static SolidColorBrush BackgroundOutgoing = GetSolidColorBrush(255, "#f3f3f3");
+        public static SolidColorBrush ForegroundIncoming = GetSolidColorBrush(255, "#ffffff");
+        public static SolidColorBrush ForegroundOutgoing = GetSolidColorBrush(255, "#454545");
 
         public static SolidColorBrush GetSolidColorBrush(byte opacity, string hex)
         {

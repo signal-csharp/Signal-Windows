@@ -1,7 +1,5 @@
 using Signal_Windows.Models;
-using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -12,6 +10,7 @@ namespace Signal_Windows.Controls
     public sealed partial class ThreadListItem : UserControl, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+
         public ThreadListItem()
         {
             this.InitializeComponent();
@@ -31,6 +30,7 @@ namespace Signal_Windows.Controls
         }
 
         private uint _UnreadCount;
+
         public uint UnreadCount
         {
             get
