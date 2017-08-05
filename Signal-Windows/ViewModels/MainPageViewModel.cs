@@ -207,10 +207,9 @@ namespace Signal_Windows.ViewModels
                         View.SwitchToStyle(View.GetCurrentViewStyle());
                         await Task.Run(() =>
                         {
-                            SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
+                            SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId, this);
                         });
-                        ThreadsDictionary[SelectedThread.ThreadId].Unread = 0;
-                        ThreadsDictionary[SelectedThread.ThreadId].View.UnreadCount = 0;
+                        UIResetRead(SelectedThread.ThreadId);
                         View.Thread.ScrollToBottom();
                     }
                 }
@@ -334,6 +333,12 @@ namespace Signal_Windows.ViewModels
                 ThreadsDictionary[message.ThreadId].View.UnreadCount = unread;
                 MoveThreadToTop(thread);
             }
+        }
+
+        public void UIResetRead(string threadId)
+        {
+            ThreadsDictionary[threadId].Unread = 0;
+            ThreadsDictionary[threadId].View.UnreadCount = 0;
         }
 
         public void UIUpdateMessageBox(SignalMessage updatedMessage)

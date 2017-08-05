@@ -136,7 +136,7 @@ namespace Signal_Windows.ViewModels
                         var readMessages = content.SynchronizeMessage.getRead().ForceGetValue();
                         foreach (var readMessage in readMessages)
                         {
-                            //TODO
+                            SignalDBContext.ClearUnreadLocked(readMessage.getSender(), this);
                         }
                     }
                 } //TODO callmessages

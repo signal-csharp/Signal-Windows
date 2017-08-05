@@ -320,7 +320,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void ClearUnreadLocked(string threadId)
+        public static void ClearUnreadLocked(string threadId, MainPageViewModel mpvm)
         {
             lock (DBLock)
             {
@@ -342,6 +342,10 @@ namespace Signal_Windows.Storage
                     }
                     ctx.SaveChanges();
                 }
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                {
+                    mpvm.UIResetRead(threadId);
+                }).AsTask().Wait();
             }
         }
 
