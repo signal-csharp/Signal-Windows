@@ -303,15 +303,22 @@ namespace Signal_Windows.ViewModels
                     if (message.Type == SignalMessageType.Incoming)
                     {
                         unread++;
-                        thread.Unread = unread;
-                        thread.LastActiveTimestamp = message.ReceivedTimestamp;
-                        ThreadsDictionary[message.ThreadId].View.UnreadCount = unread;
+                        await Task.Run(() =>
+                        {
+                            SignalDBContext.UpdateConversationLocked(message.ThreadId, unread);
+                        });
+                    } else if (message.Type == SignalMessageType.Synced)
+                    {
+                        unread = 0;
                         await Task.Run(() =>
                         {
                             SignalDBContext.UpdateConversationLocked(message.ThreadId, unread);
                         });
                     }
                 }
+                thread.Unread = unread;
+                thread.LastActiveTimestamp = message.ReceivedTimestamp;
+                ThreadsDictionary[message.ThreadId].View.UnreadCount = unread;
                 MoveThreadToTop(thread);
             }
         }
