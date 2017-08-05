@@ -194,7 +194,7 @@ namespace Signal_Windows.ViewModels
                 var rawId = dataMessage.Group.GroupId;
                 threadId = Base64.encodeBytes(rawId);
                 var g = SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp, this);
-                if (!g.CanReceive && envelope.getSourceAddress().getNumber() == App.Store.Username)
+                if (!g.CanReceive)
                 {
                     SignalServiceGroup group = new SignalServiceGroup()
                     {
