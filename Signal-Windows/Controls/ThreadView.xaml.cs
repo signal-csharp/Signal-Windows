@@ -79,19 +79,11 @@ namespace Signal_Windows.Controls
         public void Update(SignalThread thread)
         {
             InputTextBox.IsEnabled = thread.CanReceive;
-            ThreadDisplayName = thread.ThreadDisplayName;
+            UpdateHeader(thread);
         }
 
-        public void ScrollToBottom()
+        private void UpdateHeader(SignalThread thread)
         {
-            SelectedMessagesScrollViewer.UpdateLayout();
-            SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f, true);
-        }
-
-        public async Task Load(SignalThread thread)
-        {
-            InputTextBox.IsEnabled = false;
-            DisposeCurrentThread();
             ThreadDisplayName = thread.ThreadDisplayName;
             ThreadUsername = thread.ThreadId;
             if (thread is SignalContact)
@@ -115,6 +107,19 @@ namespace Signal_Windows.Controls
                 ThreadUsernameVisibility = Visibility.Collapsed;
                 SeparatorVisibility = Visibility.Collapsed;
             }
+        }
+
+        public void ScrollToBottom()
+        {
+            SelectedMessagesScrollViewer.UpdateLayout();
+            SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f, true);
+        }
+
+        public async Task Load(SignalThread thread)
+        {
+            InputTextBox.IsEnabled = false;
+            DisposeCurrentThread();
+            UpdateHeader(thread);
             var before = Util.CurrentTimeMillis();
             var messages = await Task.Run(() =>
             {
