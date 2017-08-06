@@ -1,9 +1,11 @@
 using GalaSoft.MvvmLight;
 using libsignalservice;
+using libsignalservice.push.exceptions;
 using libsignalservice.util;
 using Nito.AsyncEx;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
+using Signal_Windows.Views;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -96,16 +98,15 @@ namespace Signal_Windows.ViewModels
         public MainPageViewModel()
         {
             App.MainPageActive = true;
-            Init();
         }
 
-        public void Init()
+        public async Task Init()
         {
             CancelSource = new CancellationTokenSource();
             var l = ActionInProgress.Lock(CancelSource.Token);
             try
             {
-                Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
                     List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
@@ -156,29 +157,26 @@ namespace Signal_Windows.ViewModels
                             Debug.WriteLine(e.StackTrace);
                         }
                     });
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        try
-                        {
-                            MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
-                            Pipe = MessageReceiver.createMessagePipe();
-                            MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
-                            IncomingMessagesTask = Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
-                            OutgoingMessagesTask = Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine(e.Message);
-                            Debug.WriteLine(e.StackTrace);
-                        }
-                    });
-                    l.Dispose();
+                    MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
+                    Pipe = MessageReceiver.createMessagePipe();
+                    MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
+                    IncomingMessagesTask = Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
+                    OutgoingMessagesTask = Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
                 });
+            }
+            catch(AuthorizationFailedException)
+            {
+                Debug.WriteLine("OWS server rejected our credentials - redirecting to StartPage");
+                View.Frame.Navigate(typeof(StartPage));
             }
             catch (Exception e)
             {
                 Debug.WriteLine(e.Message);
                 Debug.WriteLine(e.StackTrace);
+            }
+            finally
+            {
+                l.Dispose();
             }
         }
 

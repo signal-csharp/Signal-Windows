@@ -69,9 +69,10 @@ namespace Signal_Windows
             return Utils.GetViewStyle(new Size(ActualWidth, ActualHeight));
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            await Vm.Init();
         }
 
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
