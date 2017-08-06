@@ -74,7 +74,7 @@ namespace Signal_Windows.ViewModels
                     LastActiveTimestamp = 0,
                     Draft = null,
                     Color = "red",
-                    Unread = 0
+                    UnreadCount = 0
                 };
                 ContactName = "";
                 ContactNumber = "";

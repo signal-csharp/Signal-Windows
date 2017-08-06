@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Signal_Windows.Models
 {
-    public class SignalGroup : SignalThread
+    public class SignalGroup : SignalConversation
     {
         public List<GroupMembership> GroupMemberships { get; set; }
     }

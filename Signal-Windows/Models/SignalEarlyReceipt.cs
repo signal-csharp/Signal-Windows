@@ -2,7 +2,7 @@
 {
     public class SignalEarlyReceipt
     {
-        public uint Id { get; set; }
+        public ulong Id { get; set; }
         public string Username { get; set; }
         public uint DeviceId { get; set; }
         public long Timestamp { get; set; }

@@ -43,7 +43,8 @@ namespace Signal_Windows
                 Init = Task.Run(() =>
                 {
                     SignalDBContext.Migrate();
-                    return SignalDBContext.GetSignalStore();
+                    LibsignalDBContext.Migrate();
+                    return LibsignalDBContext.GetSignalStore();
                 });
             }
             catch (Exception e)

@@ -9,23 +9,23 @@ namespace Signal_Windows.Storage
     {
         public IdentityKeyPair GetIdentityKeyPair()
         {
-            return SignalDBContext.GetIdentityKeyPair();
+            return LibsignalDBContext.GetIdentityKeyPair();
         }
 
         public uint GetLocalRegistrationId()
         {
-            return SignalDBContext.GetLocalRegistrationId();
+            return LibsignalDBContext.GetLocalRegistrationId();
         }
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            SignalDBContext.SaveIdentityLocked(address.Name, Base64.encodeBytes(identityKey.serialize()));
+            LibsignalDBContext.SaveIdentityLocked(address.Name, Base64.encodeBytes(identityKey.serialize()));
             return true;
         }
 
         public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            string savedIdentity = SignalDBContext.GetIdentityLocked(address.Name);
+            string savedIdentity = LibsignalDBContext.GetIdentityLocked(address.Name);
             if (savedIdentity == null)
             {
                 return true;
@@ -38,77 +38,77 @@ namespace Signal_Windows.Storage
 
         public PreKeyRecord LoadPreKey(uint preKeyId)
         {
-            return SignalDBContext.LoadPreKey(preKeyId);
+            return LibsignalDBContext.LoadPreKey(preKeyId);
         }
 
         public void StorePreKey(uint preKeyId, PreKeyRecord record)
         {
-            SignalDBContext.StorePreKey(preKeyId, record);
+            LibsignalDBContext.StorePreKey(preKeyId, record);
         }
 
         public bool ContainsPreKey(uint preKeyId)
         {
-            return SignalDBContext.ContainsPreKey(preKeyId);
+            return LibsignalDBContext.ContainsPreKey(preKeyId);
         }
 
         public void RemovePreKey(uint preKeyId)
         {
-            SignalDBContext.RemovePreKey(preKeyId);
+            LibsignalDBContext.RemovePreKey(preKeyId);
         }
 
         public SessionRecord LoadSession(SignalProtocolAddress address)
         {
-            return SignalDBContext.LoadSession(address);
+            return LibsignalDBContext.LoadSession(address);
         }
 
         public List<uint> GetSubDeviceSessions(string name)
         {
-            return SignalDBContext.GetSubDeviceSessions(name);
+            return LibsignalDBContext.GetSubDeviceSessions(name);
         }
 
         public void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
-            SignalDBContext.StoreSession(address, record);
+            LibsignalDBContext.StoreSession(address, record);
         }
 
         public bool ContainsSession(SignalProtocolAddress address)
         {
-            return SignalDBContext.ContainsSession(address);
+            return LibsignalDBContext.ContainsSession(address);
         }
 
         public void DeleteSession(SignalProtocolAddress address)
         {
-            SignalDBContext.DeleteSession(address);
+            LibsignalDBContext.DeleteSession(address);
         }
 
         public void DeleteAllSessions(string name)
         {
-            SignalDBContext.DeleteAllSessions(name);
+            LibsignalDBContext.DeleteAllSessions(name);
         }
 
         public SignedPreKeyRecord LoadSignedPreKey(uint signedPreKeyId)
         {
-            return SignalDBContext.LoadSignedPreKey(signedPreKeyId);
+            return LibsignalDBContext.LoadSignedPreKey(signedPreKeyId);
         }
 
         public List<SignedPreKeyRecord> LoadSignedPreKeys()
         {
-            return SignalDBContext.LoadSignedPreKeys();
+            return LibsignalDBContext.LoadSignedPreKeys();
         }
 
         public void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
         {
-            SignalDBContext.StoreSignedPreKey(signedPreKeyId, record);
+            LibsignalDBContext.StoreSignedPreKey(signedPreKeyId, record);
         }
 
         public bool ContainsSignedPreKey(uint signedPreKeyId)
         {
-            return SignalDBContext.ContainsSignedPreKey(signedPreKeyId);
+            return LibsignalDBContext.ContainsSignedPreKey(signedPreKeyId);
         }
 
         public void RemoveSignedPreKey(uint signedPreKeyId)
         {
-            SignalDBContext.RemoveSignedPreKey(signedPreKeyId);
+            LibsignalDBContext.RemoveSignedPreKey(signedPreKeyId);
         }
     }
 }

@@ -96,7 +96,7 @@ namespace Signal_Windows
             }
         }
 
-        public ThreadView Thread
+        public Conversation Thread
         {
             get
             {

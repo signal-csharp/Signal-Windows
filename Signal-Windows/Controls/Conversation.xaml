@@ -1,5 +1,5 @@
 ﻿<UserControl
-    x:Class="Signal_Windows.Controls.ThreadView"
+    x:Class="Signal_Windows.Controls.Conversation"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Signal_Windows.Controls"
@@ -31,7 +31,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <local:MessageBox></local:MessageBox>
+                        <local:Message></local:Message>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

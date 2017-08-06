@@ -47,7 +47,7 @@ namespace Signal_Windows.ViewModels
 
         private AsyncLock ActionInProgress = new AsyncLock();
         public MainPage View;
-        public SignalThread SelectedThread;
+        public SignalConversation SelectedThread;
         private volatile bool Running = true;
         private Task IncomingMessagesTask;
         private Task OutgoingMessagesTask;
@@ -58,10 +58,10 @@ namespace Signal_Windows.ViewModels
 
         #region Contacts
 
-        public ObservableCollection<SignalThread> Threads = new ObservableCollection<SignalThread>();
-        private Dictionary<string, SignalThread> ThreadsDictionary = new Dictionary<string, SignalThread>();
+        public ObservableCollection<SignalConversation> Threads = new ObservableCollection<SignalConversation>();
+        private Dictionary<string, SignalConversation> ThreadsDictionary = new Dictionary<string, SignalConversation>();
 
-        public void AddThread(SignalThread contact)
+        public void AddThread(SignalConversation contact)
         {
             Threads.Add(contact);
             ThreadsDictionary[contact.ThreadId] = contact;
@@ -80,9 +80,9 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void UIUpdateThread(SignalThread thread)
+        public void UIUpdateThread(SignalConversation thread)
         {
-            SignalThread uiThread = ThreadsDictionary[thread.ThreadId];
+            SignalConversation uiThread = ThreadsDictionary[thread.ThreadId];
             uiThread.CanReceive = thread.CanReceive;
             uiThread.View.Update(thread);
             if (SelectedThread == uiThread)
@@ -121,10 +121,10 @@ namespace Signal_Windows.ViewModels
                             {
                                 if (contactsIdx < amountContacts)
                                 {
-                                    SignalThread contact = contacts[contactsIdx];
+                                    SignalConversation contact = contacts[contactsIdx];
                                     if (groupsIdx < amountGroups)
                                     {
-                                        SignalThread group = groups[groupsIdx];
+                                        SignalConversation group = groups[groupsIdx];
                                         if (contact.LastActiveTimestamp > group.LastActiveTimestamp)
                                         {
                                             contactsIdx++;
@@ -144,7 +144,7 @@ namespace Signal_Windows.ViewModels
                                 }
                                 else if (groupsIdx < amountGroups)
                                 {
-                                    SignalThread group = groups[groupsIdx];
+                                    SignalConversation group = groups[groupsIdx];
                                     groupsIdx++;
                                     AddThread(group);
                                 }
@@ -202,7 +202,7 @@ namespace Signal_Windows.ViewModels
                     {
                         WelcomeVisibility = Visibility.Collapsed;
                         ThreadVisibility = Visibility.Visible;
-                        SelectedThread = (SignalThread)e.AddedItems[0];
+                        SelectedThread = (SignalConversation)e.AddedItems[0];
                         await View.Thread.Load(SelectedThread);
                         View.SwitchToStyle(View.GetCurrentViewStyle());
                         await Task.Run(() =>
@@ -240,7 +240,7 @@ namespace Signal_Windows.ViewModels
                             Content = new SignalMessageContent() { Content = text },
                             ThreadId = SelectedThread.ThreadId,
                             ReceivedTimestamp = now,
-                            Type = 0
+                            Direction = 0
                         };
                         using (await ActionInProgress.LockAsync())
                         {
@@ -270,7 +270,7 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void MoveThreadToTop(SignalThread thread)
+        public void MoveThreadToTop(SignalConversation thread)
         {
             int n = Threads.IndexOf(thread);
             if (n > 0)
@@ -295,7 +295,7 @@ namespace Signal_Windows.ViewModels
             using (await ActionInProgress.LockAsync())
             {
                 var thread = ThreadsDictionary[message.ThreadId];
-                uint unread = thread.Unread;
+                uint unread = thread.UnreadCount;
                 await Task.Run(() =>
                 {
                     SignalDBContext.SaveMessageLocked(message);
@@ -304,14 +304,14 @@ namespace Signal_Windows.ViewModels
                 {
                     View.Thread.Append(message);
                     View.Thread.ScrollToBottom();
-                    if (message.Type == SignalMessageType.Synced)
+                    if (message.Direction == SignalMessageDirection.Synced)
                     {
                         View.Thread.AddToCache(message);
                     }
                 }
                 else
                 {
-                    if (message.Type == SignalMessageType.Incoming)
+                    if (message.Direction == SignalMessageDirection.Incoming)
                     {
                         unread++;
                         await Task.Run(() =>
@@ -319,7 +319,7 @@ namespace Signal_Windows.ViewModels
                             SignalDBContext.UpdateConversationLocked(message.ThreadId, unread);
                         });
                     }
-                    else if (message.Type == SignalMessageType.Synced)
+                    else if (message.Direction == SignalMessageDirection.Synced)
                     {
                         unread = 0;
                         await Task.Run(() =>
@@ -328,7 +328,7 @@ namespace Signal_Windows.ViewModels
                         });
                     }
                 }
-                thread.Unread = unread;
+                thread.UnreadCount = unread;
                 thread.LastActiveTimestamp = message.ReceivedTimestamp;
                 ThreadsDictionary[message.ThreadId].View.UnreadCount = unread;
                 MoveThreadToTop(thread);
@@ -337,7 +337,7 @@ namespace Signal_Windows.ViewModels
 
         public void UIResetRead(string threadId)
         {
-            ThreadsDictionary[threadId].Unread = 0;
+            ThreadsDictionary[threadId].UnreadCount = 0;
             ThreadsDictionary[threadId].View.UnreadCount = 0;
         }
 

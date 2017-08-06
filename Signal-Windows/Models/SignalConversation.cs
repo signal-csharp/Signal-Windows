@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Signal_Windows.Models
 {
-    public class SignalThread
+    public class SignalConversation
     {
         public ulong Id { get; set; }
         public string ThreadId { get; set; }
@@ -11,9 +11,11 @@ namespace Signal_Windows.Models
         public long LastActiveTimestamp { get; set; }
         public string Draft { get; set; }
         public string AvatarFile { get; set; }
-        public uint Unread { get; set; }
+        public uint UnreadCount { get; set; }
         public bool CanReceive { get; set; }
         public uint ExpiresInSeconds { get; set; }
-        [NotMapped] public ThreadListItem View;
+        public SignalMessage LastMessage { get; set; }
+        public SignalMessage LastSeenMessage { get; set; }
+        [NotMapped] public ConversationListElement View;
     }
 }

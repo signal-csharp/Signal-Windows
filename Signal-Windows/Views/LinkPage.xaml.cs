@@ -26,12 +26,16 @@ namespace Signal_Windows.Views
             }
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            Utils.DisableBackButton();
-            Vm.Init();
-            Vm.BeginLinking();
+            await Vm.OnNavigatedTo();
+        }
+
+        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        {
+            base.OnNavigatingFrom(e);
+            Utils.DisableBackButton(Vm.BackButton_Click);
         }
 
         public void SetQR(string qr)
@@ -55,6 +59,10 @@ namespace Signal_Windows.Views
             {
                 Frame.Navigate(typeof(MainPage));
             }
+        }
+
+        private void FinishButton_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        {
         }
     }
 }

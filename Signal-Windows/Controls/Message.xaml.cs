@@ -12,7 +12,7 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class MessageBox : UserControl, INotifyPropertyChanged
+    public sealed partial class Message : UserControl, INotifyPropertyChanged
     {
         public Visibility HeaderVisibility { get; set; }
         public string ContactName { get; set; }
@@ -35,7 +35,7 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public MessageBox()
+        public Message()
         {
             this.InitializeComponent();
             this.DataContextChanged += MessageBox_DataContextChanged;
@@ -81,7 +81,7 @@ namespace Signal_Windows.Controls
 
         private void SetSignalMessageStatusIcon(SignalMessage updatedMessage)
         {
-            if (updatedMessage.Type == SignalMessageType.Outgoing)
+            if (updatedMessage.Direction == SignalMessageDirection.Outgoing)
             {
                 if (updatedMessage.Status == SignalMessageStatus.Pending)
                 {
@@ -102,7 +102,7 @@ namespace Signal_Windows.Controls
                     DoubleCheckVisibility = Visibility.Visible;
                 }
             }
-            else if (updatedMessage.Type == SignalMessageType.Synced)
+            else if (updatedMessage.Direction == SignalMessageDirection.Synced)
             {
                 if (updatedMessage.Receipts == 0)
                 {

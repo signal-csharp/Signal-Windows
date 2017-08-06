@@ -15,6 +15,577 @@ using System.Linq;
 
 namespace Signal_Windows.Storage
 {
+    public class LibsignalDBContext : DbContext
+    {
+        private static readonly object DBLock = new object();
+        public DbSet<SignalIdentity> Identities { get; set; }
+        public DbSet<SignalStore> Store { get; set; }
+        public DbSet<SignalPreKey> PreKeys { get; set; }
+        public DbSet<SignalSignedPreKey> SignedPreKeys { get; set; }
+        public DbSet<SignalSession> Sessions { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlite("Filename=Libsignal.db", x => x.SuppressForeignKeyEnforcement());
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<SignalIdentity>()
+                .HasIndex(si => si.Username);
+
+            modelBuilder.Entity<SignalSession>()
+                .HasIndex(s => s.Username);
+
+            modelBuilder.Entity<SignalSession>()
+                .HasIndex(s => s.DeviceId);
+
+            modelBuilder.Entity<SignalPreKey>()
+                .HasIndex(pk => pk.Id);
+        }
+
+        public static void Migrate()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    ctx.Database.Migrate();
+                }
+            }
+        }
+
+        public static void PurgeAccountData()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM Store;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'Store';");
+
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM SignedPreKeys;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'SignedPreKeys';");
+
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM PreKeys;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'PreKeys';");
+
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM Sessions;");
+                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'Sessions';");
+                }
+            }
+        }
+
+        #region Identities
+
+        public static string GetIdentityLocked(string number)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var identity = ctx.Identities.LastOrDefault(i => i.Username == number);
+                    if (identity == null)
+                    {
+                        return null;
+                    }
+                    return identity.IdentityKey;
+                }
+            }
+        }
+
+        public static void SaveIdentityLocked(string number, string identity)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    ctx.Identities.Add(new SignalIdentity()
+                    {
+                        IdentityKey = identity,
+                        Username = number,
+                        VerifiedStatus = (uint)VerifiedStatus.Default
+                    });
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static void UpdateIdentityLocked(string username, string identity, VerifiedStatus status, MainPageViewModel mpvm)
+        {
+            lock (DBLock)
+            {
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                {
+                    await MainPage.NotifyNewIdentity(username);
+                }).AsTask().Wait();
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var i = ctx.Identities.SingleOrDefault(id => id.Username == username);
+                    if (i != null)
+                    {
+                        i.IdentityKey = identity;
+                        i.VerifiedStatus = status;
+                    }
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        #endregion Identities
+
+        #region Account
+
+        public static SignalStore GetSignalStore()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    return ctx.Store
+                        .AsNoTracking()
+                        .SingleOrDefault();
+                }
+            }
+        }
+
+        public static void SaveOrUpdateSignalStore(SignalStore store)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var old = ctx.Store.SingleOrDefault();
+                    if (old != null)
+                    {
+                        old.DeviceId = store.DeviceId;
+                        old.IdentityKeyPair = store.IdentityKeyPair;
+                        old.NextSignedPreKeyId = store.NextSignedPreKeyId;
+                        old.Password = store.Password;
+                        old.PreKeyIdOffset = store.PreKeyIdOffset;
+                        old.Registered = store.Registered;
+                        old.RegistrationId = store.RegistrationId;
+                        old.SignalingKey = store.SignalingKey;
+                        old.Username = store.Username;
+                    }
+                    else
+                    {
+                        ctx.Store.Add(store);
+                    }
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static void UpdatePreKeyIdOffset(uint preKeyIdOffset)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var s = ctx.Store.Single();
+                    s.PreKeyIdOffset = preKeyIdOffset;
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static void UpdateNextSignedPreKeyId(uint nextSignedPreKeyId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var s = ctx.Store.Single();
+                    s.NextSignedPreKeyId = nextSignedPreKeyId;
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static IdentityKeyPair GetIdentityKeyPair()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var ikp = ctx.Store
+                        .AsNoTracking()
+                        .Single().IdentityKeyPair;
+                    return new IdentityKeyPair(Base64.decode(ikp));
+                }
+            }
+        }
+
+        public static uint GetLocalRegistrationId()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    return ctx.Store
+                        .AsNoTracking()
+                        .Single().RegistrationId;
+                }
+            }
+        }
+
+        #endregion Account
+
+        #region Sessions
+
+        private static string GetSessionCacheIndex(string username, uint deviceid)
+        {
+            return username + @"\" + deviceid;
+        }
+
+        private static Dictionary<string, SessionRecord> SessionsCache = new Dictionary<string, SessionRecord>();
+
+        public static SessionRecord LoadSession(SignalProtocolAddress address)
+        {
+            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
+            SessionRecord record;
+            lock (DBLock)
+            {
+                if (SessionsCache.TryGetValue(index, out record))
+                {
+                    return record;
+                }
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var session = ctx.Sessions
+                        .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId)
+                        .AsNoTracking()
+                        .SingleOrDefault();
+                    if (session != null)
+                    {
+                        record = new SessionRecord(Base64.decode(session.Session));
+                    }
+                    else
+                    {
+                        record = new SessionRecord();
+                    }
+                    SessionsCache[index] = record;
+                    return record;
+                }
+            }
+        }
+
+        public static List<uint> GetSubDeviceSessions(string name)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var sessions = ctx.Sessions
+                        .Where(se => se.Username == name)
+                        .AsNoTracking()
+                        .ToList();
+                    var s = new List<uint>();
+                    foreach (var session in sessions)
+                    {
+                        if (session.DeviceId != SignalServiceAddress.DEFAULT_DEVICE_ID)
+                        {
+                            s.Add(session.DeviceId);
+                        }
+                    }
+                    return s;
+                }
+            }
+        }
+
+        public static void StoreSession(SignalProtocolAddress address, SessionRecord record)
+        {
+            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var session = ctx.Sessions
+                        .Where(s => s.DeviceId == address.DeviceId && s.Username == address.Name)
+                        .SingleOrDefault();
+                    if (session != null)
+                    {
+                        session.Session = Base64.encodeBytes(record.serialize());
+                    }
+                    else
+                    {
+                        ctx.Sessions.Add(new SignalSession()
+                        {
+                            DeviceId = address.DeviceId,
+                            Session = Base64.encodeBytes(record.serialize()),
+                            Username = address.Name
+                        });
+                    }
+                    SessionsCache[index] = record;
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static bool ContainsSession(SignalProtocolAddress address)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var session = ctx.Sessions
+                        .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId)
+                        .SingleOrDefault();
+                    return session != null;
+                }
+            }
+        }
+
+        public static void DeleteSession(SignalProtocolAddress address)
+        {
+            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
+            lock (DBLock)
+            {
+                SessionsCache.Remove(index);
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var sessions = ctx.Sessions
+                        .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId);
+                    ctx.Sessions.RemoveRange(sessions);
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static void DeleteAllSessions(string name)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var sessions = ctx.Sessions
+                        .Where(s => s.Username == name)
+                        .ToList();
+                    foreach (var session in sessions)
+                    {
+                        SessionsCache.Remove(GetSessionCacheIndex(name, session.DeviceId));
+                    }
+                    ctx.Sessions.RemoveRange(sessions);
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        #endregion Sessions
+
+        #region PreKeys
+
+        public static PreKeyRecord LoadPreKey(uint preKeyId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var pk = ctx.PreKeys
+                        .Where(p => p.Id == preKeyId)
+                        .AsNoTracking()
+                        .Single();
+                    return new PreKeyRecord(Base64.decode(pk.Key));
+                }
+            }
+        }
+
+        public static void StorePreKey(uint preKeyId, PreKeyRecord record)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    ctx.PreKeys.Add(new SignalPreKey()
+                    {
+                        Id = preKeyId,
+                        Key = Base64.encodeBytes(record.serialize())
+                    });
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static bool ContainsPreKey(uint preKeyId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    return ctx.PreKeys
+                        .Where(p => p.Id == preKeyId)
+                        .AsNoTracking()
+                        .SingleOrDefault() != null;
+                }
+            }
+        }
+
+        public static void RemovePreKey(uint preKeyId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var preKey = ctx.PreKeys
+                        .AsNoTracking()
+                        .Where(b => b.Id == preKeyId)
+                        .SingleOrDefault();
+                    if (preKey != null)
+                    {
+                        ctx.PreKeys.Remove(preKey);
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+        }
+
+        public static SignedPreKeyRecord LoadSignedPreKey(uint signedPreKeyId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var preKeys = ctx.SignedPreKeys
+                        .AsNoTracking()
+                        .Where(b => b.Id == signedPreKeyId)
+                        .Single();
+                    return new SignedPreKeyRecord(Base64.decode(preKeys.Key));
+                }
+            }
+        }
+
+        public static List<SignedPreKeyRecord> LoadSignedPreKeys()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var preKeys = ctx.SignedPreKeys
+                        .AsNoTracking()
+                        .ToList();
+                    var v = new List<SignedPreKeyRecord>();
+                    foreach (var preKey in preKeys)
+                    {
+                        v.Add(new SignedPreKeyRecord(Base64.decode(preKey.Key)));
+                    }
+                    return v;
+                }
+            }
+        }
+
+        public static void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    ctx.SignedPreKeys.Add(new SignalSignedPreKey()
+                    {
+                        Id = signedPreKeyId,
+                        Key = Base64.encodeBytes(record.serialize())
+                    });
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static bool ContainsSignedPreKey(uint signedPreKeyId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var old = ctx.SignedPreKeys.Where(k => k.Id == signedPreKeyId).SingleOrDefault();
+                    if (old != null)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+        }
+
+        public static void RemoveSignedPreKey(uint id)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    var old = ctx.SignedPreKeys.Where(k => k.Id == id).SingleOrDefault();
+                    if (old != null)
+                    {
+                        ctx.SignedPreKeys.Remove(old);
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+        }
+
+        public static void RefreshPreKeys(SignalServiceAccountManager accountManager) //TODO wrap in extra lock? enforce reload?
+        {
+            List<PreKeyRecord> oneTimePreKeys = GeneratePreKeys();
+            PreKeyRecord lastResortKey = getOrGenerateLastResortPreKey();
+            SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(GetIdentityKeyPair());
+            accountManager.setPreKeys(GetIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
+        }
+
+        private static List<PreKeyRecord> GeneratePreKeys()
+        {
+            List<PreKeyRecord> records = new List<PreKeyRecord>();
+            for (uint i = 1; i < App.PREKEY_BATCH_SIZE; i++)
+            {
+                uint preKeyId = (App.Store.PreKeyIdOffset + i) % Medium.MAX_VALUE;
+                ECKeyPair keyPair = Curve.generateKeyPair();
+                PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
+
+                StorePreKey(preKeyId, record);
+                records.Add(record);
+            }
+            UpdatePreKeyIdOffset((App.Store.PreKeyIdOffset + App.PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE);
+            return records;
+        }
+
+        private static PreKeyRecord getOrGenerateLastResortPreKey()
+        {
+            if (ContainsPreKey(Medium.MAX_VALUE))
+            {
+                try
+                {
+                    return LoadPreKey(Medium.MAX_VALUE);
+                }
+                catch (InvalidKeyIdException)
+                {
+                    RemovePreKey(Medium.MAX_VALUE);
+                }
+            }
+            ECKeyPair keyPair = Curve.generateKeyPair();
+            PreKeyRecord record = new PreKeyRecord(Medium.MAX_VALUE, keyPair);
+            StorePreKey(Medium.MAX_VALUE, record);
+            return record;
+        }
+
+        private static SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair)
+        {
+            try
+            {
+                ECKeyPair keyPair = Curve.generateKeyPair();
+                byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
+                SignedPreKeyRecord record = new SignedPreKeyRecord(App.Store.NextSignedPreKeyId, (ulong)DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
+
+                StoreSignedPreKey(App.Store.NextSignedPreKeyId, record);
+                UpdateNextSignedPreKeyId((App.Store.NextSignedPreKeyId + 1) % Medium.MAX_VALUE);
+                return record;
+            }
+            catch (InvalidKeyException e)
+            {
+                throw e;
+            }
+        }
+
+        #endregion PreKeys
+    }
+
     public class SignalDBContext : DbContext
     {
         private static readonly object DBLock = new object();
@@ -24,16 +595,11 @@ namespace Signal_Windows.Storage
         public DbSet<SignalGroup> Groups { get; set; }
         public DbSet<GroupMembership> GroupMemberships { get; set; }
         public DbSet<SignalMessageContent> Messages_fts { get; set; }
-        public DbSet<SignalIdentity> Identities { get; set; }
-        public DbSet<SignalStore> Store { get; set; }
-        public DbSet<SignalPreKey> PreKeys { get; set; }
-        public DbSet<SignalSignedPreKey> SignedPreKeys { get; set; }
-        public DbSet<SignalSession> Sessions { get; set; }
         public DbSet<SignalEarlyReceipt> EarlyReceipts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Filename=Main.db", x => x.SuppressForeignKeyEnforcement());
+            optionsBuilder.UseSqlite("Filename=Signal.db", x => x.SuppressForeignKeyEnforcement());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -53,23 +619,20 @@ namespace Signal_Windows.Storage
             modelBuilder.Entity<GroupMembership>()
                 .HasIndex(gm => gm.GroupId);
 
-            modelBuilder.Entity<SignalIdentity>()
-                .HasIndex(si => si.Username);
-
-            modelBuilder.Entity<SignalSession>()
-                .HasIndex(s => s.Username);
-
-            modelBuilder.Entity<SignalSession>()
-                .HasIndex(s => s.DeviceId);
-
-            modelBuilder.Entity<SignalPreKey>()
-                .HasIndex(pk => pk.Id);
-
             modelBuilder.Entity<SignalEarlyReceipt>()
                 .HasIndex(er => er.Username);
 
             modelBuilder.Entity<SignalEarlyReceipt>()
                 .HasIndex(er => er.DeviceId);
+
+            modelBuilder.Entity<SignalEarlyReceipt>()
+                .HasIndex(er => er.Timestamp);
+
+            modelBuilder.Entity<SignalConversation>()
+                .HasOne(sc => sc.LastMessage);
+
+            modelBuilder.Entity<SignalConversation>()
+                .HasIndex(sc => sc.ThreadId);
         }
 
         public static void Migrate()
@@ -88,27 +651,6 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void PurgeAccountData()
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM Store;");
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'Store';");
-
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM SignedPreKeys;");
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'SignedPreKeys';");
-
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM PreKeys;");
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'PreKeys';");
-
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM Sessions;");
-                    ctx.Database.ExecuteSqlCommand("DELETE FROM sqlite_sequence WHERE name = 'Sessions';");
-                }
-            }
-        }
-
         #region Messages
 
         public static void SaveMessageLocked(SignalMessage message)
@@ -118,7 +660,7 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     long timestamp;
-                    if (message.Type == SignalMessageType.Synced)
+                    if (message.Direction == SignalMessageDirection.Synced)
                     {
                         var receipts = ctx.EarlyReceipts
                         .Where(er => er.Timestamp == message.ComposedTimestamp)
@@ -157,7 +699,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static List<SignalMessage> GetMessagesLocked(SignalThread thread)
+        public static List<SignalMessage> GetMessagesLocked(SignalConversation thread)
         {
             lock (DBLock)
             {
@@ -264,7 +806,7 @@ namespace Signal_Windows.Storage
 
         #region Threads
 
-        public static void UpdateExpiresInLocked(SignalThread thread, uint exp)
+        public static void UpdateExpiresInLocked(SignalConversation thread, uint exp)
         {
             lock (DBLock)
             {
@@ -309,11 +851,11 @@ namespace Signal_Windows.Storage
                         var group = ctx.Groups
                             .Where(g => g.ThreadId == threadId)
                             .Single();
-                        group.Unread = unread;
+                        group.UnreadCount = unread;
                     }
                     else
                     {
-                        contact.Unread = unread;
+                        contact.UnreadCount = unread;
                     }
                     ctx.SaveChanges();
                 }
@@ -334,11 +876,11 @@ namespace Signal_Windows.Storage
                         var group = ctx.Groups
                             .Where(g => g.ThreadId == threadId)
                             .Single();
-                        group.Unread = 0;
+                        group.UnreadCount = 0;
                     }
                     else
                     {
-                        contact.Unread = 0;
+                        contact.UnreadCount = 0;
                     }
                     ctx.SaveChanges();
                 }
@@ -375,7 +917,7 @@ namespace Signal_Windows.Storage
                             ThreadDisplayName = "Unknown group",
                             LastActiveTimestamp = timestamp,
                             AvatarFile = null,
-                            Unread = 0,
+                            UnreadCount = 0,
                             CanReceive = false,
                             GroupMemberships = new List<GroupMembership>()
                         };
@@ -416,7 +958,7 @@ namespace Signal_Windows.Storage
                             ThreadDisplayName = displayname,
                             LastActiveTimestamp = timestamp,
                             AvatarFile = avatarfile,
-                            Unread = 0,
+                            UnreadCount = 0,
                             CanReceive = canReceive,
                             GroupMemberships = new List<GroupMembership>()
                         };
@@ -562,7 +1104,7 @@ namespace Signal_Windows.Storage
                         c.AvatarFile = contact.AvatarFile;
                         c.LastActiveTimestamp = contact.LastActiveTimestamp;
                         c.Draft = contact.Draft;
-                        c.Unread = contact.Unread;
+                        c.UnreadCount = contact.UnreadCount;
                     }
                     ctx.SaveChanges();
                 }
@@ -584,514 +1126,5 @@ namespace Signal_Windows.Storage
         }
 
         #endregion Contacts
-
-        #region Identities
-
-        public static string GetIdentityLocked(string number)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var identity = ctx.Identities.LastOrDefault(i => i.Username == number);
-                    if (identity == null)
-                    {
-                        return null;
-                    }
-                    return identity.IdentityKey;
-                }
-            }
-        }
-
-        public static void SaveIdentityLocked(string number, string identity)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    ctx.Identities.Add(new SignalIdentity()
-                    {
-                        IdentityKey = identity,
-                        Username = number,
-                        VerifiedStatus = (uint)VerifiedStatus.Default
-                    });
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static void UpdateIdentityLocked(string username, string identity, VerifiedStatus status, MainPageViewModel mpvm)
-        {
-            lock (DBLock)
-            {
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-                {
-                    await MainPage.NotifyNewIdentity(username);
-                }).AsTask().Wait();
-                using (var ctx = new SignalDBContext())
-                {
-                    var i = ctx.Identities.SingleOrDefault(id => id.Username == username);
-                    if (i != null)
-                    {
-                        i.IdentityKey = identity;
-                        i.VerifiedStatus = status;
-                    }
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        #endregion Identities
-
-        #region Account
-
-        public static SignalStore GetSignalStore()
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    return ctx.Store
-                        .AsNoTracking()
-                        .SingleOrDefault();
-                }
-            }
-        }
-
-        public static void SaveOrUpdateSignalStore(SignalStore store)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var old = ctx.Store.SingleOrDefault();
-                    if (old != null)
-                    {
-                        old.DeviceId = store.DeviceId;
-                        old.IdentityKeyPair = store.IdentityKeyPair;
-                        old.NextSignedPreKeyId = store.NextSignedPreKeyId;
-                        old.Password = store.Password;
-                        old.PreKeyIdOffset = store.PreKeyIdOffset;
-                        old.Registered = store.Registered;
-                        old.RegistrationId = store.RegistrationId;
-                        old.SignalingKey = store.SignalingKey;
-                        old.Username = store.Username;
-                    }
-                    else
-                    {
-                        ctx.Store.Add(store);
-                    }
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static void UpdatePreKeyIdOffset(uint preKeyIdOffset)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var s = ctx.Store.Single();
-                    s.PreKeyIdOffset = preKeyIdOffset;
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static void UpdateNextSignedPreKeyId(uint nextSignedPreKeyId)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var s = ctx.Store.Single();
-                    s.NextSignedPreKeyId = nextSignedPreKeyId;
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static IdentityKeyPair GetIdentityKeyPair()
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var ikp = ctx.Store
-                        .AsNoTracking()
-                        .Single().IdentityKeyPair;
-                    return new IdentityKeyPair(Base64.decode(ikp));
-                }
-            }
-        }
-
-        public static uint GetLocalRegistrationId()
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    return ctx.Store
-                        .AsNoTracking()
-                        .Single().RegistrationId;
-                }
-            }
-        }
-
-        #endregion Account
-
-        #region Sessions
-
-        private static string GetSessionCacheIndex(string username, uint deviceid)
-        {
-            return username + @"\" + deviceid;
-        }
-
-        private static Dictionary<string, SessionRecord> SessionsCache = new Dictionary<string, SessionRecord>();
-
-        public static SessionRecord LoadSession(SignalProtocolAddress address)
-        {
-            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
-            SessionRecord record;
-            lock (DBLock)
-            {
-                if (SessionsCache.TryGetValue(index, out record))
-                {
-                    return record;
-                }
-                using (var ctx = new SignalDBContext())
-                {
-                    var session = ctx.Sessions
-                        .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId)
-                        .AsNoTracking()
-                        .SingleOrDefault();
-                    if (session != null)
-                    {
-                        record = new SessionRecord(Base64.decode(session.Session));
-                    }
-                    else
-                    {
-                        record = new SessionRecord();
-                    }
-                    SessionsCache[index] = record;
-                    return record;
-                }
-            }
-        }
-
-        public static List<uint> GetSubDeviceSessions(string name)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var sessions = ctx.Sessions
-                        .Where(se => se.Username == name)
-                        .AsNoTracking()
-                        .ToList();
-                    var s = new List<uint>();
-                    foreach (var session in sessions)
-                    {
-                        if (session.DeviceId != SignalServiceAddress.DEFAULT_DEVICE_ID)
-                        {
-                            s.Add(session.DeviceId);
-                        }
-                    }
-                    return s;
-                }
-            }
-        }
-
-        public static void StoreSession(SignalProtocolAddress address, SessionRecord record)
-        {
-            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var session = ctx.Sessions
-                        .Where(s => s.DeviceId == address.DeviceId && s.Username == address.Name)
-                        .SingleOrDefault();
-                    if (session != null)
-                    {
-                        session.Session = Base64.encodeBytes(record.serialize());
-                    }
-                    else
-                    {
-                        ctx.Sessions.Add(new SignalSession()
-                        {
-                            DeviceId = address.DeviceId,
-                            Session = Base64.encodeBytes(record.serialize()),
-                            Username = address.Name
-                        });
-                    }
-                    SessionsCache[index] = record;
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static bool ContainsSession(SignalProtocolAddress address)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var session = ctx.Sessions
-                        .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId)
-                        .SingleOrDefault();
-                    return session != null;
-                }
-            }
-        }
-
-        public static void DeleteSession(SignalProtocolAddress address)
-        {
-            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
-            lock (DBLock)
-            {
-                SessionsCache.Remove(index);
-                using (var ctx = new SignalDBContext())
-                {
-                    var sessions = ctx.Sessions
-                        .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId);
-                    ctx.Sessions.RemoveRange(sessions);
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static void DeleteAllSessions(string name)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var sessions = ctx.Sessions
-                        .Where(s => s.Username == name)
-                        .ToList();
-                    foreach (var session in sessions)
-                    {
-                        SessionsCache.Remove(GetSessionCacheIndex(name, session.DeviceId));
-                    }
-                    ctx.Sessions.RemoveRange(sessions);
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        #endregion Sessions
-
-        #region PreKeys
-
-        public static PreKeyRecord LoadPreKey(uint preKeyId)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var pk = ctx.PreKeys
-                        .Where(p => p.Id == preKeyId)
-                        .AsNoTracking()
-                        .Single();
-                    return new PreKeyRecord(Base64.decode(pk.Key));
-                }
-            }
-        }
-
-        public static void StorePreKey(uint preKeyId, PreKeyRecord record)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    ctx.PreKeys.Add(new SignalPreKey()
-                    {
-                        Id = preKeyId,
-                        Key = Base64.encodeBytes(record.serialize())
-                    });
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static bool ContainsPreKey(uint preKeyId)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    return ctx.PreKeys
-                        .Where(p => p.Id == preKeyId)
-                        .AsNoTracking()
-                        .SingleOrDefault() != null;
-                }
-            }
-        }
-
-        public static void RemovePreKey(uint preKeyId)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var preKey = ctx.PreKeys
-                        .AsNoTracking()
-                        .Where(b => b.Id == preKeyId)
-                        .SingleOrDefault();
-                    if (preKey != null)
-                    {
-                        ctx.PreKeys.Remove(preKey);
-                        ctx.SaveChanges();
-                    }
-                }
-            }
-        }
-
-        public static SignedPreKeyRecord LoadSignedPreKey(uint signedPreKeyId)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var preKeys = ctx.SignedPreKeys
-                        .AsNoTracking()
-                        .Where(b => b.Id == signedPreKeyId)
-                        .Single();
-                    return new SignedPreKeyRecord(Base64.decode(preKeys.Key));
-                }
-            }
-        }
-
-        public static List<SignedPreKeyRecord> LoadSignedPreKeys()
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var preKeys = ctx.SignedPreKeys
-                        .AsNoTracking()
-                        .ToList();
-                    var v = new List<SignedPreKeyRecord>();
-                    foreach (var preKey in preKeys)
-                    {
-                        v.Add(new SignedPreKeyRecord(Base64.decode(preKey.Key)));
-                    }
-                    return v;
-                }
-            }
-        }
-
-        public static void StoreSignedPreKey(uint signedPreKeyId, SignedPreKeyRecord record)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    ctx.SignedPreKeys.Add(new SignalSignedPreKey()
-                    {
-                        Id = signedPreKeyId,
-                        Key = Base64.encodeBytes(record.serialize())
-                    });
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static bool ContainsSignedPreKey(uint signedPreKeyId)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var old = ctx.SignedPreKeys.Where(k => k.Id == signedPreKeyId).SingleOrDefault();
-                    if (old != null)
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-            }
-        }
-
-        public static void RemoveSignedPreKey(uint id)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    var old = ctx.SignedPreKeys.Where(k => k.Id == id).SingleOrDefault();
-                    if (old != null)
-                    {
-                        ctx.SignedPreKeys.Remove(old);
-                        ctx.SaveChanges();
-                    }
-                }
-            }
-        }
-
-        public static void RefreshPreKeys(SignalServiceAccountManager accountManager) //TODO wrap in extra lock? enforce reload?
-        {
-            List<PreKeyRecord> oneTimePreKeys = GeneratePreKeys();
-            PreKeyRecord lastResortKey = getOrGenerateLastResortPreKey();
-            SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(GetIdentityKeyPair());
-            accountManager.setPreKeys(GetIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
-        }
-
-        private static List<PreKeyRecord> GeneratePreKeys()
-        {
-            List<PreKeyRecord> records = new List<PreKeyRecord>();
-            for (uint i = 1; i < App.PREKEY_BATCH_SIZE; i++)
-            {
-                uint preKeyId = (App.Store.PreKeyIdOffset + i) % Medium.MAX_VALUE;
-                ECKeyPair keyPair = Curve.generateKeyPair();
-                PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
-
-                StorePreKey(preKeyId, record);
-                records.Add(record);
-            }
-            UpdatePreKeyIdOffset((App.Store.PreKeyIdOffset + App.PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE);
-            return records;
-        }
-
-        private static PreKeyRecord getOrGenerateLastResortPreKey()
-        {
-            if (ContainsPreKey(Medium.MAX_VALUE))
-            {
-                try
-                {
-                    return LoadPreKey(Medium.MAX_VALUE);
-                }
-                catch (InvalidKeyIdException)
-                {
-                    RemovePreKey(Medium.MAX_VALUE);
-                }
-            }
-            ECKeyPair keyPair = Curve.generateKeyPair();
-            PreKeyRecord record = new PreKeyRecord(Medium.MAX_VALUE, keyPair);
-            StorePreKey(Medium.MAX_VALUE, record);
-            return record;
-        }
-
-        private static SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair)
-        {
-            try
-            {
-                ECKeyPair keyPair = Curve.generateKeyPair();
-                byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
-                SignedPreKeyRecord record = new SignedPreKeyRecord(App.Store.NextSignedPreKeyId, (ulong)DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
-
-                StoreSignedPreKey(App.Store.NextSignedPreKeyId, record);
-                UpdateNextSignedPreKeyId((App.Store.NextSignedPreKeyId + 1) % Medium.MAX_VALUE);
-                return record;
-            }
-            catch (InvalidKeyException e)
-            {
-                throw e;
-            }
-        }
-
-        #endregion PreKeys
     }
 }

@@ -7,21 +7,21 @@ using Windows.UI.Xaml.Controls;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class ThreadListItem : UserControl, INotifyPropertyChanged
+    public sealed partial class ConversationListElement : UserControl, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public ThreadListItem()
+        public ConversationListElement()
         {
             this.InitializeComponent();
             this.DataContextChanged += ThreadListItem_DataContextChanged;
         }
 
-        public SignalThread Model
+        public SignalConversation Model
         {
             get
             {
-                return DataContext as SignalThread;
+                return DataContext as SignalConversation;
             }
             set
             {
@@ -65,16 +65,16 @@ namespace Signal_Windows.Controls
             {
                 Model.View = this;
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
-                UnreadCount = Model.Unread;
+                UnreadCount = Model.UnreadCount;
             }
         }
 
-        public void Update(SignalThread thread)
+        public void Update(SignalConversation thread)
         {
             Model.ThreadDisplayName = thread.ThreadDisplayName;
             Model.LastActiveTimestamp = thread.LastActiveTimestamp;
             ConversationDisplayName.Text = thread.ThreadDisplayName;
-            UnreadCount = thread.Unread;
+            UnreadCount = thread.UnreadCount;
         }
     }
 }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Signal_Windows.Models
 {
-    public class SignalContact : SignalThread
+    public class SignalContact : SignalConversation
     {
         public SignalContact()
         {

@@ -23,7 +23,7 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <controls:ThreadListItem />
+                                <controls:ConversationListElement />
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
@@ -32,7 +32,7 @@
         </SplitView.Pane>
         <Grid>
             <controls:Welcome Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" />
-            <controls:ThreadView Grid.Row="0" Visibility="{x:Bind Vm.ThreadVisibility, Mode=OneWay}" x:Name="ThreadView" />
+            <controls:Conversation Grid.Row="0" Visibility="{x:Bind Vm.ThreadVisibility, Mode=OneWay}" x:Name="ThreadView" />
         </Grid>
     </SplitView>
 </Page>

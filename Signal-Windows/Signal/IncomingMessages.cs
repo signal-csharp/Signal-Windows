@@ -88,7 +88,7 @@ namespace Signal_Windows.ViewModels
                     SignalServiceDataMessage message = content.Message;
                     if (message.EndSession)
                     {
-                        SignalDBContext.DeleteAllSessions(envelope.getSource());
+                        LibsignalDBContext.DeleteAllSessions(envelope.getSource());
                     }
                     else if (message.IsGroupUpdate())
                     {
@@ -107,7 +107,7 @@ namespace Signal_Windows.ViewModels
                             threadid = envelope.getSource();
                             SignalDBContext.GetOrCreateContactLocked(threadid, timestamp, this);
                         }
-                        SignalDBContext.UpdateExpiresInLocked(new SignalThread() { ThreadId = threadid }, (uint)message.ExpiresInSeconds);
+                        SignalDBContext.UpdateExpiresInLocked(new SignalConversation() { ThreadId = threadid }, (uint)message.ExpiresInSeconds);
                     }
                     else
                     {
@@ -148,7 +148,7 @@ namespace Signal_Windows.ViewModels
             catch (libsignal.exceptions.UntrustedIdentityException e)
             {
                 Debug.WriteLine("HandleMessage received message from changed identity");
-                SignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
+                LibsignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
                 HandleMessage(envelope);
             }
         }
@@ -182,7 +182,7 @@ namespace Signal_Windows.ViewModels
 
         private void HandleSignalMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
         {
-            SignalMessageType type;
+            SignalMessageDirection type;
             SignalContact author;
             SignalMessageStatus status;
             string threadId;
@@ -227,21 +227,21 @@ namespace Signal_Windows.ViewModels
 
             if (isSync)
             {
-                type = SignalMessageType.Synced;
+                type = SignalMessageDirection.Synced;
                 status = SignalMessageStatus.Confirmed;
                 author = null;
             }
             else
             {
                 status = 0;
-                type = SignalMessageType.Incoming;
+                type = SignalMessageDirection.Incoming;
                 author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
             }
 
             List<SignalAttachment> attachments = new List<SignalAttachment>();
             SignalMessage message = new SignalMessage()
             {
-                Type = type,
+                Direction = type,
                 Status = status,
                 Author = author,
                 Content = new SignalMessageContent() { Content = body },

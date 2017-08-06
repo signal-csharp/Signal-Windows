@@ -104,24 +104,29 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\MessageBox.xaml.cs">
-      <DependentUpon>MessageBox.xaml</DependentUpon>
+    <Compile Include="Controls\Message.xaml.cs">
+      <DependentUpon>Message.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ThreadListItem.xaml.cs">
-      <DependentUpon>ThreadListItem.xaml</DependentUpon>
+    <Compile Include="Controls\ConversationListElement.xaml.cs">
+      <DependentUpon>ConversationListElement.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ThreadView.xaml.cs">
-      <DependentUpon>ThreadView.xaml</DependentUpon>
+    <Compile Include="Controls\Conversation.xaml.cs">
+      <DependentUpon>Conversation.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\Welcome.xaml.cs">
       <DependentUpon>Welcome.xaml</DependentUpon>
     </Compile>
     <Compile Include="Logging\LoggerProvider.cs" />
-    <Compile Include="Migrations\20170720044215_m1.cs" />
-    <Compile Include="Migrations\20170720044215_m1.designer.cs">
-      <DependentUpon>20170720044215_m1.cs</DependentUpon>
+    <Compile Include="Migrations\SignalDB\20170806163624_s1.cs" />
+    <Compile Include="Migrations\SignalDB\20170806163624_s1.designer.cs">
+      <DependentUpon>20170806163624_s1.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\SignalDBContextModelSnapshot.cs" />
+    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.cs" />
+    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.designer.cs">
+      <DependentUpon>20170806145530_ls1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\LibsignalDB\LibsignalDBContextModelSnapshot.cs" />
+    <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\SignalEarlyReceipt.cs" />
     <Compile Include="Models\SignalIdentity.cs" />
     <Compile Include="Models\SignalAttachment.cs" />
@@ -133,7 +138,7 @@
     <Compile Include="Models\SignalSession.cs" />
     <Compile Include="Models\SignalSignedPreKey.cs" />
     <Compile Include="Models\SignalStore.cs" />
-    <Compile Include="Models\SignalThread.cs" />
+    <Compile Include="Models\SignalConversation.cs" />
     <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
     <Compile Include="Storage\Store.cs" />
@@ -182,15 +187,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="Controls\MessageBox.xaml">
+    <Page Include="Controls\Message.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\ThreadListItem.xaml">
+    <Page Include="Controls\ConversationListElement.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\ThreadView.xaml">
+    <Page Include="Controls\Conversation.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

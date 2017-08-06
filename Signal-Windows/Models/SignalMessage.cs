@@ -7,6 +7,7 @@ namespace Signal_Windows.Models
     public class SignalMessage
     {
         public ulong Id { get; set; }
+        public SignalMessageDirection Direction { get; set; }
         public SignalMessageType Type { get; set; }
         public SignalMessageStatus Status { get; set; }
         public SignalMessageContent Content { get; set; }
@@ -14,16 +15,25 @@ namespace Signal_Windows.Models
         public ulong? AuthorId { get; set; }
         public SignalContact Author { get; set; }
         public uint DeviceId { get; set; }
+        public bool Read { get; set; }
         public uint Receipts { get; set; }
         public long ReceivedTimestamp { get; set; }
         public long ComposedTimestamp { get; set; }
         public uint ExpiresAt { get; set; }
         public uint AttachmentsCount { get; set; }
         public List<SignalAttachment> Attachments { get; set; }
-        [NotMapped] public MessageBox View { get; set; }
+        [NotMapped] public Message View { get; set; }
     }
 
     public enum SignalMessageType
+    {
+        Normal = 0,
+        GroupUpdate = 1,
+        SessionReset = 2,
+        ExpireUpdate = 3
+    }
+
+    public enum SignalMessageDirection
     {
         Outgoing = 0,
         Incoming = 1,

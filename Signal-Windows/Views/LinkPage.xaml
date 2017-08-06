@@ -23,9 +23,20 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Padding="20" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <TextBlock Foreground="White" TextWrapping="WrapWholeWords">Signal-Windows is now preparing to get linked to your Signal master device. This might take a while.</TextBlock>
-        <TextBlock Foreground="White" TextWrapping="WrapWholeWords" Margin="0 20 0 0" Visibility="{x:Bind Vm.QRVisible, Mode=OneWay}">Scan this QR-Code with your master device to link this device:</TextBlock>
-        <Image x:Name="QRCode" Stretch="None" Visibility="{x:Bind Vm.QRVisible, Mode=OneWay}" />
-    </StackPanel>
+    <Grid Padding="20" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Image Grid.Row="0" x:Name="QRCode" Stretch="Fill" Visibility="{x:Bind Vm.QRVisible, Mode=OneWay}" Width="250" Height="250" Margin="20 20 20 20" />
+            <TextBlock Grid.Row="1" Foreground="White" TextWrapping="WrapWholeWords" Text="Open Signal on your phone and navigate to Settings > Linked devices. Tap the button to add a new device, then scan the code above." HorizontalAlignment="Center" Margin="20 20 20 20"></TextBlock>
+            <TextBlock Grid.Row="2" Foreground="White" TextWrapping="WrapWholeWords" HorizontalAlignment="Center">This device's name will be</TextBlock>
+            <TextBox Grid.Row="3" Name="DeviceName" Text="{x:Bind Vm.DeviceName, Mode=TwoWay}" Margin="20 20 20 20" Width="240" HorizontalAlignment="Center" />
+            <TextBlock Grid.Row="4" Foreground="White" Text="{x:Bind Vm.QRCodeString, Mode=OneWay}" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Bottom" IsTextSelectionEnabled="True" Margin="20 20 20 20" />
+        </Grid>
+    </Grid>
 </Page>

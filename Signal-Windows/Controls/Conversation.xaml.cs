@@ -16,12 +16,13 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class ThreadView : UserControl, INotifyPropertyChanged
+    public sealed partial class Conversation : UserControl, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public RangeObservableCollection<SignalMessage> Messages = new RangeObservableCollection<SignalMessage>();
-        private Dictionary<ulong, MessageBox> OutgoingCache = new Dictionary<ulong, MessageBox>();
+        private Dictionary<ulong, Message> OutgoingCache = new Dictionary<ulong, Message>();
+
+        public RangeObservableCollection<SignalMessage> Messages { get; set; } = new RangeObservableCollection<SignalMessage>();
 
         private string _ThreadDisplayName;
 
@@ -63,7 +64,7 @@ namespace Signal_Windows.Controls
             set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
         }
 
-        public ThreadView()
+        public Conversation()
         {
             this.InitializeComponent();
             Displayname.Foreground = Utils.ForegroundIncoming;
@@ -76,13 +77,13 @@ namespace Signal_Windows.Controls
             return DataContext as MainPageViewModel;
         }
 
-        public void Update(SignalThread thread)
+        public void Update(SignalConversation thread)
         {
             InputTextBox.IsEnabled = thread.CanReceive;
             UpdateHeader(thread);
         }
 
-        private void UpdateHeader(SignalThread thread)
+        private void UpdateHeader(SignalConversation thread)
         {
             ThreadDisplayName = thread.ThreadDisplayName;
             ThreadUsername = thread.ThreadId;
@@ -115,7 +116,7 @@ namespace Signal_Windows.Controls
             SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f, true);
         }
 
-        public async Task Load(SignalThread thread)
+        public async Task Load(SignalConversation thread)
         {
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();

@@ -10,6 +10,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 
 namespace Signal_Windows.ViewModels
@@ -18,6 +19,11 @@ namespace Signal_Windows.ViewModels
     {
         public LinkPage View;
         private CancellationTokenSource CancelSource;
+        private bool UIEnabled = true;
+        private Task LinkingTask;
+
+        public string DeviceName { get; set; } = "Signal on Windows";
+
         private Visibility _QRVisible;
 
         public Visibility QRVisible
@@ -33,38 +39,57 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void Init()
+        private string _QRCodeString;
+
+        public string QRCodeString
         {
-            QRVisible = Visibility.Collapsed;
+            get
+            {
+                return _QRCodeString;
+            }
+            set
+            {
+                _QRCodeString = value;
+                RaisePropertyChanged(nameof(QRCodeString));
+            }
         }
 
-        public void BeginLinking()
+        public async Task OnNavigatedTo()
         {
-            CancelSource = new CancellationTokenSource();
-            Task.Run(() =>
+            UIEnabled = true;
+            QRVisible = Visibility.Collapsed;
+            QRCodeString = "";
+
+            Utils.EnableBackButton(BackButton_Click);
+            await BeginLinking();
+        }
+
+        public async Task BeginLinking()
+        {
+            try
             {
-                try
+                CancelSource = new CancellationTokenSource();
+                string deviceName = DeviceName;
+                LinkingTask = Task.Run(() =>
                 {
                     /* clean the database from stale values */
-                    SignalDBContext.PurgeAccountData();
+                    LibsignalDBContext.PurgeAccountData();
 
-                    /* link to master */
+                    /* prepare qrcode */
                     string password = Base64.encodeBytes(Util.getSecretBytes(18));
                     IdentityKeyPair tmpIdentity = KeyHelper.generateIdentityKeyPair();
                     SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, CancelSource.Token, "Signal-Windows");
                     string uuid = accountManager.GetNewDeviceUuid(CancelSource.Token);
-                    Debug.WriteLine("received uuid=" + uuid);
                     string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.encodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
-                    Debug.WriteLine(tsdevice);
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         View.SetQR(tsdevice);
                         QRVisible = Visibility.Visible;
+                        QRCodeString = tsdevice;
                     }).AsTask().Wait();
 
                     string tmpSignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
                     int registrationId = (int)KeyHelper.generateRegistrationId(false);
-                    string deviceName = "windowstest";
 
                     NewDeviceLinkResult result = accountManager.FinishNewDeviceRegistration(tmpIdentity, tmpSignalingKey, password, false, true, registrationId, deviceName);
                     SignalStore store = new SignalStore()
@@ -79,31 +104,59 @@ namespace Signal_Windows.ViewModels
                         SignalingKey = tmpSignalingKey,
                         Username = result.Number
                     };
-                    SignalDBContext.SaveOrUpdateSignalStore(store);
+                    LibsignalDBContext.SaveOrUpdateSignalStore(store);
 
                     /* reload registered state */
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
+                        UIEnabled = false;
                         App.Store = store;
                     }).AsTask().Wait();
 
                     /* create prekeys */
-                    SignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                    LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
 
                     /* reload again with prekeys and their offsets */
-                    store = SignalDBContext.GetSignalStore();
+                    store = LibsignalDBContext.GetSignalStore();
                     Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         App.Store = store;
                         View.Finish(true);
                     }).AsTask().Wait();
-                }
-                catch (Exception e)
+                });
+                await LinkingTask;
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+                Debug.WriteLine(e.StackTrace);
+            }
+        }
+
+        internal async void BackButton_Click(object sender, BackRequestedEventArgs e)
+        {
+            if (UIEnabled)
+            {
+                CancelSource.Cancel();
+                if (LinkingTask != null)
                 {
-                    Debug.WriteLine(e);
+                    try
+                    {
+                        await LinkingTask;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                        Debug.WriteLine(ex.StackTrace);
+                    }
                 }
-            });
+                await Task.Run(() =>
+                {
+                    LibsignalDBContext.PurgeAccountData();
+                });
+                View.Frame.GoBack();
+            }
         }
     }
 }

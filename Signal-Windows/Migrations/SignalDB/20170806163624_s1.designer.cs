@@ -9,8 +9,8 @@ using Signal_Windows.Models;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20170720044215_m1")]
-    partial class m1
+    [Migration("20170806163624_s1")]
+    partial class s1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -63,7 +63,7 @@ namespace Signal_Windows.Migrations
                     b.ToTable("Attachments");
                 });
 
-            modelBuilder.Entity("Signal_Windows.Models.SignalContact", b =>
+            modelBuilder.Entity("Signal_Windows.Models.SignalConversation", b =>
                 {
                     b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd();
@@ -72,7 +72,8 @@ namespace Signal_Windows.Migrations
 
                     b.Property<bool>("CanReceive");
 
-                    b.Property<string>("Color");
+                    b.Property<string>("Discriminator")
+                        .IsRequired();
 
                     b.Property<string>("Draft");
 
@@ -80,20 +81,32 @@ namespace Signal_Windows.Migrations
 
                     b.Property<long>("LastActiveTimestamp");
 
+                    b.Property<ulong?>("LastMessageId");
+
+                    b.Property<ulong?>("LastSeenMessageId");
+
                     b.Property<string>("ThreadDisplayName");
 
                     b.Property<string>("ThreadId");
 
-                    b.Property<uint>("Unread");
+                    b.Property<uint>("UnreadCount");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Contacts");
+                    b.HasIndex("LastMessageId");
+
+                    b.HasIndex("LastSeenMessageId");
+
+                    b.HasIndex("ThreadId");
+
+                    b.ToTable("SignalConversation");
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("SignalConversation");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalEarlyReceipt", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<uint>("DeviceId");
@@ -106,53 +119,11 @@ namespace Signal_Windows.Migrations
 
                     b.HasIndex("DeviceId");
 
+                    b.HasIndex("Timestamp");
+
                     b.HasIndex("Username");
 
                     b.ToTable("EarlyReceipts");
-                });
-
-            modelBuilder.Entity("Signal_Windows.Models.SignalGroup", b =>
-                {
-                    b.Property<ulong>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("AvatarFile");
-
-                    b.Property<bool>("CanReceive");
-
-                    b.Property<string>("Draft");
-
-                    b.Property<uint>("ExpiresInSeconds");
-
-                    b.Property<long>("LastActiveTimestamp");
-
-                    b.Property<string>("ThreadDisplayName");
-
-                    b.Property<string>("ThreadId");
-
-                    b.Property<uint>("Unread");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Groups");
-                });
-
-            modelBuilder.Entity("Signal_Windows.Models.SignalIdentity", b =>
-                {
-                    b.Property<ulong>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("IdentityKey");
-
-                    b.Property<string>("Username");
-
-                    b.Property<int>("VerifiedStatus");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Username");
-
-                    b.ToTable("Identities");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
@@ -170,7 +141,11 @@ namespace Signal_Windows.Migrations
 
                     b.Property<uint>("DeviceId");
 
+                    b.Property<int>("Direction");
+
                     b.Property<uint>("ExpiresAt");
+
+                    b.Property<bool>("Read");
 
                     b.Property<uint>("Receipts");
 
@@ -205,78 +180,25 @@ namespace Signal_Windows.Migrations
                     b.ToTable("Messages_fts");
                 });
 
-            modelBuilder.Entity("Signal_Windows.Models.SignalPreKey", b =>
+            modelBuilder.Entity("Signal_Windows.Models.SignalContact", b =>
                 {
-                    b.Property<uint>("Id")
-                        .ValueGeneratedOnAdd();
+                    b.HasBaseType("Signal_Windows.Models.SignalConversation");
 
-                    b.Property<string>("Key");
+                    b.Property<string>("Color");
 
-                    b.HasKey("Id");
+                    b.ToTable("SignalContact");
 
-                    b.HasIndex("Id");
-
-                    b.ToTable("PreKeys");
+                    b.HasDiscriminator().HasValue("SignalContact");
                 });
 
-            modelBuilder.Entity("Signal_Windows.Models.SignalSession", b =>
+            modelBuilder.Entity("Signal_Windows.Models.SignalGroup", b =>
                 {
-                    b.Property<uint>("Id")
-                        .ValueGeneratedOnAdd();
+                    b.HasBaseType("Signal_Windows.Models.SignalConversation");
 
-                    b.Property<uint>("DeviceId");
 
-                    b.Property<string>("Session");
+                    b.ToTable("SignalGroup");
 
-                    b.Property<string>("Username");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeviceId");
-
-                    b.HasIndex("Username");
-
-                    b.ToTable("Sessions");
-                });
-
-            modelBuilder.Entity("Signal_Windows.Models.SignalSignedPreKey", b =>
-                {
-                    b.Property<uint>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("Key");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SignedPreKeys");
-                });
-
-            modelBuilder.Entity("Signal_Windows.Models.SignalStore", b =>
-                {
-                    b.Property<uint>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<uint>("DeviceId");
-
-                    b.Property<string>("IdentityKeyPair");
-
-                    b.Property<uint>("NextSignedPreKeyId");
-
-                    b.Property<string>("Password");
-
-                    b.Property<uint>("PreKeyIdOffset");
-
-                    b.Property<bool>("Registered");
-
-                    b.Property<uint>("RegistrationId");
-
-                    b.Property<string>("SignalingKey");
-
-                    b.Property<string>("Username");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Store");
+                    b.HasDiscriminator().HasValue("SignalGroup");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
@@ -298,6 +220,17 @@ namespace Signal_Windows.Migrations
                         .WithMany("Attachments")
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Signal_Windows.Models.SignalConversation", b =>
+                {
+                    b.HasOne("Signal_Windows.Models.SignalMessage", "LastMessage")
+                        .WithMany()
+                        .HasForeignKey("LastMessageId");
+
+                    b.HasOne("Signal_Windows.Models.SignalMessage", "LastSeenMessage")
+                        .WithMany()
+                        .HasForeignKey("LastSeenMessageId");
                 });
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
