@@ -155,7 +155,7 @@ namespace Signal_Windows.Controls
             //TODO move scrolltobottom here
         }
 
-        public void AddToCache(SignalMessage sm)
+        public void AddToOutgoingMessagesCache(SignalMessage sm)
         {
             if (sm.View != null)
             {

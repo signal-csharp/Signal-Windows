@@ -8,12 +8,17 @@
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="400">
-    <Grid>
+    <Grid Padding="0 10 0 10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0" Name="ConversationDisplayName" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="18" />
         <TextBlock Grid.Column="1" Text="{x:Bind UnreadString, Mode=OneWay}" />
+        <TextBlock Grid.Row="1" Text="{x:Bind LastMessage, Mode=OneWay}" />
     </Grid>
 </UserControl>

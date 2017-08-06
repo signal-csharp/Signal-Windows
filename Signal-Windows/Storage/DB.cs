@@ -684,6 +684,7 @@ namespace Signal_Windows.Storage
                             .Where(c => c.ThreadId == message.ThreadId)
                             .Single();
                         contact.LastActiveTimestamp = timestamp;
+                        contact.LastMessage = message;
                     }
                     else
                     {
@@ -692,6 +693,7 @@ namespace Signal_Windows.Storage
                             .Single();
                         message.ExpiresAt = group.ExpiresInSeconds;
                         group.LastActiveTimestamp = timestamp;
+                        group.LastMessage = message;
                     }
                     ctx.Messages.Add(message);
                     ctx.SaveChanges();
@@ -1021,6 +1023,8 @@ namespace Signal_Windows.Storage
                         .OrderByDescending(g => g.LastActiveTimestamp)
                         .Include(g => g.GroupMemberships)
                         .ThenInclude(gm => gm.Contact)
+                        .Include(g => g.LastMessage)
+                        .ThenInclude(m => m.Content)
                         .AsNoTracking()
                         .ToList();
                 }
@@ -1038,6 +1042,8 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     return ctx.Contacts
+                        .Include(g => g.LastMessage)
+                        .ThenInclude(m => m.Content)
                         .OrderByDescending(c => c.LastActiveTimestamp)
                         .AsNoTracking()
                         .ToList();

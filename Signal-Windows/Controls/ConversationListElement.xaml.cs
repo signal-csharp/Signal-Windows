@@ -1,5 +1,6 @@
 using Signal_Windows.Models;
 using System.ComponentModel;
+using System.Diagnostics;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -40,7 +41,7 @@ namespace Signal_Windows.Controls
             set
             {
                 _UnreadCount = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("UnreadString"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UnreadString)));
             }
         }
 
@@ -59,6 +60,22 @@ namespace Signal_Windows.Controls
             }
         }
 
+        private string _LastMessage = "@";
+
+        public string LastMessage
+        {
+            get
+            {
+                return _LastMessage;
+            }
+            set
+            {
+                Debug.WriteLine("setting lastmessage to " + value);
+                _LastMessage = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastMessage)));
+            }
+        }
+
         private void ThreadListItem_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             if (Model != null)
@@ -66,6 +83,7 @@ namespace Signal_Windows.Controls
                 Model.View = this;
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
                 UnreadCount = Model.UnreadCount;
+                LastMessage = Model.LastMessage?.Content.Content;
             }
         }
 
@@ -75,6 +93,7 @@ namespace Signal_Windows.Controls
             Model.LastActiveTimestamp = thread.LastActiveTimestamp;
             ConversationDisplayName.Text = thread.ThreadDisplayName;
             UnreadCount = thread.UnreadCount;
+            LastMessage = Model.LastMessage?.Content.Content;
         }
     }
 }
