@@ -1108,7 +1108,6 @@ namespace Signal_Windows.Storage
                         c.ThreadDisplayName = contact.ThreadDisplayName;
                         c.CanReceive = contact.CanReceive;
                         c.AvatarFile = contact.AvatarFile;
-                        c.LastActiveTimestamp = contact.LastActiveTimestamp;
                         c.Draft = contact.Draft;
                         c.UnreadCount = contact.UnreadCount;
                     }
