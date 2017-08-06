@@ -1070,8 +1070,8 @@ namespace Signal_Windows.Storage
                             ThreadId = username,
                             ThreadDisplayName = username,
                             CanReceive = true,
-                            LastActiveTimestamp = timestamp
-                            //TODO pick random color
+                            LastActiveTimestamp = timestamp,
+                            Color = Utils.Colors[Utils.CalculateDefaultColorIndex(username)]
                         };
                         ctx.Contacts.Add(contact);
                         ctx.SaveChanges();

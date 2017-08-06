@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Signal_Windows.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -10,6 +11,23 @@ namespace Signal_Windows
 {
     public class Utils
     {
+        public static string[] Colors = {
+            "red",
+            "pink",
+            "purple",
+            "deep_purple",
+            "indigo",
+            "blue",
+            "light_blue",
+            "cyan",
+            "teal",
+            "green",
+            "light_green",
+            "orange",
+            "deep_orange",
+            "amber",
+            "blue_grey"};
+
         public static SolidColorBrush Red = GetSolidColorBrush(255, "#EF5350");
         public static SolidColorBrush Pink = GetSolidColorBrush(255, "#EC407A");
         public static SolidColorBrush Purple = GetSolidColorBrush(255, "#AB47BC");
@@ -63,6 +81,21 @@ namespace Signal_Windows
                 case "grey": return Grey;
                 default: return Default;
             }
+        }
+
+        public static int CalculateDefaultColorIndex(string title)
+        {
+            if (title.Length == 0)
+            {
+                return 0;
+            }
+            var hash = 0;
+            for (int i = 0; i < title.Length; i++)
+            {
+                hash = ((hash << 5) - hash) + title[i];
+                hash = hash & hash;
+            }
+            return Math.Abs(hash) % 15;
         }
 
         public static void EnableBackButton()
