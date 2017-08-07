@@ -1,7 +1,18 @@
-﻿using System;
-using Signal_Windows.ViewModels;
+﻿using Signal_Windows.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using Windows.Foundation;
+using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Data;
+using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 // Die Elementvorlage "Leere Seite" wird unter https://go.microsoft.com/fwlink/?LinkId=234238 dokumentiert.
@@ -11,31 +22,25 @@ namespace Signal_Windows.Views
     /// <summary>
     /// Eine leere Seite, die eigenständig verwendet oder zu der innerhalb eines Rahmens navigiert werden kann.
     /// </summary>
-    public sealed partial class RegisterPage : Page
+    public sealed partial class RegisterFinalizationPage : Page
     {
-        public RegisterPage()
+        public RegisterFinalizationPage()
         {
             this.InitializeComponent();
             Vm.View = this;
-            Loaded += RegisterPage_Loaded;
         }
 
-        private void RegisterPage_Loaded(object sender, RoutedEventArgs e)
-        {
-            Vm.RegisterPage_Loaded();
-        }
-
-        public RegisterPageViewModel Vm
+        public RegisterFinalizationPageViewModel Vm
         {
             get
             {
-                return (RegisterPageViewModel)DataContext;
+                return (RegisterFinalizationPageViewModel)DataContext;
             }
         }
 
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void FinishButton_Click(object sender, RoutedEventArgs e)
         {
-            Vm.ComboBox_SelectionChanged(sender, e);
+            Vm.FinishButton_Click();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -48,16 +53,6 @@ namespace Signal_Windows.Views
         {
             base.OnNavigatingFrom(e);
             Vm.OnNavigatingFrom();
-        }
-
-        internal void SetCountry(int i)
-        {
-            CountriesList.SelectedIndex = i;
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            Vm.RegisterButton_Click();
         }
     }
 }

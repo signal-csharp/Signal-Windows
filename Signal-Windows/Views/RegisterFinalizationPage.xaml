@@ -1,12 +1,12 @@
 ﻿<Page
-    x:Class="Signal_Windows.Views.RegisterPage"
+    x:Class="Signal_Windows.Views.RegisterFinalizationPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Signal_Windows.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    DataContext="{Binding RegisterPageInstance, Source={StaticResource Locator}}">
+    DataContext="{Binding RegisterFinalizationPageInstance, Source={StaticResource Locator}}">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -32,11 +32,8 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Foreground="White" FontSize="35" HorizontalAlignment="Center" Margin="20 20 20 20">Connect with Signal</TextBlock>
-        <ComboBox Grid.Row="1" Background="White" HorizontalAlignment="Center" Width="250" ItemsSource="{x:Bind Vm.CountriesList}" SelectionChanged="ComboBox_SelectionChanged" Name="CountriesList"/>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
-            <TextBox Text="{x:Bind Vm.PhonePrefix, Mode=TwoWay}" Background="White" />
-            <TextBox Text="{x:Bind Vm.PhoneSuffix, Mode=TwoWay}" Background="White" Width="186"/>
-        </StackPanel>
-        <Button  Grid.Row="3" Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="200" Margin="20 20 20 20" Click="Button_Click">Register</Button>
+        <TextBlock Grid.Row="1" Foreground="White" HorizontalAlignment="Center">Please enter your SMS verification code below:</TextBlock>
+        <TextBox Grid.Row="2" Width="200" />
+        <Button  Grid.Row="3" Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="200" Margin="20 20 20 20" Click="FinishButton_Click" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}">Finish Registration</Button>
     </Grid>
 </Page>
