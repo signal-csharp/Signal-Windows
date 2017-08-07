@@ -29,8 +29,9 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<INavigationService, NavigationService>();
             SimpleIoc.Default.Register<StartPageViewModel>();
             SimpleIoc.Default.Register<AddContactPageViewModel>();
-            SimpleIoc.Default.Register<MainPageViewModel>();
+            SimpleIoc.Default.Register<MainPageViewModel>(); 
             SimpleIoc.Default.Register<RegisterPageViewModel>();
+            SimpleIoc.Default.Register<RegisterFinalizationPageViewModel>();
             SimpleIoc.Default.Register<LinkPageViewModel>();
         }
 
@@ -69,6 +70,14 @@ namespace Signal_Windows.ViewModels
             get
             {
                 return ServiceLocator.Current.GetInstance<RegisterPageViewModel>();
+            }
+        }
+
+        public RegisterFinalizationPageViewModel RegisterFinalizationPageInstance
+        {
+            get
+            {
+                return ServiceLocator.Current.GetInstance<RegisterFinalizationPageViewModel>();
             }
         }
 
