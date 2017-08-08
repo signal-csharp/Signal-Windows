@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -22,7 +23,9 @@ namespace Signal_Windows.Controls
 
         private Dictionary<ulong, Message> OutgoingCache = new Dictionary<ulong, Message>();
 
-        public RangeObservableCollection<SignalMessage> Messages { get; set; } = new RangeObservableCollection<SignalMessage>();
+        public RangeObservableCollection<object> Messages { get; set; } = new RangeObservableCollection<object>();
+        private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
+        private bool UnreadMarkerAdded = false;
 
         private string _ThreadDisplayName;
 
@@ -113,11 +116,21 @@ namespace Signal_Windows.Controls
         public void ScrollToBottom()
         {
             SelectedMessagesScrollViewer.UpdateLayout();
-            SelectedMessagesScrollViewer.ChangeView(0.0f, double.MaxValue, 1.0f, true);
+            if (UnreadMarkerAdded)
+            {
+                var transform = UnreadMarker.View.TransformToVisual((UIElement)SelectedMessagesScrollViewer.Content);
+                var position = transform.TransformPoint(new Point(0, 0));
+                SelectedMessagesScrollViewer.ChangeView(null, position.Y, null, true);
+            }
+            else
+            {
+                SelectedMessagesScrollViewer.ChangeView(null, double.MaxValue, null, true);
+            }
         }
 
         public async Task Load(SignalConversation thread)
         {
+            UnreadMarkerAdded = false;
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();
             UpdateHeader(thread);
@@ -127,8 +140,21 @@ namespace Signal_Windows.Controls
                 return SignalDBContext.GetMessagesLocked(thread);
             });
             var after1 = Util.CurrentTimeMillis();
-            Messages.AddRange(messages);
+            foreach (var message in messages)
+            {
+                Messages.AddSilently(message);
+                if (thread.LastSeenMessageId == message.Id && thread.LastMessageId != message.Id)
+                {
+                    UnreadMarkerAdded = true;
+                    Messages.AddSilently(UnreadMarker);
+                }
+            }
+            Messages.ForceCollectionChanged();
             UpdateLayout();
+            if (UnreadMarkerAdded)
+            {
+                UnreadMarker.View.SetText(thread.UnreadCount + " UNREAD MESSAGE" + (thread.UnreadCount > 1 ? "S" : ""));
+            }
             foreach (var message in messages)
             {
                 if (message.Direction != SignalMessageDirection.Incoming)
@@ -178,6 +204,39 @@ namespace Signal_Windows.Controls
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             await GetMainPageVm().TextBox_KeyDown(sender, e);
+        }
+
+        public void RemoveUnreadMarker()
+        {
+            if (UnreadMarkerAdded)
+            {
+                Messages.Remove(UnreadMarker);
+            }
+        }
+    }
+
+    public class SignalUnreadMarker
+    {
+        public UnreadMarker View { get; set; }
+    }
+
+    public class MessageTemplateSelector : DataTemplateSelector
+    {
+        public DataTemplate NormalMessage { get; set; }
+        public DataTemplate UnreadMarker { get; set; }
+
+        protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
+        {
+            FrameworkElement element = container as FrameworkElement;
+            if (item is SignalMessage)
+            {
+                return NormalMessage;
+            }
+            if (item is SignalUnreadMarker)
+            {
+                return UnreadMarker;
+            }
+            return null;
         }
     }
 }

@@ -3,12 +3,23 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Signal_Windows.Controls"
+    xmlns:models="using:Signal_Windows.Models"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:xaml="using:Windows.UI.Xaml"
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="400">
 
+    <Control.Resources>
+        <DataTemplate x:Key="NormalMessageTemplate" x:DataType="models:SignalMessage">
+            <local:Message></local:Message>
+        </DataTemplate>
+        <DataTemplate x:Key="UnreadMarkerTemplate">
+            <local:UnreadMarker />
+        </DataTemplate>
+        <local:MessageTemplateSelector x:Key="MessageDataTemplateSelector" NormalMessage="{StaticResource NormalMessageTemplate}" UnreadMarker="{StaticResource UnreadMarkerTemplate}" />
+    </Control.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />
@@ -23,17 +34,12 @@
             </StackPanel>
         </Border>
         <ScrollViewer Grid.Row="1" Name="SelectedMessagesScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 14 0">
-            <ItemsControl Name="SelectedMessagesList" ItemsSource="{x:Bind Messages}">
+            <ItemsControl Name="SelectedMessagesList" ItemsSource="{x:Bind Messages}" ItemTemplateSelector="{StaticResource MessageDataTemplateSelector}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Vertical" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <local:Message></local:Message>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
         <TextBox Grid.Row="2" Name="InputTextBox" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>

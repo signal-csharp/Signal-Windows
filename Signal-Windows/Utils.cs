@@ -163,5 +163,18 @@ namespace Signal_Windows
             _suppressNotification = false;
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
+
+        public void AddSilently(T t)
+        {
+            bool old = _suppressNotification;
+            _suppressNotification = true;
+            Add(t);
+            _suppressNotification = old;
+        }
+
+        public void ForceCollectionChanged()
+        {
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
     }
 }

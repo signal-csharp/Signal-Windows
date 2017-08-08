@@ -70,7 +70,6 @@ namespace Signal_Windows.Controls
             }
             set
             {
-                Debug.WriteLine("setting lastmessage to " + value);
                 _LastMessage = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastMessage)));
             }
@@ -87,7 +86,7 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public void Update(SignalConversation thread)
+        public void UpdateConversationDisplay(SignalConversation thread)
         {
             Model.ThreadDisplayName = thread.ThreadDisplayName;
             Model.LastActiveTimestamp = thread.LastActiveTimestamp;

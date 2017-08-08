@@ -86,7 +86,7 @@ namespace Signal_Windows.ViewModels
         {
             SignalConversation uiThread = ThreadsDictionary[thread.ThreadId];
             uiThread.CanReceive = thread.CanReceive;
-            uiThread.View.Update(thread);
+            uiThread.View.UpdateConversationDisplay(thread);
             if (SelectedThread == uiThread)
             {
                 View.Thread.Update(thread);
@@ -203,11 +203,11 @@ namespace Signal_Windows.ViewModels
                         SelectedThread = (SignalConversation)e.AddedItems[0];
                         await View.Thread.Load(SelectedThread);
                         View.SwitchToStyle(View.GetCurrentViewStyle());
-                        await Task.Run(() =>
+                        SignalConversation conversation = await Task.Run(() =>
                         {
-                            SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId, this);
+                            return SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
                         });
-                        UIResetRead(SelectedThread.ThreadId);
+                        UIResetRead(conversation);
                         View.Thread.ScrollToBottom();
                     }
                 }
@@ -247,12 +247,15 @@ namespace Signal_Windows.ViewModels
                             View.Thread.Append(message);
                             View.Thread.ScrollToBottom();
                             SelectedThread.LastMessage = message;
-                            SelectedThread.View.Update(SelectedThread);
+                            SelectedThread.View.UpdateConversationDisplay(SelectedThread);
                             MoveThreadToTop(SelectedThread);
                             await Task.Run(() =>
                             {
                                 SignalDBContext.SaveMessageLocked(message);
+                                SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
                             });
+                            SelectedThread.LastMessageId = message.Id;
+                            SelectedThread.LastSeenMessageId = message.Id;
                             if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
                             {
                                 View.Thread.AddToOutgoingMessagesCache(message);
@@ -260,6 +263,7 @@ namespace Signal_Windows.ViewModels
                             OutgoingQueue.Add(message);
                             var after = Util.CurrentTimeMillis();
                             Debug.WriteLine("ms until out queue: " + (after - now));
+                            View.Thread.RemoveUnreadMarker();
                         }
                     }
                 }
@@ -306,6 +310,7 @@ namespace Signal_Windows.ViewModels
                 {
                     SignalDBContext.SaveMessageLocked(message);
                 });
+                ulong? seenId = null;
                 if (SelectedThread == thread)
                 {
                     View.Thread.Append(message);
@@ -314,38 +319,40 @@ namespace Signal_Windows.ViewModels
                     {
                         View.Thread.AddToOutgoingMessagesCache(message);
                     }
+                    seenId = message.Id;
                 }
                 else
                 {
                     if (message.Direction == SignalMessageDirection.Incoming)
                     {
                         unreadCount++;
-                        await Task.Run(() =>
-                        {
-                            SignalDBContext.UpdateConversationLocked(message.ThreadId, unreadCount);
-                        });
                     }
                     else if (message.Direction == SignalMessageDirection.Synced)
                     {
                         unreadCount = 0;
-                        await Task.Run(() =>
-                        {
-                            SignalDBContext.UpdateConversationLocked(message.ThreadId, unreadCount);
-                        });
+                        thread.LastSeenMessageId = message.Id;
+                        seenId = message.Id;
                     }
                 }
+                await Task.Run(() =>
+                {
+                    SignalDBContext.UpdateConversationLocked(message.ThreadId, unreadCount, seenId);
+                });
                 thread.UnreadCount = unreadCount;
                 thread.LastActiveTimestamp = message.ReceivedTimestamp;
                 thread.LastMessage = message;
-                ThreadsDictionary[message.ThreadId].View.Update(thread);
+                thread.LastMessageId = message.Id;
+                ThreadsDictionary[message.ThreadId].View.UpdateConversationDisplay(thread);
                 MoveThreadToTop(thread);
             }
         }
 
-        public void UIResetRead(string threadId)
+        public void UIResetRead(SignalConversation conversation)
         {
-            ThreadsDictionary[threadId].UnreadCount = 0;
-            ThreadsDictionary[threadId].View.UnreadCount = 0;
+            SignalConversation uiConversation = ThreadsDictionary[conversation.ThreadId];
+            uiConversation.UnreadCount = 0;
+            uiConversation.View.UnreadCount = 0;
+            uiConversation.LastSeenMessageId = conversation.LastMessageId;
         }
 
         public void UIUpdateMessageBox(SignalMessage updatedMessage)

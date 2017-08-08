@@ -839,7 +839,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void UpdateConversationLocked(string threadId, uint unread)
+        public static void UpdateConversationLocked(string threadId, uint unread, ulong? lastSeenMessageId)
         {
             lock (DBLock)
             {
@@ -854,42 +854,50 @@ namespace Signal_Windows.Storage
                             .Where(g => g.ThreadId == threadId)
                             .Single();
                         group.UnreadCount = unread;
+                        if (lastSeenMessageId != null)
+                        {
+                            group.LastSeenMessageId = lastSeenMessageId;
+                        }
                     }
                     else
                     {
                         contact.UnreadCount = unread;
+                        if (lastSeenMessageId != null)
+                        {
+                            contact.LastSeenMessageId = lastSeenMessageId;
+                        }
                     }
                     ctx.SaveChanges();
                 }
             }
         }
 
-        public static void ClearUnreadLocked(string threadId, MainPageViewModel mpvm)
+        public static SignalConversation ClearUnreadLocked(string threadId)
         {
             lock (DBLock)
             {
+                SignalConversation conversation;
                 using (var ctx = new SignalDBContext())
                 {
-                    var contact = ctx.Contacts
+                    conversation = ctx.Contacts
                         .Where(c => c.ThreadId == threadId)
                         .SingleOrDefault();
-                    if (contact == null)
+                    if (conversation == null)
                     {
-                        var group = ctx.Groups
+                        conversation = ctx.Groups
                             .Where(g => g.ThreadId == threadId)
                             .Single();
-                        group.UnreadCount = 0;
+                        conversation.UnreadCount = 0;
+                        conversation.LastSeenMessageId = conversation.LastMessageId;
                     }
                     else
                     {
-                        contact.UnreadCount = 0;
+                        conversation.UnreadCount = 0;
+                        conversation.LastSeenMessageId = conversation.LastMessageId;
                     }
                     ctx.SaveChanges();
                 }
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                {
-                    mpvm.UIResetRead(threadId);
-                }).AsTask().Wait();
+                return conversation;
             }
         }
 
