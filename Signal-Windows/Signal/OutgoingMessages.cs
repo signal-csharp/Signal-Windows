@@ -49,7 +49,7 @@ namespace Signal_Windows.ViewModels
                     else
                     {
                         List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                        SignalGroup g = (SignalGroup)SelectedThread;
+                        SignalGroup g = SignalDBContext.GetOrCreateGroupLocked(outgoingSignalMessage.ThreadId, 0, this);
                         foreach (GroupMembership sc in g.GroupMemberships)
                         {
                             if (sc.Contact.ThreadId != App.Store.Username)
