@@ -128,6 +128,14 @@ namespace Signal_Windows.Controls
             });
             var after1 = Util.CurrentTimeMillis();
             Messages.AddRange(messages);
+            UpdateLayout();
+            foreach (var message in messages)
+            {
+                if (message.Direction != SignalMessageDirection.Incoming)
+                {
+                    AddToOutgoingMessagesCache(message);
+                }
+            }
             var after2 = Util.CurrentTimeMillis();
             Debug.WriteLine("db query: " + (after1 - before));
             Debug.WriteLine("ui: " + (after2 - after1));
