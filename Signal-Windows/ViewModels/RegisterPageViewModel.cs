@@ -65,7 +65,7 @@ namespace Signal_Windows.ViewModels
         {
             try
             {
-                string number = PhoneNumberFormatter.formatE164(PhonePrefix, PhoneSuffix);
+                string number = PhoneNumberFormatter.FormatE164(PhonePrefix, PhoneSuffix);
                 if(number != null && number.Length > 0 && number[0] == '+')
                 {
                     FinalNumber = number;
