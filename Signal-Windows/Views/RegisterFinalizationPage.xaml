@@ -33,7 +33,7 @@
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Foreground="White" FontSize="35" HorizontalAlignment="Center" Margin="20 20 20 20">Connect with Signal</TextBlock>
         <TextBlock Grid.Row="1" Foreground="White" HorizontalAlignment="Center">Please enter your SMS verification code below:</TextBlock>
-        <TextBox Grid.Row="2" Width="200" />
+        <TextBox Grid.Row="2" Width="200" Text="{x:Bind Vm.VerificationCode, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
         <Button  Grid.Row="3" Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="200" Margin="20 20 20 20" Click="FinishButton_Click" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}">Finish Registration</Button>
     </Grid>
 </Page>
