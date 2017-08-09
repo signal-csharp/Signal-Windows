@@ -126,7 +126,7 @@ namespace Signal_Windows.ViewModels
                         if (originalNumber[0] != '+')
                         {
                             // need a better way of determining the "default" country code here
-                            var formattedPhoneNumber = PhoneNumberFormatter.formatE164("1", originalNumber);
+                            var formattedPhoneNumber = PhoneNumberFormatter.FormatE164("1", originalNumber);
                             if (string.IsNullOrEmpty(formattedPhoneNumber))
                             {
                                 ContactNumber = originalNumber;
