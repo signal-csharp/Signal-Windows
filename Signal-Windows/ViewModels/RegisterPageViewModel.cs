@@ -12,13 +12,15 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Core;
 using libsignalservice.util;
 using Windows.UI.Popups;
+using PhoneNumbers;
 
 namespace Signal_Windows.ViewModels
 {
     public class RegisterPageViewModel : ViewModelBase
     {
         public CancellationTokenSource CancelSource = new CancellationTokenSource();
-        public IEnumerable<string> CountriesList { get; set; } = CountryArrays.Names;
+        public List<string> CountriesList { get; set; } = new List<string>(250);
+        private List<int> CountriesPrefixList { get; set; } = new List<int>(250);
         public RegisterPage View { get; set; }
         public string FinalNumber { get; set; }
         private string _PhonePrefix { get; set; }
@@ -35,12 +37,29 @@ namespace Signal_Windows.ViewModels
             }
         }
 
+        public RegisterPageViewModel()
+        {
+            HashSet<string> set = PhoneNumberUtil.GetInstance().GetSupportedRegions();
+            var phoneUtil = PhoneNumberUtil.GetInstance();
+            foreach (var region in set)
+            {
+                if(region != "AC" && region != "SX" && region != "CW" && region != "BQ" && region != "TA" && region != "SS")
+                {
+                    string s = new Locale("en", region).GetDisplayCountry("en");
+                    int prefix = phoneUtil.GetCountryCodeForRegion(region);
+                    CountriesList.Add(s);
+                    CountriesPrefixList.Add(prefix);
+                }
+            }
+        }
+
         internal void RegisterPage_Loaded()
         {
             var c = Windows.System.UserProfile.GlobalizationPreferences.HomeGeographicRegion;
-            for (int i = 0; i < CountryArrays.Abbreviations.Length; i++)
+            for (int i=0;i<CountriesPrefixList.Count;i++)
             {
-                if (CountryArrays.Abbreviations[i] == c)
+                int prefix = CountriesPrefixList[i];
+                if (prefix == PhoneNumberUtil.GetInstance().GetCountryCodeForRegion(c))
                 {
                     View.SetCountry(i);
                 }
@@ -104,8 +123,10 @@ namespace Signal_Windows.ViewModels
 
         public void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            int index = (sender as ComboBox).SelectedIndex;
-            PhonePrefix = Utils.GetCountryCode(CountryArrays.Abbreviations[index]);
+            ComboBox dropdown = (ComboBox)sender;
+            string region = (string)dropdown.SelectedItem;
+            int prefix = CountriesPrefixList[dropdown.SelectedIndex];
+            PhonePrefix = "+" + prefix;
         }
     }
 }
