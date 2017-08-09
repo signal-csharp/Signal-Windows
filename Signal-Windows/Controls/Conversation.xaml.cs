@@ -211,6 +211,7 @@ namespace Signal_Windows.Controls
             if (UnreadMarkerAdded)
             {
                 Messages.Remove(UnreadMarker);
+                UnreadMarkerAdded = false;
             }
         }
     }
