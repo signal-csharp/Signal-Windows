@@ -22,7 +22,14 @@ namespace Signal_Windows.ViewModels
     public class RegisterFinalizationPageViewModel : ViewModelBase
     {
         public RegisterFinalizationPage View { get; set; }
-        public string VerificationCode { get; set; }
+
+        private string _VerificationCode = string.Empty;
+        public string VerificationCode
+        {
+            get { return _VerificationCode; }
+            set { _VerificationCode = value; RaisePropertyChanged(nameof(VerificationCode)); }
+        }
+
         private SignalServiceAccountManager AccountManager;
         private string Password;
         private uint SignalRegistrationId;
