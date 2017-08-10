@@ -23,8 +23,12 @@ namespace Signal_Windows.Storage
             return true;
         }
 
-        public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey)
+        public bool IsTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction)
         {
+            if (direction == Direction.RECEIVING)
+            {
+                return true;
+            }
             string savedIdentity = LibsignalDBContext.GetIdentityLocked(address.Name);
             if (savedIdentity == null)
             {

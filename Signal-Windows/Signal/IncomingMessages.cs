@@ -265,9 +265,9 @@ namespace Signal_Windows.ViewModels
                         Status = (uint)SignalAttachmentStatus.Default,
                         SentFileName = pointer.FileName,
                         ContentType = "",
-                        Key = pointer.getKey(),
-                        Relay = pointer.getRelay(),
-                        StorageId = pointer.getId()
+                        Key = pointer.Key,
+                        Relay = pointer.Relay,
+                        StorageId = pointer.Id
                     };
                     attachments.Add(sa);
                 }
