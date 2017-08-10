@@ -338,11 +338,15 @@ namespace Signal_Windows.ViewModels
                 {
                     SignalDBContext.UpdateConversationLocked(message.ThreadId, unreadCount, seenId);
                 });
+                if (message.Read)
+                {
+                    thread.LastSeenMessageId = message.Id;
+                }
                 thread.UnreadCount = unreadCount;
                 thread.LastActiveTimestamp = message.ReceivedTimestamp;
                 thread.LastMessage = message;
                 thread.LastMessageId = message.Id;
-                ThreadsDictionary[message.ThreadId].View.UpdateConversationDisplay(thread);
+                thread.View.UpdateConversationDisplay(thread);
                 MoveThreadToTop(thread);
             }
         }
