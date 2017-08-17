@@ -16,7 +16,7 @@ namespace Signal_Windows.ViewModels
         /// <summary>
         /// Queue for pending outgoing messages.
         /// </summary>
-        private BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
+        public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
 
         /// <summary>
         /// Reads pending messages from the <see cref="OutgoingQueue"/> and attempts to send them
@@ -43,7 +43,7 @@ namespace Signal_Windows.ViewModels
                         if (!token.IsCancellationRequested)
                         {
                             MessageSender.sendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
-                            SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
+                            outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
                     else
@@ -65,7 +65,7 @@ namespace Signal_Windows.ViewModels
                         if (!token.IsCancellationRequested)
                         {
                             MessageSender.sendMessage(recipients, message);
-                            SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
+                            outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
                 }
@@ -73,19 +73,23 @@ namespace Signal_Windows.ViewModels
                 {
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
+                    Debug.WriteLine("HandleOutgoingMessages finished");
+                    return;
                 }
                 catch (libsignal.exceptions.UntrustedIdentityException e)
                 {
-                    LibsignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
-                    //TODO devise appropriate resend strategy
+                    //LibsignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.StackTrace);
+                    outgoingSignalMessage.Status = SignalMessageStatus.Failed_Identity;
                 }
                 catch (Exception e)
                 {
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
-                    OutgoingQueue.Add(outgoingSignalMessage);
-                    //TODO notify UI
+                    outgoingSignalMessage.Status = SignalMessageStatus.Failed_Network;
                 }
+                SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
             }
             Debug.WriteLine("HandleOutgoingMessages finished");
         }

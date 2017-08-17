@@ -29,11 +29,18 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <StackPanel Name="FooterPanel" Orientation="Horizontal">
-                <TextBlock Foreground="{x:Bind TimestampColor}" Text="{x:Bind FancyTimestamp}" Margin="0 0 5 0" />
-                <Image Source="{StaticResource Check}" Visibility="{x:Bind CheckVisibility, Mode=OneWay}" Width="16" Height="16" />
-                <Image Source="{StaticResource DoubleCheck}" Visibility="{x:Bind DoubleCheckVisibility, Mode=OneWay}" Width="16" Height="16" />
-            </StackPanel>
+            <Grid Name="FooterPanel">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Margin="0 0 5 0" Foreground="Red" FontWeight="SemiBold" Visibility="{x:Bind ResendVisibility, Mode=OneWay}" Tapped="ResendTextBlock_Tapped">Send again</TextBlock>
+                <TextBlock Grid.Column="1"  Foreground="{x:Bind TimestampColor}" Text="{x:Bind FancyTimestamp}" Margin="0 0 5 0" />
+                <Image Grid.Column="2"  Source="{StaticResource Check}" Visibility="{x:Bind CheckVisibility, Mode=OneWay}" Width="16" Height="16" />
+                <Image Grid.Column="3" Source="{StaticResource DoubleCheck}" Visibility="{x:Bind DoubleCheckVisibility, Mode=OneWay}" Width="16" Height="16" />
+            </Grid>
         </ItemsControl>
     </Border>
 </UserControl>

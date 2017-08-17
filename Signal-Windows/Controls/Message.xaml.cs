@@ -20,6 +20,7 @@ namespace Signal_Windows.Controls
         public SolidColorBrush ContactNameColor { get; set; }
         public SolidColorBrush TextColor { get; set; }
         public SolidColorBrush TimestampColor { get; set; }
+        public Visibility ResendVisibility { get; set; } = Visibility.Collapsed;
         public Visibility CheckVisibility { get; set; } = Visibility.Collapsed;
         public Visibility DoubleCheckVisibility { get; set; } = Visibility.Collapsed;
 
@@ -76,10 +77,11 @@ namespace Signal_Windows.Controls
             DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.ComposedTimestamp / 1000);
             DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
             FancyTimestamp = dt.ToString();
-            SetSignalMessageStatusIcon(Model);
+            UpdateSignalMessageStatusIcon(Model);
+            UpdateResendButton(Model);
         }
 
-        private void SetSignalMessageStatusIcon(SignalMessage updatedMessage)
+        private void UpdateSignalMessageStatusIcon(SignalMessage updatedMessage)
         {
             if (updatedMessage.Direction == SignalMessageDirection.Outgoing)
             {
@@ -117,11 +119,25 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public void UpdateSignalMessageStatusIcon(SignalMessage updatedMessage)
+        private void UpdateResendButton(SignalMessage updatedMessage)
         {
-            SetSignalMessageStatusIcon(updatedMessage);
-            PropertyChanged(this, new PropertyChangedEventArgs("CheckVisibility"));
-            PropertyChanged(this, new PropertyChangedEventArgs("DoubleCheckVisibility"));
+            if (updatedMessage.Direction == SignalMessageDirection.Outgoing && (updatedMessage.Status == SignalMessageStatus.Failed_Identity || updatedMessage.Status == SignalMessageStatus.Failed_Network))
+            {
+                ResendVisibility = Visibility.Visible;
+            }
+            else
+            {
+                ResendVisibility = Visibility.Collapsed;
+            }
+        }
+
+        public void UpdateMessageBox(SignalMessage updatedMessage)
+        {
+            UpdateSignalMessageStatusIcon(updatedMessage);
+            UpdateResendButton(updatedMessage);
+            PropertyChanged(this, new PropertyChangedEventArgs(nameof(CheckVisibility)));
+            PropertyChanged(this, new PropertyChangedEventArgs(nameof(DoubleCheckVisibility)));
+            PropertyChanged(this, new PropertyChangedEventArgs(nameof(ResendVisibility)));
         }
 
         private async void AttachmentSaveButton_Click(object sender, RoutedEventArgs e)
@@ -150,6 +166,17 @@ namespace Signal_Windows.Controls
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace);
             }
+        }
+
+        private void TextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+
+        }
+
+        private void ResendTextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            App.ViewModels.MainPageInstance.OutgoingQueue.Add(Model);
+            //TODO prevent button smashing
         }
     }
 }

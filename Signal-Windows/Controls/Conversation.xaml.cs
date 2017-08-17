@@ -179,7 +179,7 @@ namespace Signal_Windows.Controls
             if (OutgoingCache.ContainsKey(updatedMessage.Id))
             {
                 var m = OutgoingCache[updatedMessage.Id];
-                m.UpdateSignalMessageStatusIcon(updatedMessage);
+                m.UpdateMessageBox(updatedMessage);
             }
         }
 

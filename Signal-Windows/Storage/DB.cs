@@ -731,13 +731,20 @@ namespace Signal_Windows.Storage
                     m = ctx.Messages.Single(t => t.ComposedTimestamp == outgoingSignalMessage.ComposedTimestamp && t.Author == null);
                     if (m != null)
                     {
-                        if (m.Receipts == 0)
+                        if (outgoingSignalMessage.Status == SignalMessageStatus.Confirmed)
                         {
-                            m.Status = SignalMessageStatus.Confirmed;
+                            if (m.Receipts > 0)
+                            {
+                                m.Status = SignalMessageStatus.Received;
+                            }
+                            else
+                            {
+                                m.Status = SignalMessageStatus.Confirmed;
+                            }
                         }
                         else
                         {
-                            m.Status = SignalMessageStatus.Received;
+                            m.Status = outgoingSignalMessage.Status;
                         }
                         ctx.SaveChanges();
                     }
