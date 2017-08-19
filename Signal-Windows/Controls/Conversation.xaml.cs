@@ -225,12 +225,18 @@ namespace Signal_Windows.Controls
     {
         public DataTemplate NormalMessage { get; set; }
         public DataTemplate UnreadMarker { get; set; }
+        public DataTemplate IdentityKeyChangeMessage { get; set; }
 
         protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
         {
             FrameworkElement element = container as FrameworkElement;
             if (item is SignalMessage)
             {
+                SignalMessage sm = (SignalMessage)item;
+                if (sm.Type == SignalMessageType.IdentityKeyChange)
+                {
+                    return IdentityKeyChangeMessage;
+                }
                 return NormalMessage;
             }
             if (item is SignalUnreadMarker)

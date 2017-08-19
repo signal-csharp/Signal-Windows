@@ -18,7 +18,10 @@
         <DataTemplate x:Key="UnreadMarkerTemplate">
             <local:UnreadMarker />
         </DataTemplate>
-        <local:MessageTemplateSelector x:Key="MessageDataTemplateSelector" NormalMessage="{StaticResource NormalMessageTemplate}" UnreadMarker="{StaticResource UnreadMarkerTemplate}" />
+        <DataTemplate x:Key="IdentityKeyChangeTemplate">
+            <local:IdentityKeyChangeMessage />
+        </DataTemplate>
+        <local:MessageTemplateSelector x:Key="MessageDataTemplateSelector" NormalMessage="{StaticResource NormalMessageTemplate}" UnreadMarker="{StaticResource UnreadMarkerTemplate}" IdentityKeyChangeMessage="{StaticResource IdentityKeyChangeTemplate}" />
     </Control.Resources>
     <Grid>
         <Grid.RowDefinitions>

@@ -121,7 +121,7 @@ namespace Signal_Windows.Controls
 
         private void UpdateResendButton(SignalMessage updatedMessage)
         {
-            if (updatedMessage.Direction == SignalMessageDirection.Outgoing && (updatedMessage.Status == SignalMessageStatus.Failed_Identity || updatedMessage.Status == SignalMessageStatus.Failed_Network))
+            if (updatedMessage.Direction == SignalMessageDirection.Outgoing && updatedMessage.Status != SignalMessageStatus.Pending && updatedMessage.Status != SignalMessageStatus.Confirmed && updatedMessage.Status != SignalMessageStatus.Received)
             {
                 ResendVisibility = Visibility.Visible;
             }

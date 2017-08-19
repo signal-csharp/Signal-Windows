@@ -1,5 +1,8 @@
+using libsignal;
+using libsignalservice.crypto;
 using libsignalservice.messages;
 using libsignalservice.push;
+using libsignalservice.push.exceptions;
 using libsignalservice.util;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
@@ -76,18 +79,50 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine("HandleOutgoingMessages finished");
                     return;
                 }
-                catch (libsignal.exceptions.UntrustedIdentityException e)
+                catch (EncapsulatedExceptions exceptions)
                 {
-                    //LibsignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
+                    Debug.WriteLine(exceptions.Message);
+                    Debug.WriteLine(exceptions.StackTrace);
+                    IList<UntrustedIdentityException> identityExceptions = exceptions.getUntrustedIdentityExceptions();
+                    if (exceptions.getNetworkExceptions().Count > 0)
+                    {
+                        outgoingSignalMessage.Status = SignalMessageStatus.Failed_Network;
+                    }
+                    if (identityExceptions.Count > 0)
+                    {
+                        outgoingSignalMessage.Status = SignalMessageStatus.Failed_Identity;
+                    }
+                    foreach (UntrustedIdentityException e in identityExceptions)
+                    {
+                        Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                        {
+                            await MainPage.NotifyNewIdentity(e.getE164Number());
+                        }).AsTask().Wait();
+                        LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(e.getE164Number(), 1), Base64.encodeBytes(e.getIdentityKey().serialize()));
+                    }
+                }
+                catch (RateLimitException e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.StackTrace);
+                    outgoingSignalMessage.Status = SignalMessageStatus.Failed_Ratelimit;
+                }
+                catch (UntrustedIdentityException e)
+                {
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Identity;
+                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                    {
+                        await MainPage.NotifyNewIdentity(e.getE164Number());
+                    }).AsTask().Wait();
+                    LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(e.getE164Number(), 1), Base64.encodeBytes(e.getIdentityKey().serialize()));
                 }
                 catch (Exception e)
                 {
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
-                    outgoingSignalMessage.Status = SignalMessageStatus.Failed_Network;
+                    outgoingSignalMessage.Status = SignalMessageStatus.Failed_Unknown;
                 }
                 SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
             }

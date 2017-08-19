@@ -11,6 +11,7 @@ using Signal_Windows.Models;
 using Signal_Windows.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Signal_Windows.Storage
@@ -94,38 +95,38 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void SaveIdentityLocked(string number, string identity)
+        public static void SaveIdentityLocked(SignalProtocolAddress address, string identity)
         {
             lock (DBLock)
             {
                 using (var ctx = new LibsignalDBContext())
                 {
-                    ctx.Identities.Add(new SignalIdentity()
+                    var old = ctx.Identities
+                        .Where(i => i.Username == address.Name)
+                        .FirstOrDefault(); //could contain stale data
+                    if (old == null)
                     {
-                        IdentityKey = identity,
-                        Username = number,
-                        VerifiedStatus = (uint)VerifiedStatus.Default
-                    });
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public static void UpdateIdentityLocked(string username, string identity, VerifiedStatus status, MainPageViewModel mpvm)
-        {
-            lock (DBLock)
-            {
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-                {
-                    await MainPage.NotifyNewIdentity(username);
-                }).AsTask().Wait();
-                using (var ctx = new LibsignalDBContext())
-                {
-                    var i = ctx.Identities.SingleOrDefault(id => id.Username == username);
-                    if (i != null)
+                        ctx.Identities.Add(new SignalIdentity()
+                        {
+                            IdentityKey = identity,
+                            Username = address.Name,
+                            VerifiedStatus = VerifiedStatus.Default
+                        });
+                    }
+                    else if (old.IdentityKey != identity)
                     {
-                        i.IdentityKey = identity;
-                        i.VerifiedStatus = status;
+                        if (old.VerifiedStatus == VerifiedStatus.Verified)
+                        {
+                            old.VerifiedStatus = VerifiedStatus.Unverified;
+                        }
+                        old.IdentityKey = identity;
+                        var childSessions = ctx.Sessions
+                            .Where(s => s.Username == address.Name && s.DeviceId != address.DeviceId);
+                        ctx.Sessions.RemoveRange(childSessions);
+                        Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                        {
+                            await App.ViewModels.MainPageInstance.UIHandleIdentityKeyChange(address.Name);
+                        }).AsTask().Wait();
                     }
                     ctx.SaveChanges();
                 }
@@ -652,6 +653,63 @@ namespace Signal_Windows.Storage
         }
 
         #region Messages
+
+        public static LinkedList<SignalMessage> InsertIdentityChangedMessages(string number)
+        {
+            long now = Util.CurrentTimeMillis();
+            LinkedList<SignalMessage> messages = new LinkedList<SignalMessage>();
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    SignalContact contact = ctx.Contacts
+                        .Where(c => c.ThreadId == number)
+                        .SingleOrDefault();
+                    if (contact != null)
+                    {
+                        string str = $"Your safety numbers with {contact.ThreadDisplayName} have changed.";
+                        SignalMessage msg = new SignalMessage()
+                        {
+                            Author = contact,
+                            ComposedTimestamp = now,
+                            ReceivedTimestamp = now,
+                            Direction = SignalMessageDirection.Incoming,
+                            Type = SignalMessageType.IdentityKeyChange,
+                            ThreadId = contact.ThreadId,
+                            Content = new SignalMessageContent() { Content = str }
+                        };
+                        contact.LastMessage = msg;
+                        ctx.Messages.Add(msg);
+                        messages.AddLast(msg);
+                        var groups = ctx.GroupMemberships
+                            .Where(gm => gm.ContactId == contact.Id)
+                            .Include(gm => gm.Group);
+                        foreach (var gm in groups)
+                        {
+                            msg = new SignalMessage()
+                            {
+                                Author = contact,
+                                ComposedTimestamp = now,
+                                ReceivedTimestamp = now,
+                                Direction = SignalMessageDirection.Incoming,
+                                Type = SignalMessageType.IdentityKeyChange,
+                                ThreadId = gm.Group.ThreadId,
+                                Content = new SignalMessageContent() { Content = str }
+                            };
+                            gm.Group.LastMessage = msg;
+                            ctx.Messages.Add(msg);
+                            messages.AddLast(msg);
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("InsertIdentityChangedMessages for non-existing contact!");
+                    }
+                    ctx.SaveChanges();
+                }
+            }
+            return messages;
+        }
 
         public static void SaveMessageLocked(SignalMessage message)
         {

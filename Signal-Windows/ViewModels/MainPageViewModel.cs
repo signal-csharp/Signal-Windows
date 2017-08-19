@@ -367,6 +367,26 @@ namespace Signal_Windows.ViewModels
             }
         }
 
+        public async Task UIHandleIdentityKeyChange(string number)
+        {
+            using (await ActionInProgress.LockAsync())
+            {
+                var messages = SignalDBContext.InsertIdentityChangedMessages(number);
+                foreach (var message in messages)
+                {
+                    var thread = ThreadsDictionary[message.ThreadId];
+                    if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                    {
+                        View.Thread.Append(message);
+                        View.Thread.ScrollToBottom();
+                    }
+                    thread.LastMessage = message;
+                    thread.LastMessageId = message.Id;
+                    thread.View.UpdateConversationDisplay(thread);
+                }
+            }
+        }
+
         #endregion UIThread
     }
 }

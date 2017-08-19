@@ -19,7 +19,7 @@ namespace Signal_Windows.Storage
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            LibsignalDBContext.SaveIdentityLocked(address.Name, Base64.encodeBytes(identityKey.serialize()));
+            LibsignalDBContext.SaveIdentityLocked(address, Base64.encodeBytes(identityKey.serialize()));
             return true;
         }
 
@@ -36,6 +36,8 @@ namespace Signal_Windows.Storage
             }
             else
             {
+                //TODO compare timestamps & firstUse, see Signal-Android impl
+                string identity = Base64.encodeBytes(identityKey.serialize());
                 return savedIdentity == Base64.encodeBytes(identityKey.serialize());
             }
         }

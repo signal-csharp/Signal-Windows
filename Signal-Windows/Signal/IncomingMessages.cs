@@ -77,79 +77,76 @@ namespace Signal_Windows.ViewModels
 
         private void HandleMessage(SignalServiceEnvelope envelope)
         {
-            try
-            {
-                var cipher = new SignalServiceCipher(new SignalServiceAddress(App.Store.Username), new Store());
-                var content = cipher.decrypt(envelope);
-                long timestamp = Util.CurrentTimeMillis();
+            var cipher = new SignalServiceCipher(new SignalServiceAddress(App.Store.Username), new Store());
+            var content = cipher.decrypt(envelope);
+            long timestamp = Util.CurrentTimeMillis();
 
-                if (content.Message != null)
+            if (content.Message != null)
+            {
+                SignalServiceDataMessage message = content.Message;
+                if (message.EndSession)
                 {
-                    SignalServiceDataMessage message = content.Message;
-                    if (message.EndSession)
-                    {
-                        LibsignalDBContext.DeleteAllSessions(envelope.getSource());
-                    }
-                    else if (message.IsGroupUpdate())
+                    LibsignalDBContext.DeleteAllSessions(envelope.getSource());
+                }
+                else if (message.IsGroupUpdate())
+                {
+                    if (message.Group.Type == SignalServiceGroup.GroupType.DELIVER)
                     {
                         HandleGroupUpdateMessage(envelope, content, message, timestamp);
                     }
-                    else if (message.ExpirationUpdate)
+                }
+                else if (message.ExpirationUpdate)
+                {
+                    string threadid;
+                    if (message.Group != null)
                     {
-                        string threadid;
-                        if (message.Group != null)
-                        {
-                            threadid = Base64.encodeBytes(message.Group.GroupId);
-                            SignalDBContext.GetOrCreateGroupLocked(threadid, timestamp, this);
-                        }
-                        else
-                        {
-                            threadid = envelope.getSource();
-                            SignalDBContext.GetOrCreateContactLocked(threadid, timestamp, this);
-                        }
-                        SignalDBContext.UpdateExpiresInLocked(new SignalConversation() { ThreadId = threadid }, (uint)message.ExpiresInSeconds);
+                        threadid = Base64.encodeBytes(message.Group.GroupId);
+                        SignalDBContext.GetOrCreateGroupLocked(threadid, timestamp, this);
                     }
                     else
                     {
-                        //TODO check both the db for duplicates
-                        HandleSignalMessage(envelope, content, message, false, timestamp);
+                        threadid = envelope.getSource();
+                        SignalDBContext.GetOrCreateContactLocked(threadid, timestamp, this);
                     }
+                    SignalDBContext.UpdateExpiresInLocked(new SignalConversation() { ThreadId = threadid }, (uint)message.ExpiresInSeconds);
                 }
-                else if (content.SynchronizeMessage != null)
+                else
                 {
-                    if (content.SynchronizeMessage.getSent().HasValue)
+                    //TODO check both the db for duplicates
+                    HandleSignalMessage(envelope, content, message, false, timestamp);
+                }
+            }
+            else if (content.SynchronizeMessage != null)
+            {
+                if (content.SynchronizeMessage.getSent().HasValue)
+                {
+                    var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
+                    var dataMessage = syncMessage.getMessage();
+                    //TODO check both the db for duplicates
+                    if (dataMessage.IsGroupUpdate())
                     {
-                        var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
-                        var dataMessage = syncMessage.getMessage();
-                        //TODO check both the db for duplicates
-                        if (dataMessage.IsGroupUpdate())
+                        if (dataMessage.Group.Type == SignalServiceGroup.GroupType.DELIVER)
                         {
                             HandleGroupUpdateMessage(envelope, content, dataMessage, timestamp);
                         }
-                        else
-                        {
-                            HandleSignalMessage(envelope, content, dataMessage, true, timestamp);
-                        }
                     }
-                    else if (content.SynchronizeMessage.getRead().HasValue)
+                    else
                     {
-                        var readMessages = content.SynchronizeMessage.getRead().ForceGetValue();
-                        foreach (var readMessage in readMessages)
-                        {
-                            //TODO
-                        }
+                        HandleSignalMessage(envelope, content, dataMessage, true, timestamp);
                     }
-                } //TODO callmessages
-                else
-                {
-                    Debug.WriteLine("HandleMessage got unrecognized message from " + envelope.getSource());
                 }
-            }
-            catch (libsignal.exceptions.UntrustedIdentityException e)
+                else if (content.SynchronizeMessage.getRead().HasValue)
+                {
+                    var readMessages = content.SynchronizeMessage.getRead().ForceGetValue();
+                    foreach (var readMessage in readMessages)
+                    {
+                        //TODO
+                    }
+                }
+            } //TODO callmessages
+            else
             {
-                Debug.WriteLine("HandleMessage received message from changed identity");
-                LibsignalDBContext.UpdateIdentityLocked(e.getName(), Base64.encodeBytes(e.getUntrustedIdentity().serialize()), VerifiedStatus.Default, this);
-                HandleMessage(envelope);
+                Debug.WriteLine("HandleMessage got unrecognized message from " + envelope.getSource());
             }
         }
 

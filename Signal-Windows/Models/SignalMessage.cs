@@ -30,7 +30,8 @@ namespace Signal_Windows.Models
         Normal = 0,
         GroupUpdate = 1,
         SessionReset = 2,
-        ExpireUpdate = 3
+        ExpireUpdate = 3,
+        IdentityKeyChange = 4
     }
 
     public enum SignalMessageDirection
@@ -46,6 +47,8 @@ namespace Signal_Windows.Models
         Confirmed = 1,
         Received = 2,
         Failed_Identity = 3,
-        Failed_Network = 4
+        Failed_Network = 4,
+        Failed_Ratelimit = 5,
+        Failed_Unknown = 6
     }
 }

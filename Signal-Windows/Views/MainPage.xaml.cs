@@ -120,8 +120,8 @@ namespace Signal_Windows
 
         public static async Task NotifyNewIdentity(string user)
         {
-            var title = "Identity Key Change";
-            var content = "The identity key of " + user + " has changed. This happens when someone is attempting to intercept your communication, or when your contact re-registered on a different device.";
+            var title = "Safety Numbers Change";
+            var content = "Your safety numbers with " + user + " have changed. This happens when someone is attempting to intercept your communication, or when your contact reinstalled signal on a different device.";
             UICommand understood = new UICommand("I understand");
             MessageDialog dialog = new MessageDialog(content, title);
             dialog.Commands.Add(understood);
