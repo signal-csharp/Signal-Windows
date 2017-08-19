@@ -31,7 +31,7 @@
             </ItemsControl>
             <Grid Name="FooterPanel">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition />
                     <ColumnDefinition />
                     <ColumnDefinition />
