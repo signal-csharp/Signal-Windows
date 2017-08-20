@@ -1,6 +1,6 @@
 ﻿{
   "dependencies": {
-    "libsignal-service-dotnet": "2.5.10.1",
+    "libsignal-service-dotnet": "2.5.10.2",
     "Microsoft.EntityFrameworkCore": "1.1.2",
     "Microsoft.EntityFrameworkCore.Design": "1.1.2",
     "Microsoft.EntityFrameworkCore.Sqlite": "1.1.2",
@@ -12,7 +12,7 @@
     "ZXing.Net.Mobile": "2.2.9"
   },
   "frameworks": {
-    "uap10.0": {}
+    "uap10.0.10586": {}
   },
   "runtimes": {
     "win10-arm": {},
