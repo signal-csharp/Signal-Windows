@@ -86,33 +86,21 @@ namespace Signal_Windows.ViewModels
                 SignalServiceDataMessage message = content.Message;
                 if (message.EndSession)
                 {
-                    LibsignalDBContext.DeleteAllSessions(envelope.getSource());
+                    HandleSessionResetMessage(envelope, content, message, false, timestamp);
                 }
                 else if (message.IsGroupUpdate())
                 {
                     if (message.Group.Type == SignalServiceGroup.GroupType.UPDATE)
                     {
-                        HandleGroupUpdateMessage(envelope, content, message, timestamp);
+                        HandleGroupUpdateMessage(envelope, content, message, false, timestamp);
                     }
                 }
                 else if (message.ExpirationUpdate)
                 {
-                    string threadid;
-                    if (message.Group != null)
-                    {
-                        threadid = Base64.encodeBytes(message.Group.GroupId);
-                        SignalDBContext.GetOrCreateGroupLocked(threadid, timestamp, this);
-                    }
-                    else
-                    {
-                        threadid = envelope.getSource();
-                        SignalDBContext.GetOrCreateContactLocked(threadid, timestamp, this);
-                    }
-                    SignalDBContext.UpdateExpiresInLocked(new SignalConversation() { ThreadId = threadid }, (uint)message.ExpiresInSeconds);
+                    HandleExpirationUpdateMessage(envelope, content, message, false, timestamp);
                 }
                 else
                 {
-                    //TODO check both the db for duplicates
                     HandleSignalMessage(envelope, content, message, false, timestamp);
                 }
             }
@@ -122,13 +110,21 @@ namespace Signal_Windows.ViewModels
                 {
                     var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
                     var dataMessage = syncMessage.getMessage();
-                    //TODO check both the db for duplicates
-                    if (dataMessage.IsGroupUpdate())
+
+                    if (dataMessage.EndSession)
+                    {
+                        HandleSessionResetMessage(envelope, content, dataMessage, true, timestamp);
+                    }
+                    else if (dataMessage.IsGroupUpdate())
                     {
                         if (dataMessage.Group.Type == SignalServiceGroup.GroupType.UPDATE)
                         {
-                            HandleGroupUpdateMessage(envelope, content, dataMessage, timestamp);
+                            HandleGroupUpdateMessage(envelope, content, dataMessage, true, timestamp);
                         }
+                    }
+                    else if (dataMessage.ExpirationUpdate)
+                    {
+                        HandleExpirationUpdateMessage(envelope, content, dataMessage, true, timestamp);
                     }
                     else
                     {
@@ -150,11 +146,109 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, long timestamp)
+        private void HandleExpirationUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage message, bool isSync, long timestamp)
+        {
+            SignalMessageDirection type;
+            SignalContact author;
+            SignalMessageStatus status;
+            string prefix;
+            string conversationId;
+            long composedTimestamp;
+
+            if (isSync)
+            {
+                var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                type = SignalMessageDirection.Synced;
+                status = SignalMessageStatus.Confirmed;
+                composedTimestamp = sent.getTimestamp();
+                author = null;
+                prefix = "You have";
+                conversationId = sent.getDestination().ForceGetValue();
+            }
+            else
+            {
+                status = 0;
+                type = SignalMessageDirection.Incoming;
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                prefix = $"{author.ThreadDisplayName} has";
+                composedTimestamp = envelope.getTimestamp();
+                conversationId = envelope.getSource();
+            }
+            SignalDBContext.UpdateExpiresInLocked(new SignalConversation() { ThreadId = conversationId }, (uint)message.ExpiresInSeconds);
+            SignalMessage sm = new SignalMessage()
+            {
+                Direction = type,
+                Type = SignalMessageType.ExpireUpdate,
+                Status = status,
+                Author = author,
+                Content = new SignalMessageContent() { Content = $"{prefix} set the expiration timer to {message.ExpiresInSeconds} seconds." },
+                ThreadId = conversationId,
+                DeviceId = (uint)envelope.getSourceDevice(),
+                Receipts = 0,
+                ComposedTimestamp = composedTimestamp,
+                ReceivedTimestamp = timestamp,
+            };
+            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+            {
+                await UIHandleIncomingMessage(sm);
+            }).AsTask().Wait();
+        }
+
+        private void HandleSessionResetMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
+        {
+            SignalMessageDirection type;
+            SignalContact author;
+            SignalMessageStatus status;
+            string prefix;
+            string conversationId;
+            long composedTimestamp;
+
+            if (isSync)
+            {
+                var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                type = SignalMessageDirection.Synced;
+                status = SignalMessageStatus.Confirmed;
+                composedTimestamp = sent.getTimestamp();
+                author = null;
+                prefix = "You have";
+                conversationId = sent.getDestination().ForceGetValue();
+            }
+            else
+            {
+                status = 0;
+                type = SignalMessageDirection.Incoming;
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                prefix = $"{author.ThreadDisplayName} has";
+                composedTimestamp = envelope.getTimestamp();
+                conversationId = envelope.getSource();
+            }
+            LibsignalDBContext.DeleteAllSessions(conversationId);
+
+            SignalMessage sm = new SignalMessage()
+            {
+                Direction = type,
+                Type = SignalMessageType.SessionReset,
+                Status = status,
+                Author = author,
+                Content = new SignalMessageContent() { Content = $"{prefix} reset the session." },
+                ThreadId = conversationId,
+                DeviceId = (uint)envelope.getSourceDevice(),
+                Receipts = 0,
+                ComposedTimestamp = composedTimestamp,
+                ReceivedTimestamp = timestamp,
+            };
+            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+            {
+                await UIHandleIncomingMessage(sm);
+            }).AsTask().Wait();
+        }
+
+        private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
         {
             if (dataMessage.Group != null) //TODO check signal droid: group messages have different types!
             {
                 SignalServiceGroup group = dataMessage.Group;
+                string groupid = Base64.encodeBytes(group.GroupId);
                 SignalGroup g = new SignalGroup();
                 string displayname = "Unknown group";
                 string avatarfile = null;
@@ -162,7 +256,7 @@ namespace Signal_Windows.ViewModels
                 {
                     displayname = group.Name;
                 }
-                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(Base64.encodeBytes(group.GroupId), displayname, avatarfile, true, timestamp, this);
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(groupid, displayname, avatarfile, true, timestamp, this);
                 if (group.Members != null)
                 {
                     foreach (var member in group.Members)
@@ -170,6 +264,49 @@ namespace Signal_Windows.ViewModels
                         SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, 0, this).Id);
                     }
                 }
+
+                /* insert message into conversation */
+                SignalMessageDirection type;
+                SignalContact author;
+                SignalMessageStatus status;
+                string prefix;
+                long composedTimestamp;
+
+                if (isSync)
+                {
+                    var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                    type = SignalMessageDirection.Synced;
+                    status = SignalMessageStatus.Confirmed;
+                    composedTimestamp = sent.getTimestamp();
+                    author = null;
+                    prefix = "You have";
+                }
+                else
+                {
+                    status = 0;
+                    type = SignalMessageDirection.Incoming;
+                    author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                    prefix = $"{author.ThreadDisplayName} has";
+                    composedTimestamp = envelope.getTimestamp();
+                }
+
+                SignalMessage sm = new SignalMessage()
+                {
+                    Direction = type,
+                    Type = SignalMessageType.GroupUpdate,
+                    Status = status,
+                    Author = author,
+                    Content = new SignalMessageContent() { Content = $"{prefix} updated the group." },
+                    ThreadId = groupid,
+                    DeviceId = (uint)envelope.getSourceDevice(),
+                    Receipts = 0,
+                    ComposedTimestamp = composedTimestamp,
+                    ReceivedTimestamp = timestamp,
+                };
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                {
+                    await UIHandleIncomingMessage(sm);
+                }).AsTask().Wait();
             }
             else
             {
