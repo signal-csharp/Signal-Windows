@@ -5,8 +5,8 @@ namespace Signal_Windows.Models
 {
     public class SignalAttachment
     {
-        public ulong Id { get; set; }
-        public ulong MessageId { get; set; }
+        public long Id { get; set; }
+        public long MessageId { get; set; }
         public SignalMessage Message { get; set; }
         public string FileName { get; set; }
         public string SentFileName { get; set; }

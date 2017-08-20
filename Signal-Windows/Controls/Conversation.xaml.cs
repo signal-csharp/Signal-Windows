@@ -21,7 +21,7 @@ namespace Signal_Windows.Controls
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private Dictionary<ulong, Message> OutgoingCache = new Dictionary<ulong, Message>();
+        private Dictionary<long, Message> OutgoingCache = new Dictionary<long, Message>();
 
         public RangeObservableCollection<object> Messages { get; set; } = new RangeObservableCollection<object>();
         private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();

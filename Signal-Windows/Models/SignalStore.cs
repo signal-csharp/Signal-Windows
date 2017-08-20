@@ -2,7 +2,7 @@
 {
     public class SignalStore
     {
-        public ulong Id { get; set; }
+        public long Id { get; set; }
         public uint DeviceId { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }

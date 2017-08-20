@@ -6,13 +6,13 @@ namespace Signal_Windows.Models
 {
     public class SignalMessage
     {
-        public ulong Id { get; set; }
+        public long Id { get; set; }
         public SignalMessageDirection Direction { get; set; }
         public SignalMessageType Type { get; set; }
         public SignalMessageStatus Status { get; set; }
         public SignalMessageContent Content { get; set; }
         public string ThreadId { get; set; }
-        public ulong? AuthorId { get; set; }
+        public long? AuthorId { get; set; }
         public SignalContact Author { get; set; }
         public uint DeviceId { get; set; }
         public bool Read { get; set; }

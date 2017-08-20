@@ -904,7 +904,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void UpdateConversationLocked(string threadId, uint unread, ulong? lastSeenMessageId)
+        public static void UpdateConversationLocked(string threadId, uint unread, long? lastSeenMessageId)
         {
             lock (DBLock)
             {
@@ -1066,7 +1066,7 @@ namespace Signal_Windows.Storage
             return dbgroup;
         }
 
-        public static void InsertOrUpdateGroupMembershipLocked(ulong groupid, ulong memberid)
+        public static void InsertOrUpdateGroupMembershipLocked(long groupid, long memberid)
         {
             lock (DBLock)
             {

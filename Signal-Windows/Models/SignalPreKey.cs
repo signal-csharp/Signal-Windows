@@ -2,7 +2,7 @@
 {
     public class SignalPreKey
     {
-        public ulong Id { get; set; }
+        public long Id { get; set; }
         public string Key { get; set; }
     }
 }

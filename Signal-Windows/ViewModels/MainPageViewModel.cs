@@ -310,7 +310,7 @@ namespace Signal_Windows.ViewModels
                 {
                     SignalDBContext.SaveMessageLocked(message);
                 });
-                ulong? seenId = null;
+                long? seenId = null;
                 if (SelectedThread == thread)
                 {
                     View.Thread.Append(message);
