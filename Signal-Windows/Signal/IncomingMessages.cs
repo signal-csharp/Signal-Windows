@@ -90,7 +90,7 @@ namespace Signal_Windows.ViewModels
                 }
                 else if (message.IsGroupUpdate())
                 {
-                    if (message.Group.Type == SignalServiceGroup.GroupType.DELIVER)
+                    if (message.Group.Type == SignalServiceGroup.GroupType.UPDATE)
                     {
                         HandleGroupUpdateMessage(envelope, content, message, timestamp);
                     }
@@ -125,7 +125,7 @@ namespace Signal_Windows.ViewModels
                     //TODO check both the db for duplicates
                     if (dataMessage.IsGroupUpdate())
                     {
-                        if (dataMessage.Group.Type == SignalServiceGroup.GroupType.DELIVER)
+                        if (dataMessage.Group.Type == SignalServiceGroup.GroupType.UPDATE)
                         {
                             HandleGroupUpdateMessage(envelope, content, dataMessage, timestamp);
                         }
