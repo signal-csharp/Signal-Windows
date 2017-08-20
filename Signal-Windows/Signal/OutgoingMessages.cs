@@ -81,6 +81,7 @@ namespace Signal_Windows.ViewModels
                 }
                 catch (EncapsulatedExceptions exceptions)
                 {
+                    outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                     Debug.WriteLine(exceptions.Message);
                     Debug.WriteLine(exceptions.StackTrace);
                     IList<UntrustedIdentityException> identityExceptions = exceptions.getUntrustedIdentityExceptions();
