@@ -163,7 +163,14 @@ namespace Signal_Windows.ViewModels
                 composedTimestamp = sent.getTimestamp();
                 author = null;
                 prefix = "You have";
-                conversationId = sent.getDestination().ForceGetValue();
+                if (message.Group != null)
+                {
+                    conversationId = Base64.encodeBytes(message.Group.GroupId);
+                }
+                else
+                {
+                    conversationId = sent.getDestination().ForceGetValue();
+                }
             }
             else
             {
@@ -172,7 +179,14 @@ namespace Signal_Windows.ViewModels
                 author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
                 prefix = $"{author.ThreadDisplayName} has";
                 composedTimestamp = envelope.getTimestamp();
-                conversationId = envelope.getSource();
+                if (message.Group != null)
+                {
+                    conversationId = Base64.encodeBytes(message.Group.GroupId);
+                }
+                else
+                {
+                    conversationId = envelope.getSource();
+                }
             }
             SignalDBContext.UpdateExpiresInLocked(new SignalConversation() { ThreadId = conversationId }, (uint)message.ExpiresInSeconds);
             SignalMessage sm = new SignalMessage()
