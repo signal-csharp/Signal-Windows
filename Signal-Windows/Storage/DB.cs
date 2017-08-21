@@ -654,6 +654,20 @@ namespace Signal_Windows.Storage
 
         #region Messages
 
+        public static void FailAllPendingMessages()
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var messages = ctx.Messages
+                        .Where(m => m.Direction == SignalMessageDirection.Outgoing && m.Status == SignalMessageStatus.Pending).ToList();
+                    messages.ForEach(m => m.Status = SignalMessageStatus.Failed_Unknown);
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
         public static LinkedList<SignalMessage> InsertIdentityChangedMessages(string number)
         {
             long now = Util.CurrentTimeMillis();

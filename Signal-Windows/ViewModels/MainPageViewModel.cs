@@ -108,6 +108,7 @@ namespace Signal_Windows.ViewModels
             {
                 await Task.Run(async () =>
                 {
+                    SignalDBContext.FailAllPendingMessages();
                     List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
                     List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
                     await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
