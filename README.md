@@ -6,18 +6,14 @@ This is an unofficial Signal client for the Universal Windows Platform. It is (c
 
 ## What can it do right now?
 - register as a master device
+- be linked as a slave
 - add/edit contacts
-- receive direct signal messages
-- send direct signal messages
-- receive group update messages
-- receive group messages
-- send group messages
-- download attachments to `\Attachments`
+- send and receive text messages
 
 ## What can i expect next?
 - proper attachment handling
-- proper resend behaviour
-- run as a slave
+- syncing groups and contacts on linking
+- a prettier interface
 
 ## Bug reports
 Found a bug? Great! Open a pull request or an issue.
