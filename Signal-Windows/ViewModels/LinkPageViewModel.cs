@@ -156,6 +156,7 @@ namespace Signal_Windows.ViewModels
                     LibsignalDBContext.PurgeAccountData();
                 });
                 View.Frame.GoBack();
+                e.Handled = true;
             }
         }
     }

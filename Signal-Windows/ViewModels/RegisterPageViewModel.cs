@@ -100,6 +100,7 @@ namespace Signal_Windows.ViewModels
         private void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
             View.Frame.GoBack();
+            e.Handled = true;
         }
 
         public void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

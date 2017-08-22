@@ -56,6 +56,7 @@ namespace Signal_Windows.ViewModels
             if (UIEnabled)
             {
                 View.Frame.GoBack();
+                e.Handled = true;
             }
         }
 

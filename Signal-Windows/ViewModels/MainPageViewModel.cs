@@ -79,6 +79,7 @@ namespace Signal_Windows.ViewModels
                 WelcomeVisibility = Visibility.Visible;
                 View.SwitchToStyle(View.GetCurrentViewStyle());
                 Utils.DisableBackButton(BackButton_Click);
+                e.Handled = true;
             }
         }
 
