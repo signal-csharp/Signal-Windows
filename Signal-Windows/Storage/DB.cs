@@ -27,7 +27,7 @@ namespace Signal_Windows.Storage
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Filename=Libsignal.db", x => x.SuppressForeignKeyEnforcement());
+            optionsBuilder.UseSqlite(@"Filename=..\LocalCache\Libsignal.db", x => x.SuppressForeignKeyEnforcement());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -600,7 +600,7 @@ namespace Signal_Windows.Storage
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Filename=Signal.db", x => x.SuppressForeignKeyEnforcement());
+            optionsBuilder.UseSqlite(@"Filename=..\LocalCache\Signal.db", x => x.SuppressForeignKeyEnforcement());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
