@@ -71,8 +71,10 @@ namespace Signal_Windows.ViewModels
 
         internal async void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
+            Debug.WriteLine("MPVMBack lock wait");
             using (await ActionInProgress.LockAsync())
             {
+                Debug.WriteLine("MPVMBack lock grabbed");
                 SelectedThread = null;
                 View.Thread.DisposeCurrentThread();
                 ThreadVisibility = Visibility.Collapsed;
@@ -81,6 +83,7 @@ namespace Signal_Windows.ViewModels
                 Utils.DisableBackButton(BackButton_Click);
                 e.Handled = true;
             }
+            Debug.WriteLine("MPVMBack lock released");
         }
 
         public void UIUpdateThread(SignalConversation thread)
@@ -104,92 +107,98 @@ namespace Signal_Windows.ViewModels
         public async Task Init()
         {
             CancelSource = new CancellationTokenSource();
-            var l = ActionInProgress.Lock(CancelSource.Token);
-            try
+            Debug.WriteLine("Init lock wait");
+            using (await ActionInProgress.LockAsync(CancelSource.Token))
             {
-                await Task.Run(async () =>
+                Debug.WriteLine("Init lock grabbed");
+                try
                 {
-                    SignalDBContext.FailAllPendingMessages();
-                    List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
-                    List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    await Task.Run(async () =>
                     {
-                        try
+                        SignalDBContext.FailAllPendingMessages();
+                        List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
+                        List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                         {
-                            int amountContacts = contacts.Count;
-                            int amountGroups = groups.Count;
-                            int contactsIdx = 0;
-                            int groupsIdx = 0;
-                            while (contactsIdx < amountContacts || groupsIdx < amountGroups)
+                            try
                             {
-                                if (contactsIdx < amountContacts)
+                                int amountContacts = contacts.Count;
+                                int amountGroups = groups.Count;
+                                int contactsIdx = 0;
+                                int groupsIdx = 0;
+                                while (contactsIdx < amountContacts || groupsIdx < amountGroups)
                                 {
-                                    SignalConversation contact = contacts[contactsIdx];
-                                    if (groupsIdx < amountGroups)
+                                    if (contactsIdx < amountContacts)
                                     {
-                                        SignalConversation group = groups[groupsIdx];
-                                        if (contact.LastActiveTimestamp > group.LastActiveTimestamp)
+                                        SignalConversation contact = contacts[contactsIdx];
+                                        if (groupsIdx < amountGroups)
+                                        {
+                                            SignalConversation group = groups[groupsIdx];
+                                            if (contact.LastActiveTimestamp > group.LastActiveTimestamp)
+                                            {
+                                                contactsIdx++;
+                                                AddThread(contact);
+                                            }
+                                            else
+                                            {
+                                                groupsIdx++;
+                                                AddThread(group);
+                                            }
+                                        }
+                                        else
                                         {
                                             contactsIdx++;
                                             AddThread(contact);
                                         }
-                                        else
-                                        {
-                                            groupsIdx++;
-                                            AddThread(group);
-                                        }
                                     }
-                                    else
+                                    else if (groupsIdx < amountGroups)
                                     {
-                                        contactsIdx++;
-                                        AddThread(contact);
+                                        SignalConversation group = groups[groupsIdx];
+                                        groupsIdx++;
+                                        AddThread(group);
                                     }
-                                }
-                                else if (groupsIdx < amountGroups)
-                                {
-                                    SignalConversation group = groups[groupsIdx];
-                                    groupsIdx++;
-                                    AddThread(group);
                                 }
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine(e.Message);
-                            Debug.WriteLine(e.StackTrace);
-                        }
+                            catch (Exception e)
+                            {
+                                Debug.WriteLine(e.Message);
+                                Debug.WriteLine(e.StackTrace);
+                            }
+                        });
+                        MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
+                        Pipe = MessageReceiver.createMessagePipe();
+                        MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
+                        IncomingMessagesTask = Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
+                        OutgoingMessagesTask = Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
                     });
-                    MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
-                    Pipe = MessageReceiver.createMessagePipe();
-                    MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
-                    IncomingMessagesTask = Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
-                    OutgoingMessagesTask = Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
-                });
+                }
+                catch (AuthorizationFailedException)
+                {
+                    Debug.WriteLine("OWS server rejected our credentials - redirecting to StartPage");
+                    View.Frame.Navigate(typeof(StartPage));
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.StackTrace);
+                }
             }
-            catch(AuthorizationFailedException)
-            {
-                Debug.WriteLine("OWS server rejected our credentials - redirecting to StartPage");
-                View.Frame.Navigate(typeof(StartPage));
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.Message);
-                Debug.WriteLine(e.StackTrace);
-            }
-            finally
-            {
-                l.Dispose();
-            }
+            Debug.WriteLine("Init lock released");
         }
 
         public async Task Shutdown()
         {
             Running = false;
             App.MainPageActive = false;
-            var l = await ActionInProgress.LockAsync();
-            CancelSource.Cancel();
-            await IncomingMessagesTask;
-            await OutgoingMessagesTask;
+            Debug.WriteLine("Shutdown lock await");
+            using (await ActionInProgress.LockAsync())
+            {
+                Debug.WriteLine("Shutdown lock grabbed");
+                CancelSource.Cancel();
+                await IncomingMessagesTask;
+                await OutgoingMessagesTask;
+            }
+            Debug.WriteLine("Shutdown lock released");
         }
 
         internal async void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -198,8 +207,10 @@ namespace Signal_Windows.ViewModels
             {
                 try
                 {
+                    Debug.WriteLine("SelectionChanged lock await");
                     using (await ActionInProgress.LockAsync())
                     {
+                        Debug.WriteLine("SelectionChanged lock grabbed");
                         WelcomeVisibility = Visibility.Collapsed;
                         ThreadVisibility = Visibility.Visible;
                         SelectedThread = (SignalConversation)e.AddedItems[0];
@@ -212,6 +223,7 @@ namespace Signal_Windows.ViewModels
                         UIResetRead(conversation);
                         View.Thread.ScrollToBottom();
                     }
+                    Debug.WriteLine("SelectionChanged lock released");
                 }
                 catch (Exception ex)
                 {
@@ -244,8 +256,10 @@ namespace Signal_Windows.ViewModels
                             Read = true,
                             Type = SignalMessageType.Normal
                         };
+                        Debug.WriteLine("keydown lock await");
                         using (await ActionInProgress.LockAsync())
                         {
+                            Debug.WriteLine("keydown lock grabbed");
                             View.Thread.Append(message);
                             View.Thread.ScrollToBottom();
                             SelectedThread.LastMessage = message;
@@ -267,6 +281,7 @@ namespace Signal_Windows.ViewModels
                             Debug.WriteLine("ms until out queue: " + (after - now));
                             View.Thread.RemoveUnreadMarker();
                         }
+                        Debug.WriteLine("keydown lock released");
                     }
                 }
             }
@@ -300,8 +315,10 @@ namespace Signal_Windows.ViewModels
 
         public async Task UIHandleIncomingMessage(SignalMessage message)
         {
+            Debug.WriteLine("incoming lock await");
             using (await ActionInProgress.LockAsync())
             {
+                Debug.WriteLine("incoming lock grabbed");
                 var thread = ThreadsDictionary[message.ThreadId];
                 uint unreadCount = thread.UnreadCount;
                 if (SelectedThread == thread)
@@ -351,6 +368,7 @@ namespace Signal_Windows.ViewModels
                 thread.View.UpdateConversationDisplay(thread);
                 MoveThreadToTop(thread);
             }
+            Debug.WriteLine("incoming lock released");
         }
 
         public void UIResetRead(SignalConversation conversation)
@@ -371,8 +389,10 @@ namespace Signal_Windows.ViewModels
 
         public async Task UIHandleIdentityKeyChange(string number)
         {
+            Debug.WriteLine("IKChange lock await");
             using (await ActionInProgress.LockAsync())
             {
+                Debug.WriteLine("IKChange lock grabbed");
                 var messages = SignalDBContext.InsertIdentityChangedMessages(number);
                 foreach (var message in messages)
                 {
@@ -387,6 +407,7 @@ namespace Signal_Windows.ViewModels
                     thread.View.UpdateConversationDisplay(thread);
                 }
             }
+            Debug.WriteLine("IKChange lock released");
         }
 
         #endregion UIThread
