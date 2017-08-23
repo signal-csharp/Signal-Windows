@@ -24,19 +24,38 @@
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="640"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="TitleTextBlock.FontSize" Value="46"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Foreground="White" FontSize="35" HorizontalAlignment="Center" Margin="20 20 20 20">Connect with Signal</TextBlock>
-        <ComboBox Grid.Row="1" Background="White" HorizontalAlignment="Center" Width="250" ItemsSource="{x:Bind Vm.CountriesList}" SelectionChanged="ComboBox_SelectionChanged" Name="CountriesList"/>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
-            <TextBox Text="{x:Bind Vm.PhonePrefix, Mode=TwoWay}" Background="White" />
-            <TextBox Text="{x:Bind Vm.PhoneSuffix, Mode=TwoWay}" Background="White" Width="186"/>
+        <TextBlock x:Name="TitleTextBlock" Grid.Row="0" Foreground="White" FontSize="34" HorizontalAlignment="Center" Text="Connect with Signal" FontWeight="Light" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="1">
+            <ComboBox HorizontalAlignment="Center" Width="300" ItemsSource="{x:Bind Vm.CountriesList}" SelectionChanged="ComboBox_SelectionChanged" x:Name="CountriesList" VerticalAlignment="Stretch" d:LayoutOverrides="TopPosition, BottomPosition" PlaceholderText="Select your country"/>
+            <Grid Width="300" Margin="0,18,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="48"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="+" Foreground="White" FontSize="20"/>
+                <TextBox Grid.Column="1" Text="{x:Bind Vm.PhonePrefix, Mode=TwoWay}" MinWidth="32"/>
+                <TextBox Grid.Column="3" Text="{x:Bind Vm.PhoneSuffix, Mode=TwoWay}" PlaceholderText="Phone number"/>
+            </Grid>
+            <TextBlock x:Name="VerifyTextBlock" Text="Verify your phone number to connect with Signal." FontSize="20" Foreground="White" HorizontalAlignment="Center" Margin="0,16,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
+            <Button x:Name="RegisterButton" Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="300" Content="Register" Click="RegisterButton_Click" Margin="0,16,0,0"/>
         </StackPanel>
-        <Button  Grid.Row="3" Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="200" Margin="20 20 20 20" Click="Button_Click">Register</Button>
     </Grid>
 </Page>
