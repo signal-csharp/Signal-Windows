@@ -66,6 +66,10 @@ namespace Signal_Windows.ViewModels
             try
             {
                 string number = PhoneNumberFormatter.FormatE164(PhonePrefix, PhoneSuffix);
+                if (!number.StartsWith("+"))
+                {
+                    number = $"+{number}";
+                }
                 if(number != null && number.Length > 0 && number[0] == '+')
                 {
                     FinalNumber = number;
@@ -106,7 +110,7 @@ namespace Signal_Windows.ViewModels
         public void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             int index = (sender as ComboBox).SelectedIndex;
-            PhonePrefix = Utils.GetCountryCode(CountryArrays.Abbreviations[index]);
+            PhonePrefix = Utils.GetCountryCode(CountryArrays.Abbreviations[index]).Replace("+", string.Empty);
         }
     }
 }
