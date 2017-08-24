@@ -43,7 +43,7 @@ namespace Signal_Windows
         {
             if (newStyle == PageStyle.Narrow)
             {
-                ContactsPanelScrollViewer.Width = ActualWidth;
+                ContactsGrid.Width = ActualWidth;
                 if (Vm.SelectedThread != null)
                 {
                     Utils.EnableBackButton(Vm.BackButton_Click);
@@ -60,7 +60,7 @@ namespace Signal_Windows
             {
                 Utils.DisableBackButton(Vm.BackButton_Click);
                 MainPanel.IsPaneOpen = false;
-                MainPanel.CompactPaneLength = ContactsPanelScrollViewer.Width = 180;
+                MainPanel.CompactPaneLength = ContactsGrid.Width = 480;
             }
         }
 
@@ -85,7 +85,7 @@ namespace Signal_Windows
             }
             if (newStyle == PageStyle.Narrow)
             {
-                ContactsPanelScrollViewer.Width = ActualWidth;
+                ContactsGrid.Width = ActualWidth;
             }
         }
 
@@ -110,14 +110,6 @@ namespace Signal_Windows
             Vm.ContactsList_SelectionChanged(sender, e);
         }
 
-        private void AddFriendSymbol_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            App.ViewModels.AddContactPageInstance.MainPageVM = Vm;
-            App.ViewModels.AddContactPageInstance.ContactName = "";
-            App.ViewModels.AddContactPageInstance.ContactNumber = "";
-            Frame.Navigate(typeof(AddContactPage));
-        }
-
         public static async Task NotifyNewIdentity(string user)
         {
             var title = "Safety Numbers Change";
@@ -137,6 +129,14 @@ namespace Signal_Windows
         public void ReselectTop()
         {
             ContactsList.SelectedIndex = 0;
+        }
+
+        private void AddContactButton_Click(object sender, RoutedEventArgs e)
+        {
+            App.ViewModels.AddContactPageInstance.MainPageVM = Vm;
+            App.ViewModels.AddContactPageInstance.ContactName = "";
+            App.ViewModels.AddContactPageInstance.ContactNumber = "";
+            Frame.Navigate(typeof(AddContactPage));
         }
     }
 }

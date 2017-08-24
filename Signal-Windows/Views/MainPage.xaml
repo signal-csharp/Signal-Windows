@@ -10,27 +10,48 @@
     mc:Ignorable="d"
     DataContext="{Binding MainPageInstance, Source={StaticResource Locator}}">
 
-    <SplitView Name="MainPanel" CompactPaneLength="0" OpenPaneLength="640">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <Color x:Key="SystemAltHighColor">#2190EA</Color>
+                    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{ThemeResource SystemAltHighColor}" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="SystemAltHighColor">#2190EA</Color>
+                    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="{ThemeResource SystemAltHighColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+    <SplitView Name="MainPanel" CompactPaneLength="0" OpenPaneLength="480">
         <SplitView.Pane>
-            <ScrollViewer Name="ContactsPanelScrollViewer" HorizontalAlignment="Left" MaxWidth="640" Padding="0 0 15 0">
-                <StackPanel>
-                    <SymbolIcon Symbol="AddFriend" HorizontalAlignment="Right" Name="AddFriendSymbol" Tapped="AddFriendSymbol_Tapped" Margin="0 0 0 5" />
-                    <ListView Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <controls:ConversationListElement />
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </StackPanel>
-            </ScrollViewer>
+            <Grid x:Name="ContactsGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Signal" FontSize="34" FontWeight="Light" Margin="0,16" HorizontalAlignment="Center" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+                <Button x:Name="AddContactButton" Grid.Row="0" HorizontalAlignment="Right" Background="{x:Null}" Click="AddContactButton_Click">
+                    <TextBlock Text="+" FontSize="34" FontWeight="Light" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+                </Button>
+                <AutoSuggestBox Grid.Row="1" Margin="16"/>
+                <ListView Grid.Row="2" Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <controls:ConversationListElement />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
         </SplitView.Pane>
-        <Grid>
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <controls:Welcome Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" />
             <controls:Conversation Grid.Row="0" Visibility="{x:Bind Vm.ThreadVisibility, Mode=OneWay}" x:Name="ThreadView" />
         </Grid>

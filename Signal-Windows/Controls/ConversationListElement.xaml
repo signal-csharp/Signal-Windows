@@ -6,19 +6,28 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    d:DesignHeight="300"
-    d:DesignWidth="400">
-    <Grid Padding="0 10 0 10">
+    d:DesignHeight="96"
+    d:DesignWidth="480">
+    <Grid>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="18" />
-        <TextBlock Grid.Column="1" Text="{x:Bind UnreadString, Mode=OneWay}" />
-        <TextBlock Grid.Row="1" Text="{x:Bind LastMessage, Mode=OneWay}" />
+        <Ellipse Grid.Column="0" Width="64" Height="64" Margin="8">
+            <Ellipse.Fill>
+                <ImageBrush ImageSource="ms-appx:///Assets/gambino.png"/>
+            </Ellipse.Fill>
+        </Ellipse>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="24" FontWeight="SemiLight" Text="Sanders Lauture"/>
+                <TextBlock x:Name="LastActiveTextBlock" Grid.Column="1" Text="11:11p" FontSize="11" Foreground="#999999"/>
+            </Grid>
+            <TextBlock Text="{x:Bind LastMessage, Mode=OneWay}" FontSize="20"/>
+        </StackPanel>
     </Grid>
 </UserControl>

@@ -97,6 +97,7 @@
     <None Include="project.json" />
     <Content Include="Assets\check.png" />
     <Content Include="Assets\double-check.png" />
+    <Content Include="Assets\gambino.png" />
     <Content Include="Assets\LargeTile.scale-100.png" />
     <Content Include="Assets\LargeTile.scale-125.png" />
     <Content Include="Assets\LargeTile.scale-150.png" />
