@@ -30,10 +30,10 @@ namespace Signal_Windows.ViewModels
             set { _VerificationCode = value; RaisePropertyChanged(nameof(VerificationCode)); }
         }
 
-        private SignalServiceAccountManager AccountManager;
-        private string Password;
-        private uint SignalRegistrationId;
-        private IdentityKeyPair IdentityKeyPair;
+        internal SignalServiceAccountManager AccountManager { get; private set; }
+        internal string Password { get; private set; }
+        internal uint SignalRegistrationId { get; private set; }
+        internal IdentityKeyPair IdentityKeyPair { get; private set; }
         private CancellationTokenSource CancelSource;
         private bool _UIEnabled;
         public bool UIEnabled
@@ -49,53 +49,9 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        internal async void FinishButton_Click()
+        internal void FinishButton_Click()
         {
-            try
-            {
-                await Task.Run(() =>
-                {
-                    string SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
-                    AccountManager.verifyAccountWithCode(VerificationCode, SignalingKey, SignalRegistrationId, false, false, true);
-                    SignalStore store = new SignalStore()
-                    {
-                        DeviceId = 1,
-                        IdentityKeyPair = Base64.encodeBytes(IdentityKeyPair.serialize()),
-                        NextSignedPreKeyId = 1,
-                        Password = Password,
-                        PreKeyIdOffset = 1,
-                        Registered = true,
-                        RegistrationId = SignalRegistrationId,
-                        SignalingKey = SignalingKey,
-                        Username = App.ViewModels.RegisterPageInstance.FinalNumber,
-                    };
-                    LibsignalDBContext.SaveOrUpdateSignalStore(store);
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        App.Store = store;
-                    }).AsTask().Wait();
-
-                    /* create prekeys */
-                    LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
-
-                    /* reload again with prekeys and their offsets */
-                    store = LibsignalDBContext.GetSignalStore();
-                    Debug.WriteLine("success!");
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        App.Store = store;
-                    }).AsTask().Wait();
-                });
-                View.Frame.Navigate(typeof(MainPage));
-            }
-            catch (Exception e)
-            {
-                var title = "Verification failed";
-                var content = "Please enter the correct verification code.";
-                MessageDialog dialog = new MessageDialog(content, title);
-                var result = dialog.ShowAsync();
-                View.Frame.Navigate(typeof(RegisterPage));
-            }
+            View.Frame.Navigate(typeof(FinishRegistrationPage));
         }
 
         internal async Task OnNavigatedTo()
@@ -124,7 +80,7 @@ namespace Signal_Windows.ViewModels
         private SignalServiceAccountManager InitRegistration(bool voice)
         {
             LibsignalDBContext.PurgeAccountData();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.ViewModels.RegisterPageInstance.FinalNumber, Password, 1, App.USER_AGENT);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.ViewModels.RegisterPageInstance.FinalNumber, Password, 1 /*device id isn't actually used*/, App.USER_AGENT);
             if (voice)
             {
                 accountManager.requestVoiceVerificationCode();

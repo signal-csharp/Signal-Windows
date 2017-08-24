@@ -33,6 +33,7 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<RegisterPageViewModel>();
             SimpleIoc.Default.Register<RegisterFinalizationPageViewModel>();
             SimpleIoc.Default.Register<LinkPageViewModel>();
+            SimpleIoc.Default.Register<FinishRegistrationPageViewModel>();
         }
 
         // <summary>
@@ -87,6 +88,11 @@ namespace Signal_Windows.ViewModels
             {
                 return ServiceLocator.Current.GetInstance<LinkPageViewModel>();
             }
+        }
+
+        public FinishRegistrationPageViewModel FinishRegistrationPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<FinishRegistrationPageViewModel>(); }
         }
 
         // <summary>

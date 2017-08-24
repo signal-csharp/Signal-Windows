@@ -186,6 +186,7 @@
     <Compile Include="Storage\Store.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
+    <Compile Include="ViewModels\FinishRegistrationPageViewModel.cs" />
     <Compile Include="ViewModels\LinkPageViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\RegisterFinalizationPageViewModel.cs" />
@@ -194,6 +195,9 @@
     <Compile Include="ViewModels\ViewModelLocator.cs" />
     <Compile Include="Views\AddContactPage.xaml.cs">
       <DependentUpon>AddContactPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\FinishRegistrationPage.xaml.cs">
+      <DependentUpon>FinishRegistrationPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\LinkPage.xaml.cs">
       <DependentUpon>LinkPage.xaml</DependentUpon>
@@ -258,6 +262,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\AddContactPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\FinishRegistrationPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
