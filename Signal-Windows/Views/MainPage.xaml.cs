@@ -68,6 +68,8 @@ namespace Signal_Windows
         {
             if (currentStyle == PageStyle.Narrow)
             {
+                // TODO: When phone is in landscape mode this is incorrect and some stuff gets cut off, we need to
+                // get the actual useable width (actualwidth - top icon bar - bottom control bar)
                 ContactsGrid.Width = ActualWidth;
                 if (Vm.SelectedThread == null)
                 {
