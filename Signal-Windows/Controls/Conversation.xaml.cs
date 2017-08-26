@@ -216,8 +216,6 @@ namespace Signal_Windows.Controls
         
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            TextBox t = sender as TextBox;
-            SendEnabled = t.Text != string.Empty;
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
                 // this fixes double send by enter repeat
@@ -242,6 +240,12 @@ namespace Signal_Windows.Controls
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
             await GetMainPageVm().SendMessageButton_Click(InputTextBox);
+        }
+
+        private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextBox t = sender as TextBox;
+            SendEnabled = t.Text != string.Empty;
         }
     }
 
