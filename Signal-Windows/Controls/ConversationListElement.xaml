@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     d:DesignHeight="96"
-    d:DesignWidth="480">
+    d:DesignWidth="320">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -24,10 +24,10 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="24" FontWeight="SemiLight" Text="Sanders Lauture"/>
-                <TextBlock x:Name="LastActiveTextBlock" Grid.Column="1" Text="11:11p" FontSize="11" Foreground="#999999"/>
+                <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="15" FontWeight="SemiLight" Text="Sanders Lauture" TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="LastActiveTextBlock" Grid.Column="1" Text="11:11p" FontSize="11" Foreground="#999999" TextTrimming="CharacterEllipsis"/>
             </Grid>
-            <TextBlock Text="{x:Bind LastMessage, Mode=OneWay}" FontSize="20"/>
+            <TextBlock Text="{x:Bind LastMessage, Mode=OneWay}" FontSize="12"/>
         </StackPanel>
     </Grid>
 </UserControl>

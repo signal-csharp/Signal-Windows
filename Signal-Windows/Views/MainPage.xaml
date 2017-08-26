@@ -24,7 +24,7 @@
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Page.Resources>
-    <SplitView Name="MainPanel" CompactPaneLength="0" OpenPaneLength="480">
+    <SplitView Name="MainPanel" CompactPaneLength="0" OpenPaneLength="320" DisplayMode="CompactInline">
         <SplitView.Pane>
             <Grid x:Name="ContactsGrid">
                 <Grid.RowDefinitions>

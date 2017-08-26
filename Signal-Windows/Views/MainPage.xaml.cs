@@ -43,7 +43,6 @@ namespace Signal_Windows
         {
             if (newStyle == PageStyle.Narrow)
             {
-                ContactsGrid.Width = ActualWidth;
                 if (Vm.SelectedThread != null)
                 {
                     Utils.EnableBackButton(Vm.BackButton_Click);
@@ -60,7 +59,24 @@ namespace Signal_Windows
             {
                 Utils.DisableBackButton(Vm.BackButton_Click);
                 MainPanel.IsPaneOpen = false;
-                MainPanel.CompactPaneLength = ContactsGrid.Width = 480;
+                MainPanel.CompactPaneLength = ContactsGrid.Width = 320;
+            }
+            UpdateStyle(newStyle);
+        }
+
+        private void UpdateStyle(PageStyle currentStyle)
+        {
+            if (currentStyle == PageStyle.Narrow)
+            {
+                ContactsGrid.Width = ActualWidth;
+                if (Vm.SelectedThread == null)
+                {
+                    MainPanel.OpenPaneLength = ActualWidth;
+                }
+            }
+            else if (currentStyle == PageStyle.Wide)
+            {
+                MainPanel.CompactPaneLength = MainPanel.OpenPaneLength = ContactsGrid.Width = 320;
             }
         }
 
@@ -83,10 +99,7 @@ namespace Signal_Windows
             {
                 SwitchToStyle(newStyle);
             }
-            if (newStyle == PageStyle.Narrow)
-            {
-                ContactsGrid.Width = ActualWidth;
-            }
+            UpdateStyle(newStyle);
         }
 
         public MainPageViewModel Vm
