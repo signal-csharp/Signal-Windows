@@ -7,6 +7,7 @@ using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
+using Signal_Windows.Controls;
 using Signal_Windows.Models;
 using Signal_Windows.ViewModels;
 using System;
@@ -693,6 +694,7 @@ namespace Signal_Windows.Storage
                             Content = new SignalMessageContent() { Content = str }
                         };
                         contact.LastMessage = msg;
+                        contact.MessagesCount += 1;
                         ctx.Messages.Add(msg);
                         messages.AddLast(msg);
                         var groups = ctx.GroupMemberships
@@ -711,6 +713,7 @@ namespace Signal_Windows.Storage
                                 Content = new SignalMessageContent() { Content = str }
                             };
                             gm.Group.LastMessage = msg;
+                            gm.Group.MessagesCount += 1;
                             ctx.Messages.Add(msg);
                             messages.AddLast(msg);
                         }
@@ -757,6 +760,7 @@ namespace Signal_Windows.Storage
                             .Single();
                         contact.LastActiveTimestamp = timestamp;
                         contact.LastMessage = message;
+                        contact.MessagesCount += 1;
                     }
                     else
                     {
@@ -766,6 +770,7 @@ namespace Signal_Windows.Storage
                         message.ExpiresAt = group.ExpiresInSeconds;
                         group.LastActiveTimestamp = timestamp;
                         group.LastMessage = message;
+                        group.MessagesCount += 1;
                     }
                     ctx.Messages.Add(message);
                     ctx.SaveChanges();
@@ -773,7 +778,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static List<SignalMessage> GetMessagesLocked(SignalConversation thread)
+        public static List<SignalMessageContainer> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
         {
             lock (DBLock)
             {
@@ -784,11 +789,17 @@ namespace Signal_Windows.Storage
                         .Include(m => m.Content)
                         .Include(m => m.Author)
                         .Include(m => m.Attachments)
-                        .OrderByDescending(m => m.Id)
-                        .Take(200)
-                        .AsNoTracking().ToList();
-                    messages.Reverse();
-                    return messages;
+                        .OrderBy(m => m.Id)
+                        .Skip(startIndex)
+                        .Take(count);
+
+                    var containers = new List<SignalMessageContainer>();
+                    foreach (var message in messages)
+                    {
+                        containers.Add(new SignalMessageContainer(message, startIndex));
+                        startIndex++;
+                    }
+                    return containers;
                 }
             }
         }

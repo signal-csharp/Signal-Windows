@@ -36,15 +36,19 @@
                 <TextBlock Name="Username" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadUsername, Mode=OneWay}" Visibility="{x:Bind ThreadUsernameVisibility, Mode=OneWay}" />
             </StackPanel>
         </Border>
-        <ScrollViewer Grid.Row="1" Name="SelectedMessagesScrollViewer" VerticalScrollBarVisibility="Visible" Padding="0 0 14 0">
-            <ItemsControl Name="SelectedMessagesList" ItemsSource="{x:Bind Messages}" ItemTemplateSelector="{StaticResource MessageDataTemplateSelector}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Vertical" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
-        </ScrollViewer>
+        <ListBox Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0"> <!--ItemTemplateSelector="{StaticResource MessageDataTemplateSelector}"-->
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <local:Message x:Name="ListBoxItemContent" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
         <TextBox Grid.Row="2" Name="InputTextBox" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
     </Grid>
 </UserControl>

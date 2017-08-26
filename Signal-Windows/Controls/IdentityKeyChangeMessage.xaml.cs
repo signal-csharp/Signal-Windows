@@ -39,7 +39,14 @@ namespace Signal_Windows.Controls
 
         private void IdentityKeyChangeMessage_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
-            MessageTextBlock.Text = Model.Content.Content;
+            if (Model != null)
+            {
+                MessageTextBlock.Text = Model.Content.Content;
+            }
+            else
+            {
+                MessageTextBlock.Text = "null";
+            }
         }
     }
 }

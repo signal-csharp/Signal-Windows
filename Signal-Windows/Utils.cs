@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Globalization;
 using Windows.Foundation;
 using Windows.UI.Core;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows
@@ -81,6 +84,24 @@ namespace Signal_Windows
                 case "grey": return Grey;
                 default: return Default;
             }
+        }
+
+        public static T FindParent<T>(FrameworkElement reference)
+  where T : FrameworkElement
+        {
+            FrameworkElement parent = reference;
+            while (parent != null)
+            {
+                parent = parent.Parent as FrameworkElement;
+
+                var rc = parent as T;
+                if (rc != null)
+                {
+                    return rc;
+                }
+            }
+
+            return null;
         }
 
         public static int CalculateDefaultColorIndex(string title)
