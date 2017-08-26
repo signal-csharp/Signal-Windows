@@ -235,61 +235,76 @@ namespace Signal_Windows.ViewModels
 
         internal async Task TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            if (e.Key == VirtualKey.Enter)
+            {
+                TextBox t = (TextBox)sender;
+                await SendMessageButton_Click(t);
+            }
+        }
+
+        private async Task<bool> SendMessage(string messageText)
+        {
+            Debug.WriteLine("starting sendmessage");
             try
             {
-                if (e.Key == VirtualKey.Enter)
+                if (messageText != string.Empty)
                 {
-                    TextBox t = (TextBox)sender;
-                    if (t.Text != "")
+                    var now = Util.CurrentTimeMillis();
+                    SignalMessage message = new SignalMessage()
                     {
-                        var text = t.Text;
-                        t.Text = "";
-                        var now = Util.CurrentTimeMillis();
-                        SignalMessage message = new SignalMessage()
+                        Author = null,
+                        ComposedTimestamp = now,
+                        Content = new SignalMessageContent() { Content = messageText },
+                        ThreadId = SelectedThread.ThreadId,
+                        ReceivedTimestamp = now,
+                        Direction = SignalMessageDirection.Outgoing,
+                        Read = true,
+                        Type = SignalMessageType.Normal
+                    };
+                    Debug.WriteLine("keydown lock await");
+                    using (await ActionInProgress.LockAsync())
+                    {
+                        Debug.WriteLine("keydown lock grabbed");
+                        View.Thread.Append(message);
+                        View.Thread.ScrollToBottom();
+                        SelectedThread.LastMessage = message;
+                        SelectedThread.View.UpdateConversationDisplay(SelectedThread);
+                        MoveThreadToTop(SelectedThread);
+                        await Task.Run(() =>
                         {
-                            Author = null,
-                            ComposedTimestamp = now,
-                            Content = new SignalMessageContent() { Content = text },
-                            ThreadId = SelectedThread.ThreadId,
-                            ReceivedTimestamp = now,
-                            Direction = SignalMessageDirection.Outgoing,
-                            Read = true,
-                            Type = SignalMessageType.Normal
-                        };
-                        Debug.WriteLine("keydown lock await");
-                        using (await ActionInProgress.LockAsync())
+                            SignalDBContext.SaveMessageLocked(message);
+                            SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
+                        });
+                        SelectedThread.LastMessageId = message.Id;
+                        SelectedThread.LastSeenMessageId = message.Id;
+                        if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
                         {
-                            Debug.WriteLine("keydown lock grabbed");
-                            View.Thread.Append(message);
-                            View.Thread.ScrollToBottom();
-                            SelectedThread.LastMessage = message;
-                            SelectedThread.View.UpdateConversationDisplay(SelectedThread);
-                            MoveThreadToTop(SelectedThread);
-                            await Task.Run(() =>
-                            {
-                                SignalDBContext.SaveMessageLocked(message);
-                                SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
-                            });
-                            SelectedThread.LastMessageId = message.Id;
-                            SelectedThread.LastSeenMessageId = message.Id;
-                            if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
-                            {
-                                View.Thread.AddToOutgoingMessagesCache(message);
-                            }
-                            OutgoingQueue.Add(message);
-                            var after = Util.CurrentTimeMillis();
-                            Debug.WriteLine("ms until out queue: " + (after - now));
-                            View.Thread.RemoveUnreadMarker();
+                            View.Thread.AddToOutgoingMessagesCache(message);
                         }
-                        Debug.WriteLine("keydown lock released");
+                        OutgoingQueue.Add(message);
+                        var after = Util.CurrentTimeMillis();
+                        Debug.WriteLine("ms until out queue: " + (after - now));
+                        View.Thread.RemoveUnreadMarker();
                     }
+                    Debug.WriteLine("keydown lock released");
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace);
+                return false;
+            }
+        }
+
+        internal async Task SendMessageButton_Click(TextBox messageTextBox)
+        {
+            bool sendMessageResult = await SendMessage(messageTextBox.Text);
+            if (sendMessageResult)
+            {
+                messageTextBox.Text = string.Empty;
             }
         }
 

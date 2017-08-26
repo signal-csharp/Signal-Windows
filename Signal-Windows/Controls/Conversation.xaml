@@ -23,11 +23,11 @@
         </DataTemplate>
         <local:MessageTemplateSelector x:Key="MessageDataTemplateSelector" NormalMessage="{StaticResource NormalMessageTemplate}" UnreadMarker="{StaticResource UnreadMarkerTemplate}" IdentityKeyChangeMessage="{StaticResource IdentityKeyChangeTemplate}" />
     </Control.Resources>
-    <Grid>
+    <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="50" />
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Background="{x:Bind HeaderBackground, Mode=OneWay}">
             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -45,6 +45,15 @@
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
         </ScrollViewer>
-        <TextBox Grid.Row="2" Name="InputTextBox" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
+        <Grid Grid.Row="2" BorderBrush="{ThemeResource TextBoxBorderThemeBrush}" BorderThickness="0,1,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0"/>
+            <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendEnabled, Mode=OneWay}" Background="{x:Bind HeaderBackground}" VerticalAlignment="Center" Width="50" Height="49">
+                <SymbolIcon Symbol="Send"/>
+            </Button>
+        </Grid>
     </Grid>
 </UserControl>

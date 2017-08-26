@@ -26,6 +26,7 @@ namespace Signal_Windows.Controls
         public RangeObservableCollection<object> Messages { get; set; } = new RangeObservableCollection<object>();
         private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
         private bool UnreadMarkerAdded = false;
+        private bool SendingMessage = false;
 
         private string _ThreadDisplayName;
 
@@ -67,12 +68,24 @@ namespace Signal_Windows.Controls
             set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
         }
 
+        private bool _SendEnabled;
+        public bool SendEnabled
+        {
+            get { return _SendEnabled; }
+            set
+            {
+                _SendEnabled = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendEnabled)));
+            }
+        }
+
         public Conversation()
         {
             this.InitializeComponent();
             Displayname.Foreground = Utils.ForegroundIncoming;
             Separator.Foreground = Utils.ForegroundIncoming;
             Username.Foreground = Utils.ForegroundIncoming;
+            SendEnabled = false;
         }
 
         public MainPageViewModel GetMainPageVm()
@@ -200,10 +213,21 @@ namespace Signal_Windows.Controls
                 throw new Exception("Attempt to add null view to OutgoingCache");
             }
         }
-
+        
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            await GetMainPageVm().TextBox_KeyDown(sender, e);
+            TextBox t = sender as TextBox;
+            SendEnabled = t.Text != string.Empty;
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // this fixes double send by enter repeat
+                if (!SendingMessage)
+                {
+                    SendingMessage = true;
+                    await GetMainPageVm().TextBox_KeyDown(sender, e);
+                    SendingMessage = false;
+                }
+            }
         }
 
         public void RemoveUnreadMarker()
@@ -213,6 +237,11 @@ namespace Signal_Windows.Controls
                 Messages.Remove(UnreadMarker);
                 UnreadMarkerAdded = false;
             }
+        }
+
+        private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
+        {
+            await GetMainPageVm().SendMessageButton_Click(InputTextBox);
         }
     }
 
