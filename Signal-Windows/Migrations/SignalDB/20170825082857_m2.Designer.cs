@@ -9,9 +9,10 @@ using Signal_Windows.Models;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    partial class SignalDBContextModelSnapshot : ModelSnapshot
+    [Migration("20170825082857_m2")]
+    partial class m2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.2");

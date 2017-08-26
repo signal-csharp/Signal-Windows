@@ -12,23 +12,13 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class Message : UserControl, INotifyPropertyChanged
+    public sealed partial class Message : UserControl
     {
-        public Visibility HeaderVisibility { get; set; }
-        public string ContactName { get; set; }
-        public string FancyTimestamp { get; set; }
-        public SolidColorBrush ContactNameColor { get; set; }
-        public SolidColorBrush TextColor { get; set; }
-        public SolidColorBrush TimestampColor { get; set; }
-        public Visibility ResendVisibility { get; set; } = Visibility.Collapsed;
-        public Visibility CheckVisibility { get; set; } = Visibility.Collapsed;
-        public Visibility DoubleCheckVisibility { get; set; } = Visibility.Collapsed;
-
-        public SignalMessage Model
+        public SignalMessageContainer Model
         {
             get
             {
-                return this.DataContext as SignalMessage;
+                return (SignalMessageContainer) this.DataContext;
             }
             set
             {
@@ -42,141 +32,87 @@ namespace Signal_Windows.Controls
             this.DataContextChanged += MessageBox_DataContextChanged;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        private void UpdateUI()
+        {
+            if (Model != null)
+            {
+                MessageContentTextBlock.Text = Model.Message.Content.Content;
+                if (Model.Message.Author == null)
+                {
+                    MessageAuthor.Visibility = Visibility.Collapsed;
+                    MessageBoxBorder.Background = Utils.BackgroundOutgoing;
+                    MessageContentTextBlock.Foreground = Utils.ForegroundOutgoing;
+                    FancyTimestampBlock.Foreground = Utils.GetSolidColorBrush(127, "#454545");
+                    HorizontalAlignment = HorizontalAlignment.Right;
+                    FooterPanel.HorizontalAlignment = HorizontalAlignment.Right;
+                    if (Model.Message.Status == SignalMessageStatus.Pending)
+                    {
+                        CheckImage.Visibility = Visibility.Collapsed;
+                        DoubleCheckImage.Visibility = Visibility.Collapsed;
+                        ResendTextBlock.Visibility = Visibility.Collapsed;
+                    }
+                    else if (Model.Message.Status == SignalMessageStatus.Confirmed)
+                    {
+                        CheckImage.Visibility = Visibility.Visible;
+                        DoubleCheckImage.Visibility = Visibility.Collapsed;
+                        ResendTextBlock.Visibility = Visibility.Collapsed;
+                    }
+                    else if (Model.Message.Status == SignalMessageStatus.Received)
+                    {
+                        CheckImage.Visibility = Visibility.Collapsed;
+                        DoubleCheckImage.Visibility = Visibility.Visible;
+                        ResendTextBlock.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        CheckImage.Visibility = Visibility.Collapsed;
+                        DoubleCheckImage.Visibility = Visibility.Collapsed;
+                        ResendTextBlock.Visibility = Visibility.Visible;
+                    }
+                }
+                else
+                {
+                    CheckImage.Visibility = Visibility.Collapsed;
+                    DoubleCheckImage.Visibility = Visibility.Collapsed;
+                    ResendTextBlock.Visibility = Visibility.Collapsed;
+                    if (Model.Message.ThreadId[0] != '+')
+                    {
+                        MessageAuthor.Visibility = Visibility.Visible;
+                        MessageAuthor.Text = Model.Message.Author.ThreadDisplayName;
+                    }
+                    else
+                    {
+                        MessageAuthor.Visibility = Visibility.Collapsed;
+                    }
+                    MessageBoxBorder.Background = Utils.GetBrushFromColor(Model.Message.Author.Color);
+                    MessageAuthor.Foreground = Utils.GetSolidColorBrush(204, "#ffffff");
+                    MessageContentTextBlock.Foreground = Utils.ForegroundIncoming;
+                    FancyTimestampBlock.Foreground = Utils.GetSolidColorBrush(127, "#ffffff");
+                    HorizontalAlignment = HorizontalAlignment.Left;
+                    FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;
+                }
+                DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.Message.ComposedTimestamp / 1000);
+                DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
+                FancyTimestampBlock.Text = dt.ToString();
+            }
+        }
 
         private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
-            Model.View = this;
-            if (Model.Author == null)
-            {
-                HeaderVisibility = Visibility.Collapsed;
-                Background = Utils.BackgroundOutgoing;
-                TextColor = Utils.ForegroundOutgoing;
-                TimestampColor = Utils.GetSolidColorBrush(127, "#454545");
-                HorizontalAlignment = HorizontalAlignment.Right;
-                FooterPanel.HorizontalAlignment = HorizontalAlignment.Right;
-            }
-            else
-            {
-                if (Model.ThreadId[0] != '+')
-                {
-                    HeaderVisibility = Visibility.Visible;
-                    ContactName = Model.Author.ThreadDisplayName;
-                }
-                else
-                {
-                    HeaderVisibility = Visibility.Collapsed;
-                }
-                Background = Utils.GetBrushFromColor(Model.Author.Color);
-                ContactNameColor = Utils.GetSolidColorBrush(204, "#ffffff");
-                TextColor = Utils.ForegroundIncoming;
-                TimestampColor = Utils.GetSolidColorBrush(127, "#ffffff");
-                HorizontalAlignment = HorizontalAlignment.Left;
-                FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;
-            }
-            DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.ComposedTimestamp / 1000);
-            DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
-            FancyTimestamp = dt.ToString();
-            UpdateSignalMessageStatusIcon(Model);
-            UpdateResendButton(Model);
-        }
 
-        private void UpdateSignalMessageStatusIcon(SignalMessage updatedMessage)
-        {
-            if (updatedMessage.Direction == SignalMessageDirection.Outgoing)
-            {
-                if (updatedMessage.Status == SignalMessageStatus.Pending)
-                {
-                    Model.Status = (uint)SignalMessageStatus.Pending;
-                    CheckVisibility = Visibility.Collapsed;
-                    DoubleCheckVisibility = Visibility.Collapsed;
-                }
-                else if (updatedMessage.Status == SignalMessageStatus.Confirmed)
-                {
-                    Model.Status = SignalMessageStatus.Confirmed;
-                    CheckVisibility = Visibility.Visible;
-                    DoubleCheckVisibility = Visibility.Collapsed;
-                }
-                else if (updatedMessage.Status == SignalMessageStatus.Received)
-                {
-                    Model.Status = SignalMessageStatus.Received;
-                    CheckVisibility = Visibility.Collapsed;
-                    DoubleCheckVisibility = Visibility.Visible;
-                }
-            }
-            else if (updatedMessage.Direction == SignalMessageDirection.Synced)
-            {
-                if (updatedMessage.Receipts == 0)
-                {
-                    CheckVisibility = Visibility.Visible;
-                    DoubleCheckVisibility = Visibility.Collapsed;
-                }
-                else
-                {
-                    CheckVisibility = Visibility.Collapsed;
-                    DoubleCheckVisibility = Visibility.Visible;
-                }
-            }
-        }
-
-        private void UpdateResendButton(SignalMessage updatedMessage)
-        {
-            if (updatedMessage.Direction == SignalMessageDirection.Outgoing && updatedMessage.Status != SignalMessageStatus.Pending && updatedMessage.Status != SignalMessageStatus.Confirmed && updatedMessage.Status != SignalMessageStatus.Received)
-            {
-                ResendVisibility = Visibility.Visible;
-            }
-            else
-            {
-                ResendVisibility = Visibility.Collapsed;
-            }
-        }
-
-        public void UpdateMessageBox(SignalMessage updatedMessage)
-        {
-            UpdateSignalMessageStatusIcon(updatedMessage);
-            UpdateResendButton(updatedMessage);
-            PropertyChanged(this, new PropertyChangedEventArgs(nameof(CheckVisibility)));
-            PropertyChanged(this, new PropertyChangedEventArgs(nameof(DoubleCheckVisibility)));
-            PropertyChanged(this, new PropertyChangedEventArgs(nameof(ResendVisibility)));
-        }
-
-        private async void AttachmentSaveButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-                savePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-                savePicker.FileTypeChoices.Add("", new List<string>() { "." });
-                savePicker.SuggestedFileName = "test";
-                var file = await savePicker.PickSaveFileAsync();
-                if (file != null)
-                {
-                    var button = (Button)sender;
-                    var attachment = (SignalAttachment)button.DataContext;
-                    StorageFile src = await StorageFile.GetFileFromPathAsync(ApplicationData.Current.LocalFolder.Path + @"\Attachments\" + attachment.FileName);
-                    await src.CopyAndReplaceAsync(file);
-                }
-                else
-                {
-                    Debug.WriteLine("no file picked");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                Debug.WriteLine(ex.StackTrace);
-            }
-        }
-
-        private void TextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
-        {
-
+            UpdateUI();
         }
 
         private void ResendTextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            App.ViewModels.MainPageInstance.OutgoingQueue.Add(Model);
-            //TODO prevent button smashing
+            throw new NotImplementedException();
+        }
+
+        internal bool HandleUpdate(SignalMessage updatedMessage)
+        {
+            Model.Message.Status = updatedMessage.Status;
+            UpdateUI();
+            return updatedMessage.Status != SignalMessageStatus.Received;
         }
     }
 }

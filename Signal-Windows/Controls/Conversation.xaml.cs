@@ -20,12 +20,11 @@ namespace Signal_Windows.Controls
     public sealed partial class Conversation : UserControl, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-
-        private Dictionary<long, Message> OutgoingCache = new Dictionary<long, Message>();
-
-        public RangeObservableCollection<object> Messages { get; set; } = new RangeObservableCollection<object>();
-        private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
-        private bool UnreadMarkerAdded = false;
+        private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
+        //private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
+        private SignalConversation SignalConversation;
+        //private bool UnreadMarkerAdded = false;
+        private VirtualizedCollection Collection;
 
         private string _ThreadDisplayName;
 
@@ -113,65 +112,50 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public void ScrollToBottom()
+        public void Load(SignalConversation conversation)
         {
-            SelectedMessagesScrollViewer.UpdateLayout();
-            if (UnreadMarkerAdded)
-            {
-                var transform = UnreadMarker.View.TransformToVisual((UIElement)SelectedMessagesScrollViewer.Content);
-                var position = transform.TransformPoint(new Point(0, 0));
-                SelectedMessagesScrollViewer.ChangeView(null, position.Y, null, true);
-            }
-            else
-            {
-                SelectedMessagesScrollViewer.ChangeView(null, double.MaxValue, null, true);
-            }
-        }
-
-        public async Task Load(SignalConversation thread)
-        {
-            UnreadMarkerAdded = false;
+            SignalConversation = conversation;
+            //UnreadMarkerAdded = false;
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();
-            UpdateHeader(thread);
-            var before = Util.CurrentTimeMillis();
-            var messages = await Task.Run(() =>
-            {
-                return SignalDBContext.GetMessagesLocked(thread);
-            });
-            var after1 = Util.CurrentTimeMillis();
-            foreach (var message in messages)
-            {
-                Messages.AddSilently(message);
-                if (thread.LastSeenMessageId == message.Id && thread.LastMessageId != message.Id)
-                {
-                    UnreadMarkerAdded = true;
-                    Messages.AddSilently(UnreadMarker);
-                }
-            }
-            Messages.ForceCollectionChanged();
+            UpdateHeader(conversation);
+            ConversationItemsControl.ItemsSource = new List<object>(); /* hack to avoid glitches */
             UpdateLayout();
-            if (UnreadMarkerAdded)
-            {
-                UnreadMarker.View.SetText(thread.UnreadCount + " UNREAD MESSAGE" + (thread.UnreadCount > 1 ? "S" : ""));
-            }
-            foreach (var message in messages)
-            {
-                if (message.Direction != SignalMessageDirection.Incoming)
-                {
-                    AddToOutgoingMessagesCache(message);
-                }
-            }
-            var after2 = Util.CurrentTimeMillis();
-            Debug.WriteLine("db query: " + (after1 - before));
-            Debug.WriteLine("ui: " + (after2 - after1));
-            InputTextBox.IsEnabled = thread.CanReceive;
+            Collection =  new VirtualizedCollection(conversation);
+            ConversationItemsControl.ItemsSource = Collection;
+            UpdateLayout();
+            InputTextBox.IsEnabled = conversation.CanReceive;
+            ScrollToBottom();
         }
 
         public void DisposeCurrentThread()
         {
-            Messages.Clear();
             OutgoingCache.Clear();
+        }
+
+        public T FindElementByName<T>(FrameworkElement element, string sChildName) where T : FrameworkElement
+        {
+            T childElement = null;
+            var nChildCount = VisualTreeHelper.GetChildrenCount(element);
+            for (int i = 0; i < nChildCount; i++)
+            {
+                FrameworkElement child = VisualTreeHelper.GetChild(element, i) as FrameworkElement;
+
+                if (child == null)
+                    continue;
+
+                if (child is T && child.Name.Equals(sChildName))
+                {
+                    childElement = (T)child;
+                    break;
+                }
+
+                childElement = FindElementByName<T>(child, sChildName);
+
+                if (childElement != null)
+                    break;
+            }
+            return childElement;
         }
 
         public void UpdateMessageBox(SignalMessage updatedMessage)
@@ -179,26 +163,28 @@ namespace Signal_Windows.Controls
             if (OutgoingCache.ContainsKey(updatedMessage.Id))
             {
                 var m = OutgoingCache[updatedMessage.Id];
-                m.UpdateMessageBox(updatedMessage);
+                var item = (ListBoxItem) ConversationItemsControl.ContainerFromIndex(m.Index);
+                var message = FindElementByName<Message>(item, "ListBoxItemContent");
+                bool retain = message.HandleUpdate(updatedMessage);
+                if (!retain)
+                {
+                    OutgoingCache.Remove(m.Index);
+                }
             }
         }
 
-        public void Append(SignalMessage sm)
+        public void Append(SignalMessageContainer sm, bool forceScroll)
         {
-            Messages.Add(sm);
-            //TODO move scrolltobottom here
+            Collection.Add(sm);
+            if (forceScroll || true) //TODO
+            {
+                ScrollToBottom();
+            }
         }
 
-        public void AddToOutgoingMessagesCache(SignalMessage sm)
+        public void AddToOutgoingMessagesCache(SignalMessageContainer m)
         {
-            if (sm.View != null)
-            {
-                OutgoingCache[sm.Id] = sm.View;
-            }
-            else
-            {
-                throw new Exception("Attempt to add null view to OutgoingCache");
-            }
+            OutgoingCache[m.Message.Id] = m;
         }
 
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -206,13 +192,11 @@ namespace Signal_Windows.Controls
             await GetMainPageVm().TextBox_KeyDown(sender, e);
         }
 
-        public void RemoveUnreadMarker()
+        private void ScrollToBottom()
         {
-            if (UnreadMarkerAdded)
-            {
-                Messages.Remove(UnreadMarker);
-                UnreadMarkerAdded = false;
-            }
+            var lastMsg = ConversationItemsControl.Items[ConversationItemsControl.Items.Count - 1] as SignalMessageContainer;
+            Debug.WriteLine($"scroll to {lastMsg}");
+            ConversationItemsControl.ScrollIntoView(lastMsg);
         }
     }
 
@@ -220,7 +204,6 @@ namespace Signal_Windows.Controls
     {
         public UnreadMarker View { get; set; }
     }
-
     public class MessageTemplateSelector : DataTemplateSelector
     {
         public DataTemplate NormalMessage { get; set; }
@@ -230,18 +213,14 @@ namespace Signal_Windows.Controls
         protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
         {
             FrameworkElement element = container as FrameworkElement;
-            if (item is SignalMessage)
+            if (item is SignalMessageContainer)
             {
-                SignalMessage sm = (SignalMessage)item;
+                SignalMessage sm = ((SignalMessageContainer)item).Message;
                 if (sm.Type == SignalMessageType.IdentityKeyChange)
                 {
                     return IdentityKeyChangeMessage;
                 }
                 return NormalMessage;
-            }
-            if (item is SignalUnreadMarker)
-            {
-                return UnreadMarker;
             }
             return null;
         }
