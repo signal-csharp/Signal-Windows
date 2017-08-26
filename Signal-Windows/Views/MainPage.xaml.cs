@@ -93,6 +93,13 @@ namespace Signal_Windows
             await Vm.Init();
         }
 
+        protected override async void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        {
+            base.OnNavigatingFrom(e);
+            ContactsList.SelectedItem = null;
+            await Vm.OnNavigatingFrom();
+        }
+
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             var oldStyle = Utils.GetViewStyle(e.PreviousSize);

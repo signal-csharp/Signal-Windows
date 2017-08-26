@@ -65,6 +65,14 @@ namespace Signal_Windows.ViewModels
 
         public void AddThread(SignalConversation contact)
         {
+            // only add a contact to Threads if it isn't already there
+            foreach (var thread in Threads)
+            {
+                if (thread.ThreadId == contact.ThreadId)
+                {
+                    return;
+                }
+            }
             Threads.Add(contact);
             ThreadsDictionary[contact.ThreadId] = contact;
         }
@@ -184,6 +192,12 @@ namespace Signal_Windows.ViewModels
                 }
             }
             Debug.WriteLine("Init lock released");
+        }
+
+        public async Task OnNavigatingFrom()
+        {
+            SelectedThread = null;
+            View.Thread.DisposeCurrentThread();
         }
 
         public async Task Shutdown()
