@@ -426,6 +426,7 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("received message: " + message.Content);
             if (!App.WindowActive)
             {
+                SendTileNotification(message);
                 SendMessageNotification(message);
             }
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
@@ -449,17 +450,12 @@ namespace Signal_Windows.ViewModels
                     HintCrop = ToastGenericAppLogoCrop.Circle
                 }
             };
-            AdaptiveText title = new AdaptiveText()
+
+            var notificationText = GetNotificationText(message);
+            foreach (var item in notificationText)
             {
-                Text = message.Author.ThreadDisplayName,
-                HintMaxLines = 1
-            };
-            AdaptiveText messageText = new AdaptiveText()
-            {
-                Text = message.Content.Content
-            };
-            toastBinding.Children.Add(title);
-            toastBinding.Children.Add(messageText);
+                toastBinding.Children.Add(item);
+            }
 
             ToastContent toastContent = new ToastContent()
             {
@@ -478,6 +474,62 @@ namespace Signal_Windows.ViewModels
             }
             toastNotification.Tag = notificationId;
             ToastNotificationManager.CreateToastNotifier().Show(toastNotification);
+        }
+
+        private void SendTileNotification(SignalMessage message)
+        {
+            TileBindingContentAdaptive tileBindingContent = new TileBindingContentAdaptive()
+            {
+                PeekImage = new TilePeekImage()
+                {
+                    Source = "ms-appx:///Assets/gambino.png"
+                }
+            };
+            var notificationText = GetNotificationText(message);
+            foreach (var item in notificationText)
+            {
+                tileBindingContent.Children.Add(item);
+            }
+
+            TileBinding tileBinding = new TileBinding()
+            {
+                Content = tileBindingContent
+            };
+
+            TileContent tileContent = new TileContent()
+            {
+                Visual = new TileVisual()
+                {
+                    TileMedium = tileBinding,
+                    TileWide = tileBinding,
+                    TileLarge = tileBinding
+                }
+            };
+
+            TileNotification tileNotification = new TileNotification(tileContent.GetXml());
+            if (message.Author.ExpiresInSeconds > 0)
+            {
+                tileNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
+            }
+            TileUpdateManager.CreateTileUpdaterForApplication().Update(tileNotification);
+        }
+
+        private IList<AdaptiveText> GetNotificationText(SignalMessage message)
+        {
+            List<AdaptiveText> text = new List<AdaptiveText>();
+            AdaptiveText title = new AdaptiveText()
+            {
+                Text = message.Author.ThreadDisplayName,
+                HintMaxLines = 1
+            };
+            AdaptiveText messageText = new AdaptiveText()
+            {
+                Text = message.Content.Content,
+                HintWrap = true
+            };
+            text.Add(title);
+            text.Add(messageText);
+            return text;
         }
     }
 }

@@ -13,6 +13,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using Microsoft.QueryStringDotNET;
+using Windows.UI.Notifications;
 
 namespace Signal_Windows
 {
@@ -139,6 +140,7 @@ namespace Signal_Windows
                     }
                 }
             }
+            TileUpdateManager.CreateTileUpdaterForApplication().Clear();
             // Sicherstellen, dass das aktuelle Fenster aktiv ist
             Window.Current.Activate();
         }
