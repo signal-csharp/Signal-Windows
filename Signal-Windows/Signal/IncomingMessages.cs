@@ -9,6 +9,9 @@ using Strilanc.Value;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Toolkit.Uwp.Notifications;
+using Windows.UI.Notifications;
+using Microsoft.QueryStringDotNET;
 
 namespace Signal_Windows.ViewModels
 {
@@ -421,10 +424,60 @@ namespace Signal_Windows.ViewModels
                 }
             }
             Debug.WriteLine("received message: " + message.Content);
+            if (!App.WindowActive)
+            {
+                SendMessageNotification(message);
+            }
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
             {
                 await UIHandleIncomingMessage(message);
             }).AsTask().Wait();
+        }
+
+        private void SendMessageNotification(SignalMessage message)
+        {
+            string notificationId = new QueryString()
+            {
+                { "threadId", message.ThreadId },
+                { "recievedTimestamp", message.ReceivedTimestamp.ToString() }
+            }.ToString();
+            ToastBindingGeneric toastBinding = new ToastBindingGeneric()
+            {
+                AppLogoOverride = new ToastGenericAppLogo()
+                {
+                    Source = "ms-appx:///Assets/gambino.png",
+                    HintCrop = ToastGenericAppLogoCrop.Circle
+                }
+            };
+            AdaptiveText title = new AdaptiveText()
+            {
+                Text = message.Author.ThreadDisplayName,
+                HintMaxLines = 1
+            };
+            AdaptiveText messageText = new AdaptiveText()
+            {
+                Text = message.Content.Content
+            };
+            toastBinding.Children.Add(title);
+            toastBinding.Children.Add(messageText);
+
+            ToastContent toastContent = new ToastContent()
+            {
+                Launch = notificationId,
+                Visual = new ToastVisual()
+                {
+                    BindingGeneric = toastBinding
+                },
+                DisplayTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(message.ReceivedTimestamp)
+            };
+
+            ToastNotification toastNotification = new ToastNotification(toastContent.GetXml());
+            if (message.Author.ExpiresInSeconds > 0)
+            {
+                toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
+            }
+            toastNotification.Tag = notificationId;
+            ToastNotificationManager.CreateToastNotifier().Show(toastNotification);
         }
     }
 }

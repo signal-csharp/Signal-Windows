@@ -12,6 +12,7 @@ using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
+using Microsoft.QueryStringDotNET;
 
 namespace Signal_Windows
 {
@@ -28,6 +29,7 @@ namespace Signal_Windows
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
+        public static bool WindowActive = false;
         private Task<SignalStore> Init;
 
         /// <summary>
@@ -61,7 +63,28 @@ namespace Signal_Windows
         /// <param name="e">Details über Startanforderung und -prozess.</param>
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
+            await OnLaunchedOrActivated(e);
+        }
+
+        protected override async void OnActivated(IActivatedEventArgs args)
+        {
+            await OnLaunchedOrActivated(args, false);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="launched">
+        /// If OnLaunched this is true
+        /// If OnActivated this is false
+        /// </param>
+        /// <returns></returns>
+        private async Task OnLaunchedOrActivated(IActivatedEventArgs e, bool launched = true)
+        {
             Debug.WriteLine("Signal-Windows " + LocalFolder.Path.ToString());
+            Window.Current.Activated += Current_Activated;
+            WindowActive = true;
             Frame rootFrame = Window.Current.Content as Frame;
 
             // App-Initialisierung nicht wiederholen, wenn das Fenster bereits Inhalte enthält.
@@ -82,25 +105,53 @@ namespace Signal_Windows
                 Window.Current.Content = rootFrame;
             }
 
-            if (e.PrelaunchActivated == false)
+            if (launched)
             {
-                if (rootFrame.Content == null)
+                LaunchActivatedEventArgs args = e as LaunchActivatedEventArgs;
+                if (args.PrelaunchActivated == false)
                 {
-                    // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
-                    // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
-                    // übergeben werden
-                    Store = await Init;
-                    if (Store == null || !Store.Registered)
+                    if (rootFrame.Content == null)
                     {
-                        rootFrame.Navigate(typeof(StartPage), e.Arguments);
-                    }
-                    else
-                    {
-                        rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                        // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
+                        // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
+                        // übergeben werden
+                        Store = await Init;
+                        if (Store == null || !Store.Registered)
+                        {
+                            rootFrame.Navigate(typeof(StartPage), args.Arguments);
+                        }
+                        else
+                        {
+                            rootFrame.Navigate(typeof(MainPage), args.Arguments);
+                        }
                     }
                 }
-                // Sicherstellen, dass das aktuelle Fenster aktiv ist
-                Window.Current.Activate();
+            }
+            else
+            {
+                if (e is ToastNotificationActivatedEventArgs)
+                {
+                    var args = e as ToastNotificationActivatedEventArgs;
+                    QueryString queryString = QueryString.Parse(args.Argument);
+                    if (!(rootFrame.Content is MainPage))
+                    {
+                        rootFrame.Navigate(typeof(MainPage), queryString);
+                    }
+                }
+            }
+            // Sicherstellen, dass das aktuelle Fenster aktiv ist
+            Window.Current.Activate();
+        }
+
+        private void Current_Activated(object sender, Windows.UI.Core.WindowActivatedEventArgs e)
+        {
+            if (e.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.Deactivated)
+            {
+                WindowActive = false;
+            }
+            else
+            {
+                WindowActive = true;
             }
         }
 
