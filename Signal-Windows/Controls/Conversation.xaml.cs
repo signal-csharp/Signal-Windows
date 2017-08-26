@@ -119,7 +119,14 @@ namespace Signal_Windows.Controls
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();
             UpdateHeader(conversation);
-            ConversationItemsControl.ItemsSource = new List<object>(); /* hack to avoid glitches */
+
+            /*
+             * When selecting a small (~650 messages) conversation after a bigger (~1800 messages) one,
+             * ScrollToBottom would scroll so far south that the entire screen was white. Seems like the
+             * scrollbar is not properly notified that the collection changed. I tried things like throwing
+             * CollectionChanged (reset) event, but to no avail. This hack works, though.
+             */
+            ConversationItemsControl.ItemsSource = new List<object>();
             UpdateLayout();
             Collection =  new VirtualizedCollection(conversation);
             ConversationItemsControl.ItemsSource = Collection;
