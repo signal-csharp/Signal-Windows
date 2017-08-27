@@ -54,7 +54,7 @@ namespace Signal_Windows.ViewModels
         private volatile bool Running = false;
         private Task IncomingMessagesTask;
         private Task OutgoingMessagesTask;
-        private CancellationTokenSource CancelSource;
+        private CancellationTokenSource CancelSource = new CancellationTokenSource();
         private SignalServiceMessagePipe Pipe;
         private SignalServiceMessageSender MessageSender;
         private SignalServiceMessageReceiver MessageReceiver;
