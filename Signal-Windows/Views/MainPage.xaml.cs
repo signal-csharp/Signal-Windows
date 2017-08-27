@@ -72,7 +72,7 @@ namespace Signal_Windows
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await Vm.Init();
+            await Vm.OnNavigatedTo();
         }
 
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)

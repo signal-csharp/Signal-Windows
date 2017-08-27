@@ -51,7 +51,7 @@ namespace Signal_Windows.ViewModels
         private AsyncLock ActionInProgress = new AsyncLock();
         public MainPage View;
         public SignalConversation SelectedThread;
-        private volatile bool Running = true;
+        private volatile bool Running = false;
         private Task IncomingMessagesTask;
         private Task OutgoingMessagesTask;
         private CancellationTokenSource CancelSource;
@@ -105,13 +105,22 @@ namespace Signal_Windows.ViewModels
             App.MainPageActive = true;
         }
 
+        public async Task OnNavigatedTo()
+        {
+            if (!Running)
+            {
+                await Init();
+            }
+        }
+
         public async Task Init()
         {
-            CancelSource = new CancellationTokenSource();
             Debug.WriteLine("Init lock wait");
             using (await ActionInProgress.LockAsync(CancelSource.Token))
             {
                 Debug.WriteLine("Init lock grabbed");
+                Running = true;
+                CancelSource = new CancellationTokenSource();
                 try
                 {
                     await Task.Run(async () =>
@@ -176,6 +185,8 @@ namespace Signal_Windows.ViewModels
                 catch (AuthorizationFailedException)
                 {
                     Debug.WriteLine("OWS server rejected our credentials - redirecting to StartPage");
+                    Running = false;
+                    CancelSource.Cancel();
                     View.Frame.Navigate(typeof(StartPage));
                 }
                 catch (Exception e)
@@ -189,11 +200,11 @@ namespace Signal_Windows.ViewModels
 
         public async Task Shutdown()
         {
-            Running = false;
-            App.MainPageActive = false;
             Debug.WriteLine("Shutdown lock await");
             using (await ActionInProgress.LockAsync())
             {
+                Running = false;
+                App.MainPageActive = false;
                 Debug.WriteLine("Shutdown lock grabbed");
                 CancelSource.Cancel();
                 await IncomingMessagesTask;
