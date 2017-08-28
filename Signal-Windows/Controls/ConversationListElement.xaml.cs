@@ -1,4 +1,5 @@
 using Signal_Windows.Models;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using Windows.UI.Xaml;
@@ -79,20 +80,31 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                Model.View = this;
+                Model.UpdateUI += Model_UpdateUI;
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
                 UnreadCount = Model.UnreadCount;
                 LastMessage = Model.LastMessage?.Content.Content;
             }
+            else
+            {
+                Debug.WriteLine("ConversationListElement datacontext changed to null");
+            }
         }
 
-        public void UpdateConversationDisplay(SignalConversation thread)
+        private void Model_UpdateUI(object sender, EventArgs e)
         {
-            Model.ThreadDisplayName = thread.ThreadDisplayName;
-            Model.LastActiveTimestamp = thread.LastActiveTimestamp;
-            ConversationDisplayName.Text = thread.ThreadDisplayName;
-            UnreadCount = thread.UnreadCount;
-            LastMessage = Model.LastMessage?.Content.Content;
+            var conversation = (SignalConversation)sender;
+            if (Model != null && Model == conversation)
+            {
+                ConversationDisplayName.Text = Model.ThreadDisplayName;
+                UnreadCount = Model.UnreadCount;
+                LastMessage = Model.LastMessage?.Content.Content;
+            }
+            else
+            {
+                Debug.WriteLine("Model_UpdateUI: stale update event received");
+                conversation.UpdateUI -= Model_UpdateUI;
+            }
         }
     }
 }

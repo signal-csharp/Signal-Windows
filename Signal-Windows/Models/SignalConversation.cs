@@ -1,10 +1,13 @@
 using Signal_Windows.Controls;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Signal_Windows.Models
 {
     public class SignalConversation
     {
+        public event EventHandler UpdateUI;
+
         public long Id { get; set; }
         public string ThreadId { get; set; }
         public string ThreadDisplayName { get; set; }
@@ -18,6 +21,10 @@ namespace Signal_Windows.Models
         public SignalMessage LastMessage { get; set; }
         public long? LastSeenMessageId { get; set; }
         public SignalMessage LastSeenMessage { get; set; }
-        [NotMapped] public ConversationListElement View;
+
+        internal void Update()
+        {
+            UpdateUI?.Invoke(this, new EventArgs());
+        }
     }
 }

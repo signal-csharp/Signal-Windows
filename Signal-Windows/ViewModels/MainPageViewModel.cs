@@ -98,7 +98,9 @@ namespace Signal_Windows.ViewModels
         {
             SignalConversation uiThread = ThreadsDictionary[thread.ThreadId];
             uiThread.CanReceive = thread.CanReceive;
-            uiThread.View.UpdateConversationDisplay(thread);
+            uiThread.ThreadDisplayName = thread.ThreadDisplayName;
+            uiThread.LastActiveTimestamp = thread.LastActiveTimestamp;
+            uiThread.Update();
             if (SelectedThread == uiThread)
             {
                 View.Thread.Update(thread);
@@ -282,7 +284,8 @@ namespace Signal_Windows.ViewModels
                         View.Thread.Append(message);
                         View.Thread.ScrollToBottom();
                         SelectedThread.LastMessage = message;
-                        SelectedThread.View.UpdateConversationDisplay(SelectedThread);
+                        SelectedThread.LastActiveTimestamp = now;
+                        SelectedThread.Update();
                         MoveThreadToTop(SelectedThread);
                         await Task.Run(() =>
                         {
@@ -394,7 +397,7 @@ namespace Signal_Windows.ViewModels
                 thread.LastActiveTimestamp = message.ReceivedTimestamp;
                 thread.LastMessage = message;
                 thread.LastMessageId = message.Id;
-                thread.View.UpdateConversationDisplay(thread);
+                thread.Update();
                 MoveThreadToTop(thread);
             }
             Debug.WriteLine("incoming lock released");
@@ -404,8 +407,8 @@ namespace Signal_Windows.ViewModels
         {
             SignalConversation uiConversation = ThreadsDictionary[conversation.ThreadId];
             uiConversation.UnreadCount = 0;
-            uiConversation.View.UnreadCount = 0;
             uiConversation.LastSeenMessageId = conversation.LastMessageId;
+            uiConversation.Update();
         }
 
         public void UIUpdateMessageBox(SignalMessage updatedMessage)
@@ -433,7 +436,7 @@ namespace Signal_Windows.ViewModels
                     }
                     thread.LastMessage = message;
                     thread.LastMessageId = message.Id;
-                    thread.View.UpdateConversationDisplay(thread);
+                    thread.Update();
                 }
             }
             Debug.WriteLine("IKChange lock released");
