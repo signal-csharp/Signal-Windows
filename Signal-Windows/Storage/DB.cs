@@ -780,6 +780,7 @@ namespace Signal_Windows.Storage
 
         public static List<SignalMessageContainer> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
         {
+            Debug.WriteLine($"GetMessagesLocked {thread.ThreadId} {startIndex} {count}");
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())

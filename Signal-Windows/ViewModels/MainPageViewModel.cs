@@ -335,7 +335,6 @@ namespace Signal_Windows.ViewModels
             {
                 Debug.WriteLine("incoming lock grabbed");
                 var thread = ThreadsDictionary[message.ThreadId];
-                thread.MessagesCount += 1;
                 uint unreadCount = thread.UnreadCount;
                 if (SelectedThread == thread)
                 {
@@ -346,6 +345,7 @@ namespace Signal_Windows.ViewModels
                     SignalDBContext.SaveMessageLocked(message);
                 });
                 long? seenId = null;
+                thread.MessagesCount += 1;
                 if (SelectedThread == thread)
                 {
                     var container = new SignalMessageContainer(message, (int) thread.MessagesCount - 1);
