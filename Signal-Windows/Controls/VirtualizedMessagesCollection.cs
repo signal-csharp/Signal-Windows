@@ -67,16 +67,28 @@ namespace Signal_Windows.Controls
 
         public object SyncRoot => this;
 
+        /// <summary>
+        /// "Adds" a SignalMessageContainer to this virtualized collection.</summary>
+        /// <remarks>
+        /// The method may (if incoming) or may not (if outgoing) already be present in the database, so we explicitly insert at the correct position in the cache line.
+        /// Count is mapped to the SignalConversation's MessagesCount, so callers must update appropriately before calling this method, and no async method must be called in between.</remarks>
+        /// <param name="value">The object to add to the VirtualizedMessagesCollection.</param>
+        /// <returns>The position into which the new element was inserted, or -1 to indicate that the item was not inserted into the collection.</returns>
         public int Add(object value)
         {
             var message = value as SignalMessageContainer;
             int inpageIndex = message.Index % PAGE_SIZE;
             int pageIndex = GetPageIndex(message.Index);
+            Debug.WriteLine($"VirtualizedCollection.Add Id={message.Message.Id} Index={message.Index} PageIndex={pageIndex} InpageIndex={inpageIndex} ");
             if (!Cache.ContainsKey(pageIndex))
             {
                 Cache[pageIndex] = SignalDBContext.GetMessagesLocked(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
             }
-            Cache[pageIndex].Add(message);
+            Cache[pageIndex].Insert(inpageIndex, message);
+            if (Cache[pageIndex].IndexOf(message) != inpageIndex  || message.Index != Count-1)
+            {
+                throw new InvalidOperationException("VirtualizedCollection is in an inconsistent state!");
+            }
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, message, message.Index));
             return message.Index;
         }
