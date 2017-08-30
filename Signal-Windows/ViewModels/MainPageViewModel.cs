@@ -290,47 +290,30 @@ namespace Signal_Windows.ViewModels
                     using (await ActionInProgress.LockAsync())
                     {
                         Debug.WriteLine("keydown lock grabbed");
+
+                        /* update in-memory data */
+                        SelectedThread.MessagesCount += 1;
+                        //View.Thread.RemoveUnreadMarker();
+                        var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
+                        View.Thread.Append(container, true);
                         SelectedThread.LastMessage = message;
                         SelectedThread.View.UpdateConversationDisplay(SelectedThread);
                         MoveThreadToTop(SelectedThread);
+
+                        /* save to disk */
                         await Task.Run(() =>
                         {
                             SignalDBContext.SaveMessageLocked(message);
                             SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
                         });
+
+                        /* update in-memory data with db results */
                         SelectedThread.LastMessageId = message.Id;
                         SelectedThread.LastSeenMessageId = message.Id;
-                        if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
-                        {
-                            Debug.WriteLine("keydown lock grabbed");
+                        View.Thread.AddToOutgoingMessagesCache(container);
 
-                            /* update in-memory data */
-                            SelectedThread.MessagesCount += 1;
-                            //View.Thread.RemoveUnreadMarker();
-                            var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
-                            View.Thread.Append(container, true);
-                            SelectedThread.LastMessage = message;
-                            SelectedThread.View.UpdateConversationDisplay(SelectedThread);
-                            MoveThreadToTop(SelectedThread);
-
-                            /* save to disk */
-                            await Task.Run(() =>
-                            {
-                                SignalDBContext.SaveMessageLocked(message);
-                                SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
-                            });
-
-                            /* update in-memory data with db results */
-                            SelectedThread.LastMessageId = message.Id;
-                            SelectedThread.LastSeenMessageId = message.Id;
-                            View.Thread.AddToOutgoingMessagesCache(container);
-
-                            /* send */
-                            OutgoingQueue.Add(message);
-                        }
+                        /* send */
                         OutgoingQueue.Add(message);
-                        var after = Util.CurrentTimeMillis();
-                        Debug.WriteLine("ms until out queue: " + (after - now));
                     }
                     Debug.WriteLine("keydown lock released");
                 }
