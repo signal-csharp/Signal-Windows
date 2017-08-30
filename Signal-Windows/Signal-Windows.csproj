@@ -156,6 +156,7 @@
     <Compile Include="Controls\UnreadMarker.xaml.cs">
       <DependentUpon>UnreadMarker.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\VirtualizedMessagesCollection.cs" />
     <Compile Include="Controls\Welcome.xaml.cs">
       <DependentUpon>Welcome.xaml</DependentUpon>
     </Compile>
@@ -169,6 +170,10 @@
       <DependentUpon>20170806145530_ls1.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\LibsignalDB\LibsignalDBContextModelSnapshot.cs" />
+    <Compile Include="Migrations\SignalDB\20170825082857_m2.cs" />
+    <Compile Include="Migrations\SignalDB\20170825082857_m2.designer.cs">
+      <DependentUpon>20170825082857_m2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\SignalEarlyReceipt.cs" />
     <Compile Include="Models\SignalIdentity.cs" />

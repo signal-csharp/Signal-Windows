@@ -11,6 +11,7 @@ namespace Signal_Windows.Models
         public long LastActiveTimestamp { get; set; }
         public string Draft { get; set; }
         public string AvatarFile { get; set; }
+        public long MessagesCount { get; set; }
         public uint UnreadCount { get; set; }
         public bool CanReceive { get; set; }
         public uint ExpiresInSeconds { get; set; }

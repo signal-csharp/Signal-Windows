@@ -3,6 +3,7 @@ using libsignalservice;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
 using Nito.AsyncEx;
+using Signal_Windows.Controls;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
@@ -228,14 +229,13 @@ namespace Signal_Windows.ViewModels
                         WelcomeVisibility = Visibility.Collapsed;
                         ThreadVisibility = Visibility.Visible;
                         SelectedThread = (SignalConversation)e.AddedItems[0];
-                        await View.Thread.Load(SelectedThread);
+                        View.Thread.Load(SelectedThread);
                         View.SwitchToStyle(View.GetCurrentViewStyle());
                         SignalConversation conversation = await Task.Run(() =>
                         {
                             return SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
                         });
                         UIResetRead(conversation);
-                        View.Thread.ScrollToBottom();
                     }
                     Debug.WriteLine("SelectionChanged lock released");
                 }
@@ -279,8 +279,6 @@ namespace Signal_Windows.ViewModels
                     using (await ActionInProgress.LockAsync())
                     {
                         Debug.WriteLine("keydown lock grabbed");
-                        View.Thread.Append(message);
-                        View.Thread.ScrollToBottom();
                         SelectedThread.LastMessage = message;
                         SelectedThread.View.UpdateConversationDisplay(SelectedThread);
                         MoveThreadToTop(SelectedThread);
@@ -293,12 +291,35 @@ namespace Signal_Windows.ViewModels
                         SelectedThread.LastSeenMessageId = message.Id;
                         if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
                         {
-                            View.Thread.AddToOutgoingMessagesCache(message);
+                            Debug.WriteLine("keydown lock grabbed");
+
+                            /* update in-memory data */
+                            SelectedThread.MessagesCount += 1;
+                            //View.Thread.RemoveUnreadMarker();
+                            var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
+                            View.Thread.Append(container, true);
+                            SelectedThread.LastMessage = message;
+                            SelectedThread.View.UpdateConversationDisplay(SelectedThread);
+                            MoveThreadToTop(SelectedThread);
+
+                            /* save to disk */
+                            await Task.Run(() =>
+                            {
+                                SignalDBContext.SaveMessageLocked(message);
+                                SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
+                            });
+
+                            /* update in-memory data with db results */
+                            SelectedThread.LastMessageId = message.Id;
+                            SelectedThread.LastSeenMessageId = message.Id;
+                            View.Thread.AddToOutgoingMessagesCache(container);
+
+                            /* send */
+                            OutgoingQueue.Add(message);
                         }
                         OutgoingQueue.Add(message);
                         var after = Util.CurrentTimeMillis();
                         Debug.WriteLine("ms until out queue: " + (after - now));
-                        View.Thread.RemoveUnreadMarker();
                     }
                     Debug.WriteLine("keydown lock released");
                 }
@@ -349,6 +370,7 @@ namespace Signal_Windows.ViewModels
             {
                 Debug.WriteLine("incoming lock grabbed");
                 var thread = ThreadsDictionary[message.ThreadId];
+                thread.MessagesCount += 1;
                 uint unreadCount = thread.UnreadCount;
                 if (SelectedThread == thread)
                 {
@@ -361,11 +383,11 @@ namespace Signal_Windows.ViewModels
                 long? seenId = null;
                 if (SelectedThread == thread)
                 {
-                    View.Thread.Append(message);
-                    View.Thread.ScrollToBottom();
+                    var container = new SignalMessageContainer(message, (int) thread.MessagesCount - 1);
+                    View.Thread.Append(container, false);
                     if (message.Direction == SignalMessageDirection.Synced)
                     {
-                        View.Thread.AddToOutgoingMessagesCache(message);
+                        View.Thread.AddToOutgoingMessagesCache(container);
                     }
                     seenId = message.Id;
                 }
@@ -426,10 +448,11 @@ namespace Signal_Windows.ViewModels
                 foreach (var message in messages)
                 {
                     var thread = ThreadsDictionary[message.ThreadId];
+                    thread.MessagesCount += 1;
                     if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
                     {
-                        View.Thread.Append(message);
-                        View.Thread.ScrollToBottom();
+                        var container = new SignalMessageContainer(message, (int) thread.MessagesCount - 1);
+                        View.Thread.Append(container, false);
                     }
                     thread.LastMessage = message;
                     thread.LastMessageId = message.Id;

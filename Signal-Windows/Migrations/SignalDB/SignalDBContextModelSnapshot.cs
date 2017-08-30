@@ -1,7 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Signal_Windows.Storage;
+using Signal_Windows.Models;
 
 namespace Signal_Windows.Migrations
 {
@@ -15,12 +18,12 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<ulong>("ContactId");
+                    b.Property<long>("ContactId");
 
-                    b.Property<ulong>("GroupId");
+                    b.Property<long>("GroupId");
 
                     b.HasKey("Id");
 
@@ -33,7 +36,7 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalAttachment", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("ContentType");
@@ -42,7 +45,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<byte[]>("Key");
 
-                    b.Property<ulong>("MessageId");
+                    b.Property<long>("MessageId");
 
                     b.Property<string>("Relay");
 
@@ -61,7 +64,7 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalConversation", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("AvatarFile");
@@ -77,9 +80,11 @@ namespace Signal_Windows.Migrations
 
                     b.Property<long>("LastActiveTimestamp");
 
-                    b.Property<ulong?>("LastMessageId");
+                    b.Property<long?>("LastMessageId");
 
-                    b.Property<ulong?>("LastSeenMessageId");
+                    b.Property<long?>("LastSeenMessageId");
+
+                    b.Property<long>("MessagesCount");
 
                     b.Property<string>("ThreadDisplayName");
 
@@ -124,16 +129,16 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessage", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<uint>("AttachmentsCount");
 
-                    b.Property<ulong?>("AuthorId");
+                    b.Property<long?>("AuthorId");
 
                     b.Property<long>("ComposedTimestamp");
 
-                    b.Property<ulong?>("Contentrowid");
+                    b.Property<long?>("Contentrowid");
 
                     b.Property<uint>("DeviceId");
 
@@ -166,7 +171,7 @@ namespace Signal_Windows.Migrations
 
             modelBuilder.Entity("Signal_Windows.Models.SignalMessageContent", b =>
                 {
-                    b.Property<ulong>("rowid")
+                    b.Property<long>("rowid")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("Content");
@@ -190,6 +195,7 @@ namespace Signal_Windows.Migrations
             modelBuilder.Entity("Signal_Windows.Models.SignalGroup", b =>
                 {
                     b.HasBaseType("Signal_Windows.Models.SignalConversation");
+
 
                     b.ToTable("SignalGroup");
 

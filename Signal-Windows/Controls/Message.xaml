@@ -14,21 +14,10 @@
         <BitmapImage x:Key="Check" UriSource="ms-appx:///Assets//check.png" />
         <BitmapImage x:Key="DoubleCheck" UriSource="ms-appx:///Assets//double-check.png" />
     </UserControl.Resources>
-    <Border BorderBrush="#00000000" BorderThickness="1,1,1,1" CornerRadius="4,4,4,4" Background="{x:Bind Background}" Padding="10 5 10 5" Margin="4">
+    <Border Name="MessageBoxBorder" BorderBrush="#00000000" BorderThickness="1,1,1,1" CornerRadius="4,4,4,4" Padding="10 5 10 5" Margin="4">
         <ItemsControl>
-            <TextBlock Visibility="{x:Bind HeaderVisibility}" Name="MessageContentHeader" Foreground="{x:Bind ContactNameColor}" Text="{x:Bind ContactName}" FontWeight="Bold" />
-            <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="{x:Bind TextColor}" Text="{x:Bind Model.Content.Content}"></TextBlock>
-            <ItemsControl Name="MessageAttachments" ItemsSource="{x:Bind Model.Attachments}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="models:SignalAttachment">
-                        <StackPanel>
-                            <TextBlock Name="AttachmentFilenameTextBlock" Text="{x:Bind SentFileName}"></TextBlock>
-                            <Image Name="AttachmentImage"></Image>
-                            <Button Name="AttachmentSaveButton" Click="AttachmentSaveButton_Click">Save</Button>
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <TextBlock Name="MessageAuthor" FontWeight="Bold" />
+            <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="Black" />
             <Grid Name="FooterPanel">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -36,10 +25,10 @@
                     <ColumnDefinition />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Margin="0 0 5 0" Foreground="Red" FontWeight="SemiBold" Visibility="{x:Bind ResendVisibility, Mode=OneWay}" Tapped="ResendTextBlock_Tapped">Send again</TextBlock>
-                <TextBlock Grid.Column="1"  Foreground="{x:Bind TimestampColor}" Text="{x:Bind FancyTimestamp}" Margin="0 0 5 0" />
-                <Image Grid.Column="2"  Source="{StaticResource Check}" Visibility="{x:Bind CheckVisibility, Mode=OneWay}" Width="16" Height="16" />
-                <Image Grid.Column="3" Source="{StaticResource DoubleCheck}" Visibility="{x:Bind DoubleCheckVisibility, Mode=OneWay}" Width="16" Height="16" />
+                <TextBlock Grid.Column="0" Name="ResendTextBlock"  Margin="0 0 5 0" Foreground="Red" FontWeight="SemiBold" Tapped="ResendTextBlock_Tapped" Visibility="Collapsed">Send again</TextBlock>
+                <TextBlock Name="FancyTimestampBlock" Grid.Column="1" Margin="0 0 5 0" />
+                <Image Grid.Column="2" Name="CheckImage" Source="{StaticResource Check}" Width="16" Height="16" Visibility="Collapsed"/>
+                <Image Grid.Column="3" Name="DoubleCheckImage" Source="{StaticResource DoubleCheck}" Width="16" Height="16" Visibility="Collapsed"/>
             </Grid>
         </ItemsControl>
     </Border>

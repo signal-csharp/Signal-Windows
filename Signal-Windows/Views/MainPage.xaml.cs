@@ -123,7 +123,7 @@ namespace Signal_Windows
         {
             get
             {
-                return ThreadView;
+                return ConversationControl;
             }
         }
 
