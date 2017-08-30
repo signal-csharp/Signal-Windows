@@ -780,6 +780,7 @@ namespace Signal_Windows.Storage
 
         public static List<SignalMessageContainer> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
         {
+            Debug.WriteLine($"GetMessagesLocked {thread.ThreadId} Skip({startIndex}) Take({count})");
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -793,7 +794,7 @@ namespace Signal_Windows.Storage
                         .Skip(startIndex)
                         .Take(count);
 
-                    var containers = new List<SignalMessageContainer>();
+                    var containers = new List<SignalMessageContainer>(count);
                     foreach (var message in messages)
                     {
                         containers.Add(new SignalMessageContainer(message, startIndex));

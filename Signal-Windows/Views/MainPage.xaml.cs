@@ -90,7 +90,7 @@ namespace Signal_Windows
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await Vm.Init();
+            await Vm.OnNavigatedTo();
         }
 
         protected override async void OnNavigatingFrom(NavigatingCancelEventArgs e)
