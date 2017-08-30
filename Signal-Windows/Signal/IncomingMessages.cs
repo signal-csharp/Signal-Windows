@@ -437,11 +437,9 @@ namespace Signal_Windows.ViewModels
 
         private void SendMessageNotification(SignalMessage message)
         {
-            string notificationId = new QueryString()
-            {
-                { "threadId", message.ThreadId },
-                { "recievedTimestamp", message.ReceivedTimestamp.ToString() }
-            }.ToString();
+            // notification tags can only be 16 chars (64 after creators update)
+            // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Notifications.ToastNotification#Windows_UI_Notifications_ToastNotification_Tag
+            string notificationId = message.ThreadId;
             ToastBindingGeneric toastBinding = new ToastBindingGeneric()
             {
                 AppLogoOverride = new ToastGenericAppLogo()
