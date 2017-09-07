@@ -743,6 +743,10 @@ namespace Signal_Windows.Storage
 
                         message.Receipts = (uint)receipts.Count;
                         ctx.EarlyReceipts.RemoveRange(receipts);
+                        if (message.Receipts > 0)
+                        {
+                            message.Status = SignalMessageStatus.Received;
+                        }
                     }
                     if (message.Author != null)
                     {

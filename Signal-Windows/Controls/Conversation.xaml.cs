@@ -244,13 +244,13 @@ namespace Signal_Windows.Controls
     {
         public UnreadMarker View { get; set; }
     }
-    public class MessageTemplateSelector : DataTemplateSelector
+    public class MessageStyleSelector : StyleSelector
     {
-        public DataTemplate NormalMessage { get; set; }
-        public DataTemplate UnreadMarker { get; set; }
-        public DataTemplate IdentityKeyChangeMessage { get; set; }
+        public Style NormalMessage { get; set; }
+        public Style UnreadMarker { get; set; }
+        public Style IdentityKeyChangeMessage { get; set; }
 
-        protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
+        protected override Style SelectStyleCore(object item, DependencyObject container)
         {
             FrameworkElement element = container as FrameworkElement;
             if (item is SignalMessageContainer)
