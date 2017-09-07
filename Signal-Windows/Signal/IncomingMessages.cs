@@ -424,7 +424,7 @@ namespace Signal_Windows.ViewModels
                 }
             }
             Debug.WriteLine("received message: " + message.Content);
-            if (!App.WindowActive)
+            if (!App.WindowActive && type == SignalMessageDirection.Incoming)
             {
                 SendTileNotification(message);
                 SendMessageNotification(message);
