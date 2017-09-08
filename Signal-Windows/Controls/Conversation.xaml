@@ -12,37 +12,16 @@
     d:DesignWidth="400">
 
     <Control.Resources>
-        <Style TargetType="ListBoxItem" x:Key="NormalMessageStyle">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <local:Message x:Name="ListBoxItemContent" />
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="ListBoxItem" x:Key="UnreadMarkerStyle">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <local:UnreadMarker />
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="ListBoxItem" x:Key="IdentityKeyChangeStyle">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <local:IdentityKeyChangeMessage />
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <DataTemplate x:Key="NormalMessageTemplate" x:DataType="models:SignalMessage">
+            <local:Message x:Name="ListBoxItemContent" />
+        </DataTemplate>
+        <DataTemplate x:Key="UnreadMarkerTemplate">
+            <local:UnreadMarker />
+        </DataTemplate>
         <DataTemplate x:Key="IdentityKeyChangeTemplate">
             <local:IdentityKeyChangeMessage />
         </DataTemplate>
-        <local:MessageStyleSelector x:Key="MessageDataStyleSelector" NormalMessage="{StaticResource NormalMessageStyle}" UnreadMarker="{StaticResource UnreadMarkerStyle}" IdentityKeyChangeMessage="{StaticResource IdentityKeyChangeStyle}" />
+        <local:MessageTemplateSelector  x:Key="MessageDataTemplateSelector" NormalMessage="{StaticResource NormalMessageTemplate}" UnreadMarker="{StaticResource UnreadMarkerTemplate}" IdentityKeyChangeMessage="{StaticResource IdentityKeyChangeTemplate}" />
     </Control.Resources>
     <Grid Background="White">
         <Grid.RowDefinitions>
@@ -57,7 +36,16 @@
                 <TextBlock Name="Username" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadUsername, Mode=OneWay}" Visibility="{x:Bind ThreadUsernameVisibility, Mode=OneWay}" />
             </StackPanel>
         </Border>
-        <ListBox Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" ItemContainerStyleSelector="{StaticResource MessageDataStyleSelector}" />
+        <ListView Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" ItemTemplateSelector="{StaticResource MessageDataTemplateSelector}" SelectionMode="None">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.Style>
+                <Style TargetType="ListView" />
+            </ListView.Style>
+        </ListView>
         <Grid Grid.Row="2" BorderBrush="{ThemeResource TextBoxBorderThemeBrush}" BorderThickness="0,1,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
