@@ -934,7 +934,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void UpdateConversationLocked(string threadId, uint unread, long? lastSeenMessageId)
+        public static void UpdateConversationLocked(string threadId, uint unread, long? lastSeenMessageIndex)
         {
             lock (DBLock)
             {
@@ -949,17 +949,17 @@ namespace Signal_Windows.Storage
                             .Where(g => g.ThreadId == threadId)
                             .Single();
                         group.UnreadCount = unread;
-                        if (lastSeenMessageId != null)
+                        if (lastSeenMessageIndex != null)
                         {
-                            group.LastSeenMessageId = lastSeenMessageId;
+                            group.LastSeenMessageIndex = lastSeenMessageIndex.Value;
                         }
                     }
                     else
                     {
                         contact.UnreadCount = unread;
-                        if (lastSeenMessageId != null)
+                        if (lastSeenMessageIndex != null)
                         {
-                            contact.LastSeenMessageId = lastSeenMessageId;
+                            contact.LastSeenMessageIndex = lastSeenMessageIndex.Value;
                         }
                     }
                     ctx.SaveChanges();
@@ -967,7 +967,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static SignalConversation ClearUnreadLocked(string threadId)
+        public static SignalConversation ClearUnreadLocked(string threadId, long lastReadIndex)
         {
             lock (DBLock)
             {
@@ -983,12 +983,12 @@ namespace Signal_Windows.Storage
                             .Where(g => g.ThreadId == threadId)
                             .Single();
                         conversation.UnreadCount = 0;
-                        conversation.LastSeenMessageId = conversation.LastMessageId;
+                        conversation.LastSeenMessageIndex = lastReadIndex;
                     }
                     else
                     {
                         conversation.UnreadCount = 0;
-                        conversation.LastSeenMessageId = conversation.LastMessageId;
+                        conversation.LastSeenMessageIndex = lastReadIndex;
                     }
                     ctx.SaveChanges();
                 }
@@ -1128,6 +1128,7 @@ namespace Signal_Windows.Storage
                         .ThenInclude(gm => gm.Contact)
                         .Include(g => g.LastMessage)
                         .ThenInclude(m => m.Content)
+                        .Include(g => g.LastSeenMessage)
                         .AsNoTracking()
                         .ToList();
                 }
@@ -1145,9 +1146,10 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     return ctx.Contacts
+                        .OrderByDescending(c => c.LastActiveTimestamp)
                         .Include(g => g.LastMessage)
                         .ThenInclude(m => m.Content)
-                        .OrderByDescending(c => c.LastActiveTimestamp)
+                        .Include(g => g.LastSeenMessage)
                         .AsNoTracking()
                         .ToList();
                 }

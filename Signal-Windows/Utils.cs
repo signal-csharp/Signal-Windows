@@ -86,24 +86,6 @@ namespace Signal_Windows
             }
         }
 
-        public static T FindParent<T>(FrameworkElement reference)
-  where T : FrameworkElement
-        {
-            FrameworkElement parent = reference;
-            while (parent != null)
-            {
-                parent = parent.Parent as FrameworkElement;
-
-                var rc = parent as T;
-                if (rc != null)
-                {
-                    return rc;
-                }
-            }
-
-            return null;
-        }
-
         public static int CalculateDefaultColorIndex(string title)
         {
             if (title.Length == 0)

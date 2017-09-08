@@ -22,9 +22,7 @@ namespace Signal_Windows.Controls
         public event PropertyChangedEventHandler PropertyChanged;
         private bool SendingMessage = false;
         private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
-        //private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
         private SignalConversation SignalConversation;
-        //private bool UnreadMarkerAdded = false;
         private VirtualizedCollection Collection;
 
         private string _ThreadDisplayName;
@@ -128,7 +126,6 @@ namespace Signal_Windows.Controls
         public void Load(SignalConversation conversation)
         {
             SignalConversation = conversation;
-            //UnreadMarkerAdded = false;
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();
             UpdateHeader(conversation);
@@ -145,7 +142,7 @@ namespace Signal_Windows.Controls
             ConversationItemsControl.ItemsSource = Collection;
             UpdateLayout();
             InputTextBox.IsEnabled = conversation.CanReceive;
-            ScrollToBottom();
+            ScrollToUnread();
         }
 
         public void DisposeCurrentThread()
@@ -183,21 +180,27 @@ namespace Signal_Windows.Controls
             if (OutgoingCache.ContainsKey(updatedMessage.Id))
             {
                 var m = OutgoingCache[updatedMessage.Id];
-                var item = (ListBoxItem) ConversationItemsControl.ContainerFromIndex(m.Index);
-                var message = FindElementByName<Message>(item, "ListBoxItemContent");
-                bool retain = message.HandleUpdate(updatedMessage);
-                if (!retain)
+                var item = (ListViewItem) ConversationItemsControl.ContainerFromIndex(Collection.GetVirtualIndex(m.Index));
+                if (item != null)
                 {
-                    OutgoingCache.Remove(m.Index);
+                    var message = FindElementByName<Message>(item, "ListBoxItemContent");
+                    bool retain = message.HandleUpdate(updatedMessage);
+                    if (!retain)
+                    {
+                        OutgoingCache.Remove(m.Index);
+                    }
                 }
             }
         }
 
         public void Append(SignalMessageContainer sm, bool forceScroll)
         {
-            Collection.Add(sm);
-            if (forceScroll || true) //TODO
+            var sourcePanel = (ItemsStackPanel)ConversationItemsControl.ItemsPanelRoot;
+            bool bottom = sourcePanel.LastVisibleIndex == Collection.Count - 2; /* -2 because we already incremented Count */
+            Collection.Add(sm, true);
+            if (forceScroll || bottom)
             {
+                UpdateLayout();
                 ScrollToBottom();
             }
         }
@@ -223,11 +226,11 @@ namespace Signal_Windows.Controls
 
         private void ScrollToBottom()
         {
-            if (ConversationItemsControl.Items.Count == 0)
-                return;
-            var lastMsg = ConversationItemsControl.Items[ConversationItemsControl.Items.Count - 1] as SignalMessageContainer;
-            Debug.WriteLine($"scroll to {lastMsg}");
-            ConversationItemsControl.ScrollIntoView(lastMsg);
+            if (Collection.Count > 0)
+            {
+                var lastUnreadMsg = ConversationItemsControl.Items[Collection.Count - 1];
+                ConversationItemsControl.ScrollIntoView(lastUnreadMsg, ScrollIntoViewAlignment.Leading);
+            }
         }
 
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
@@ -240,29 +243,47 @@ namespace Signal_Windows.Controls
             TextBox t = sender as TextBox;
             SendEnabled = t.Text != string.Empty;
         }
+
+        private void ScrollToUnread()
+        {
+            if (Collection.Count > 0)
+            {
+                if (Collection.UnreadMarkerIndex > 0)
+                {
+                    var lastUnreadMsg = ConversationItemsControl.Items[Collection.UnreadMarkerIndex];
+                    ConversationItemsControl.ScrollIntoView(lastUnreadMsg, ScrollIntoViewAlignment.Leading);
+                }
+                else
+                {
+                    var lastUnreadMsg = ConversationItemsControl.Items[Collection.Count - 1];
+                    ConversationItemsControl.ScrollIntoView(lastUnreadMsg, ScrollIntoViewAlignment.Leading);
+                }
+            }
+        }
     }
 
-    public class SignalUnreadMarker
+    public class MessageTemplateSelector : DataTemplateSelector
     {
-        public UnreadMarker View { get; set; }
-    }
-    public class MessageStyleSelector : StyleSelector
-    {
-        public Style NormalMessage { get; set; }
-        public Style UnreadMarker { get; set; }
-        public Style IdentityKeyChangeMessage { get; set; }
+        public DataTemplate NormalMessage { get; set; }
+        public DataTemplate UnreadMarker { get; set; }
+        public DataTemplate IdentityKeyChangeMessage { get; set; }
 
-        protected override Style SelectStyleCore(object item, DependencyObject container)
+        protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
         {
             FrameworkElement element = container as FrameworkElement;
             if (item is SignalMessageContainer)
             {
-                SignalMessage sm = ((SignalMessageContainer)item).Message;
+                SignalMessageContainer smc = (SignalMessageContainer)item;
+                SignalMessage sm = smc.Message;
                 if (sm.Type == SignalMessageType.IdentityKeyChange)
                 {
                     return IdentityKeyChangeMessage;
                 }
                 return NormalMessage;
+            }
+            if (item is SignalUnreadMarker)
+            {
+                return UnreadMarker;
             }
             return null;
         }

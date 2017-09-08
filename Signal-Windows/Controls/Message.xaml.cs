@@ -18,7 +18,7 @@ namespace Signal_Windows.Controls
         {
             get
             {
-                return (SignalMessageContainer) this.DataContext;
+                return DataContext as SignalMessageContainer;
             }
             set
             {
@@ -99,7 +99,6 @@ namespace Signal_Windows.Controls
 
         private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
-
             UpdateUI();
         }
 

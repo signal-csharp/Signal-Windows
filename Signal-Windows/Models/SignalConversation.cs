@@ -17,7 +17,7 @@ namespace Signal_Windows.Models
         public uint ExpiresInSeconds { get; set; }
         public long? LastMessageId { get; set; }
         public SignalMessage LastMessage { get; set; }
-        public long? LastSeenMessageId { get; set; }
+        public long LastSeenMessageIndex { get; set; }
         public SignalMessage LastSeenMessage { get; set; }
         [NotMapped] public ConversationListElement View;
     }
