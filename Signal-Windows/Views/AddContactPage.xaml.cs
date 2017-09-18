@@ -26,12 +26,13 @@ namespace Signal_Windows.Views
             }
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs ev)
+        protected override async void OnNavigatedTo(NavigationEventArgs ev)
         {
             base.OnNavigatedTo(ev);
             Utils.EnableBackButton(Vm.BackButton_Click);
             // probably not the best way to do this
-            Vm.ContactPhoto = null;
+            //Vm.ContactPhoto = null;
+            await Vm.OnNavigatedTo();
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
@@ -49,6 +50,11 @@ namespace Signal_Windows.Views
         private void PickButton_Click(object sender, RoutedEventArgs e)
         {
             Vm.PickButton_Click(sender, e);
+        }
+
+        private void ContactsList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+
         }
     }
 }

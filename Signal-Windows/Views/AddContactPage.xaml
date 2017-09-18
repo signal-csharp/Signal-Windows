@@ -5,11 +5,29 @@
     xmlns:local="using:Signal_Windows.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewmodels="using:Signal_Windows.ViewModels"
+    xmlns:controls="using:Signal_Windows.Controls"
     mc:Ignorable="d"
     DataContext="{Binding AddContactPageInstance, Source={StaticResource Locator}}">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <ScrollViewer HorizontalContentAlignment="Left" VerticalContentAlignment="Top">
+        <ListView Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts}" IsItemClickEnabled="True">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <controls:AddContactListElement/>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+        <!--<SemanticZoom>
+            <SemanticZoom.ZoomedInView>
+                
+            </SemanticZoom.ZoomedInView>
+            <SemanticZoom.ZoomedOutView>
+                <GridView>
+                </GridView>
+            </SemanticZoom.ZoomedOutView>
+        </SemanticZoom>-->
+        <!--<ScrollViewer HorizontalContentAlignment="Left" VerticalContentAlignment="Top">
             <Grid d:LayoutOverrides="LeftPosition, RightPosition, TopPosition, BottomPosition">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0" Width="250">
                     <Ellipse Stroke="Black" Width="250" d:LayoutOverrides="LeftMargin, RightMargin, LeftPosition, RightPosition" Margin="0" Height="250">
@@ -25,6 +43,6 @@
                     <Button x:Name="PickButton" Content="Pick From Contacts" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,10,0,0" Click="PickButton_Click" />
                 </StackPanel>
             </Grid>
-        </ScrollViewer>
+        </ScrollViewer>-->
     </Grid>
 </Page>
