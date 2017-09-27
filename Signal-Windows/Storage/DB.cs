@@ -757,7 +757,7 @@ namespace Signal_Windows.Storage
                     {
                         timestamp = message.ComposedTimestamp;
                     }
-                    if (message.ThreadId.StartsWith("+"))
+                    if (!message.ThreadId.EndsWith("="))
                     {
                         var contact = ctx.Contacts
                             .Where(c => c.ThreadId == message.ThreadId)
@@ -909,7 +909,7 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    if (thread.ThreadId.StartsWith("+"))
+                    if (!thread.ThreadId.EndsWith("="))
                     {
                         var contact = ctx.Contacts
                             .Where(c => c.ThreadId == thread.ThreadId)
