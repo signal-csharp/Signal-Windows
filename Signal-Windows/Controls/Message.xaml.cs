@@ -75,7 +75,7 @@ namespace Signal_Windows.Controls
                     CheckImage.Visibility = Visibility.Collapsed;
                     DoubleCheckImage.Visibility = Visibility.Collapsed;
                     ResendTextBlock.Visibility = Visibility.Collapsed;
-                    if (Model.Message.ThreadId[0] != '+')
+                    if (Model.Message.ThreadId.EndsWith("="))
                     {
                         MessageAuthor.Visibility = Visibility.Visible;
                         MessageAuthor.Text = Model.Message.Author.ThreadDisplayName;

@@ -41,7 +41,7 @@ namespace Signal_Windows.ViewModels
                         ExpiresInSeconds = (int)outgoingSignalMessage.ExpiresAt
                     };
 
-                    if (outgoingSignalMessage.ThreadId[0] == '+')
+                    if (!outgoingSignalMessage.ThreadId.EndsWith("="))
                     {
                         if (!token.IsCancellationRequested)
                         {
