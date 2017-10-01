@@ -24,7 +24,6 @@ namespace Signal_Windows.Controls
         {
             this.InitializeComponent();
             DataContextChanged += UnreadMarker_DataContextChanged;
-            UnreadText.Text = "keks";
         }
 
         public SignalUnreadMarker Model
@@ -37,6 +36,10 @@ namespace Signal_Windows.Controls
 
         private void UnreadMarker_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
+            if (Model != null)
+            {
+                UnreadText.Text = Model.Text;
+            }
         }
 
         public void SetText(string text)

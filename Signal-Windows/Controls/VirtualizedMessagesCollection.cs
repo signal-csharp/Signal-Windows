@@ -25,6 +25,7 @@ namespace Signal_Windows.Controls
 
     public class SignalUnreadMarker
     {
+        public string Text = "";
     }
 
     public class VirtualizedCollection : IList, INotifyCollectionChanged
@@ -42,6 +43,7 @@ namespace Signal_Windows.Controls
             if (Conversation.LastSeenMessageIndex > 0 && Conversation.LastSeenMessageIndex < Conversation.MessagesCount )
             {
                 UnreadMarkerIndex = (int) Conversation.LastSeenMessageIndex;
+                UnreadMarker.Text = Conversation.UnreadCount > 1 ? $"{Conversation.UnreadCount} new messages" : "1 new message";
             }
             else
             {
