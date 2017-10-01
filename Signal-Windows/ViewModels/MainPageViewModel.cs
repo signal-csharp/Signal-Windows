@@ -374,6 +374,13 @@ namespace Signal_Windows.ViewModels
                     if (message.Direction == SignalMessageDirection.Synced)
                     {
                         View.Thread.AddToOutgoingMessagesCache(container);
+                        unreadCount = 0;
+                        thread.LastSeenMessageIndex = thread.MessagesCount;
+                    }
+                    else
+                    {
+                        //TODO don't increase unread if we did scroll automatically, and mark the message as seen
+                        unreadCount++;
                     }
                 }
                 else
