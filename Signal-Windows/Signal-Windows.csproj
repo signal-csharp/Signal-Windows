@@ -141,9 +141,6 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\AddContactListElement.xaml.cs">
-      <DependentUpon>AddContactListElement.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Controls\IdentityKeyChangeMessage.xaml.cs">
       <DependentUpon>IdentityKeyChangeMessage.xaml</DependentUpon>
     </Compile>
@@ -178,7 +175,6 @@
       <DependentUpon>20170825082857_m2.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
-    <Compile Include="Models\PhoneContact.cs" />
     <Compile Include="Models\SignalEarlyReceipt.cs" />
     <Compile Include="Models\SignalIdentity.cs" />
     <Compile Include="Models\SignalAttachment.cs" />
@@ -247,10 +243,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="Controls\AddContactListElement.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Controls\IdentityKeyChangeMessage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
