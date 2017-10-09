@@ -44,11 +44,11 @@
         </DataTemplate>
         <local:MessageStyleSelector x:Key="MessageDataStyleSelector" NormalMessage="{StaticResource NormalMessageStyle}" UnreadMarker="{StaticResource UnreadMarkerStyle}" IdentityKeyChangeMessage="{StaticResource IdentityKeyChangeStyle}" />
     </Control.Resources>
-    <Grid>
+    <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Background="{x:Bind HeaderBackground, Mode=OneWay}">
             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -58,6 +58,15 @@
             </StackPanel>
         </Border>
         <ListBox Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" ItemContainerStyleSelector="{StaticResource MessageDataStyleSelector}" />
-        <TextBox Grid.Row="2" Name="InputTextBox" VerticalAlignment="Bottom" KeyDown="TextBox_KeyDown"></TextBox>
+        <Grid Grid.Row="2" BorderBrush="{ThemeResource TextBoxBorderThemeBrush}" BorderThickness="0,1,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" TextChanged="InputTextBox_TextChanged"/>
+            <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendEnabled, Mode=OneWay}" Background="{x:Bind HeaderBackground}" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50">
+                <SymbolIcon Symbol="Send"/>
+            </Button>
+        </Grid>
     </Grid>
 </UserControl>

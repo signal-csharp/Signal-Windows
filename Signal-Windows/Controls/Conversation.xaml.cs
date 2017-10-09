@@ -20,6 +20,7 @@ namespace Signal_Windows.Controls
     public sealed partial class Conversation : UserControl, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        private bool SendingMessage = false;
         private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
         //private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
         private SignalConversation SignalConversation;
@@ -66,12 +67,24 @@ namespace Signal_Windows.Controls
             set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
         }
 
+        private bool _SendEnabled;
+        public bool SendEnabled
+        {
+            get { return _SendEnabled; }
+            set
+            {
+                _SendEnabled = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendEnabled)));
+            }
+        }
+
         public Conversation()
         {
             this.InitializeComponent();
             Displayname.Foreground = Utils.ForegroundIncoming;
             Separator.Foreground = Utils.ForegroundIncoming;
             Username.Foreground = Utils.ForegroundIncoming;
+            SendEnabled = false;
         }
 
         public MainPageViewModel GetMainPageVm()
@@ -193,10 +206,19 @@ namespace Signal_Windows.Controls
         {
             OutgoingCache[m.Message.Id] = m;
         }
-
+        
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            await GetMainPageVm().TextBox_KeyDown(sender, e);
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // this fixes double send by enter repeat
+                if (!SendingMessage)
+                {
+                    SendingMessage = true;
+                    await GetMainPageVm().TextBox_KeyDown(sender, e);
+                    SendingMessage = false;
+                }
+            }
         }
 
         private void ScrollToBottom()
@@ -204,6 +226,17 @@ namespace Signal_Windows.Controls
             var lastMsg = ConversationItemsControl.Items[ConversationItemsControl.Items.Count - 1] as SignalMessageContainer;
             Debug.WriteLine($"scroll to {lastMsg}");
             ConversationItemsControl.ScrollIntoView(lastMsg);
+        }
+
+        private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
+        {
+            await GetMainPageVm().SendMessageButton_Click(InputTextBox);
+        }
+
+        private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextBox t = sender as TextBox;
+            SendEnabled = t.Text != string.Empty;
         }
     }
 

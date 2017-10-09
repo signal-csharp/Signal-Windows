@@ -24,16 +24,27 @@
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="640"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="TitleTextBlock.FontSize" Value="46"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Foreground="White" FontSize="35" HorizontalAlignment="Center" Margin="20 20 20 20">Connect with Signal</TextBlock>
-        <TextBlock Grid.Row="1" Foreground="White" HorizontalAlignment="Center">Please enter your SMS verification code below:</TextBlock>
-        <TextBox Grid.Row="2" Width="200" Text="{x:Bind Vm.VerificationCode, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
-        <Button  Grid.Row="3" Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="200" Margin="20 20 20 20" Click="FinishButton_Click" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}">Finish Registration</Button>
+        <TextBlock x:Name="TitleTextBlock" Grid.Row="0" Foreground="White" FontSize="34" HorizontalAlignment="Center" FontWeight="Light" Text="Connect with Signal" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="1">
+            <TextBlock Foreground="White" HorizontalAlignment="Center" Text="Enter your SMS verification code" FontSize="24" FontWeight="SemiLight"/>
+            <TextBox Width="200" Text="{x:Bind Vm.VerificationCode, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,16,0,0"/>
+            <Button Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="200" Margin="20 20 20 20" Click="FinishButton_Click" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Content="Finish Registration"/>
+        </StackPanel>
     </Grid>
 </Page>

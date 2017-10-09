@@ -66,6 +66,14 @@ namespace Signal_Windows.ViewModels
 
         public void AddThread(SignalConversation contact)
         {
+            // only add a contact to Threads if it isn't already there
+            foreach (var thread in Threads)
+            {
+                if (thread.ThreadId == contact.ThreadId)
+                {
+                    return;
+                }
+            }
             Threads.Add(contact);
             ThreadsDictionary[contact.ThreadId] = contact;
         }
@@ -198,6 +206,12 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("Init lock released");
         }
 
+        public async Task OnNavigatingFrom()
+        {
+            SelectedThread = null;
+            View.Thread.DisposeCurrentThread();
+        }
+
         public async Task Shutdown()
         {
             Debug.WriteLine("Shutdown lock await");
@@ -246,65 +260,80 @@ namespace Signal_Windows.ViewModels
 
         internal async Task TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            if (e.Key == VirtualKey.Enter)
+            {
+                TextBox t = (TextBox)sender;
+                await SendMessageButton_Click(t);
+            }
+        }
+
+        private async Task<bool> SendMessage(string messageText)
+        {
+            Debug.WriteLine("starting sendmessage");
             try
             {
-                if (e.Key == VirtualKey.Enter)
+                if (messageText != string.Empty)
                 {
-                    TextBox t = (TextBox)sender;
-                    if (t.Text != "")
+                    var now = Util.CurrentTimeMillis();
+                    SignalMessage message = new SignalMessage()
                     {
-                        var text = t.Text;
-                        t.Text = "";
-                        var now = Util.CurrentTimeMillis();
-                        SignalMessage message = new SignalMessage()
+                        Author = null,
+                        ComposedTimestamp = now,
+                        Content = new SignalMessageContent() { Content = messageText },
+                        ThreadId = SelectedThread.ThreadId,
+                        ReceivedTimestamp = now,
+                        Direction = SignalMessageDirection.Outgoing,
+                        Read = true,
+                        Type = SignalMessageType.Normal
+                    };
+                    Debug.WriteLine("keydown lock await");
+                    using (await ActionInProgress.LockAsync())
+                    {
+                        Debug.WriteLine("keydown lock grabbed");
+
+                        /* update in-memory data */
+                        SelectedThread.MessagesCount += 1;
+                        //View.Thread.RemoveUnreadMarker();
+                        var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
+                        View.Thread.Append(container, true);
+                        SelectedThread.LastMessage = message;
+                        SelectedThread.View.UpdateConversationDisplay(SelectedThread);
+                        MoveThreadToTop(SelectedThread);
+
+                        /* save to disk */
+                        await Task.Run(() =>
                         {
-                            Author = null,
-                            ComposedTimestamp = now,
-                            Content = new SignalMessageContent() { Content = text },
-                            ThreadId = SelectedThread.ThreadId,
-                            ReceivedTimestamp = now,
-                            Direction = SignalMessageDirection.Outgoing,
-                            Read = true,
-                            Type = SignalMessageType.Normal
-                        };
-                        Debug.WriteLine("keydown lock await");
-                        using (await ActionInProgress.LockAsync())
-                        {
-                            Debug.WriteLine("keydown lock grabbed");
+                            SignalDBContext.SaveMessageLocked(message);
+                            SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
+                        });
 
-                            /* update in-memory data */
-                            SelectedThread.MessagesCount += 1;
-                            //View.Thread.RemoveUnreadMarker();
-                            var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
-                            View.Thread.Append(container, true);
-                            SelectedThread.LastMessage = message;
-                            SelectedThread.View.UpdateConversationDisplay(SelectedThread);
-                            MoveThreadToTop(SelectedThread);
+                        /* update in-memory data with db results */
+                        SelectedThread.LastMessageId = message.Id;
+                        SelectedThread.LastSeenMessageId = message.Id;
+                        View.Thread.AddToOutgoingMessagesCache(container);
 
-                            /* save to disk */
-                            await Task.Run(() =>
-                            {
-                                SignalDBContext.SaveMessageLocked(message);
-                                SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
-                            });
-
-                            /* update in-memory data with db results */
-                            SelectedThread.LastMessageId = message.Id;
-                            SelectedThread.LastSeenMessageId = message.Id;
-                            View.Thread.AddToOutgoingMessagesCache(container);
-
-                            /* send */
-                            OutgoingQueue.Add(message);
-                        }
-                        Debug.WriteLine("keydown lock released");
+                        /* send */
+                        OutgoingQueue.Add(message);
                     }
+                    Debug.WriteLine("keydown lock released");
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace);
+                return false;
+            }
+        }
+
+        internal async Task SendMessageButton_Click(TextBox messageTextBox)
+        {
+            bool sendMessageResult = await SendMessage(messageTextBox.Text);
+            if (sendMessageResult)
+            {
+                messageTextBox.Text = string.Empty;
             }
         }
 

@@ -55,7 +55,7 @@ namespace Signal_Windows.Views
             CountriesList.SelectedIndex = i;
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
             Vm.RegisterButton_Click();
         }
