@@ -23,19 +23,24 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid Padding="20" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Margin="20">
-            <Button HorizontalAlignment="Center" Foreground="#2190EA" Background="White" Click="Button_Click">Register a new Signal account</Button>
-            <TextBlock HorizontalAlignment="Center" Foreground="White"  TextWrapping="WrapWholeWords"  Margin="0 15 0 0">Registering a new Signal account will terminate any previously registered accounts associated with your phone number, and unlink all slave devices.</TextBlock>
-        </StackPanel>
-        <StackPanel Grid.Row="1" Margin="20">
-            <Button HorizontalAlignment="Center" Foreground="#2190EA" Background="White" Click="Button_Click_1">Link to an existing Signal account</Button>
-            <TextBlock HorizontalAlignment="Center" Foreground="White"  TextWrapping="WrapWholeWords"  Margin="0 15 0 0">Link this device to an existing Signal master device. We will keep all contacts, groups and messages in sync.</TextBlock>
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="640"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="TitleTextBlock.FontSize" Value="46"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Image Source="ms-appx:///Assets/logo-idea-2.png" Width="256"/>
+            <TextBlock x:Name="TitleTextBlock" Text="Welcome to Signal for Windows" Foreground="White" FontSize="24" FontWeight="Light" HorizontalAlignment="Center" Margin="0,50,0,0"/>
+            <Button x:Name="RegisterButton" HorizontalAlignment="Center" Foreground="#2190EA" Background="White" Content="Register a new Signal account" Margin="0,50,0,0" Click="RegisterButton_Click"/>
+            <Button x:Name="LinkButton" HorizontalAlignment="Center" Foreground="#2190EA" Background="White" Content="Link to an existing Signal account" Margin="0,20,0,0" Click="LinkButton_Click"/>
         </StackPanel>
     </Grid>
 </Page>

@@ -9,6 +9,9 @@ using Strilanc.Value;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Toolkit.Uwp.Notifications;
+using Windows.UI.Notifications;
+using Microsoft.QueryStringDotNET;
 
 namespace Signal_Windows.ViewModels
 {
@@ -421,10 +424,110 @@ namespace Signal_Windows.ViewModels
                 }
             }
             Debug.WriteLine("received message: " + message.Content);
+            if (!App.WindowActive && type == SignalMessageDirection.Incoming)
+            {
+                SendTileNotification(message);
+                SendMessageNotification(message);
+            }
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
             {
                 await UIHandleIncomingMessage(message);
             }).AsTask().Wait();
+        }
+
+        private void SendMessageNotification(SignalMessage message)
+        {
+            // notification tags can only be 16 chars (64 after creators update)
+            // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Notifications.ToastNotification#Windows_UI_Notifications_ToastNotification_Tag
+            string notificationId = message.ThreadId;
+            ToastBindingGeneric toastBinding = new ToastBindingGeneric()
+            {
+                AppLogoOverride = new ToastGenericAppLogo()
+                {
+                    Source = "ms-appx:///Assets/gambino.png",
+                    HintCrop = ToastGenericAppLogoCrop.Circle
+                }
+            };
+
+            var notificationText = GetNotificationText(message);
+            foreach (var item in notificationText)
+            {
+                toastBinding.Children.Add(item);
+            }
+
+            ToastContent toastContent = new ToastContent()
+            {
+                Launch = notificationId,
+                Visual = new ToastVisual()
+                {
+                    BindingGeneric = toastBinding
+                },
+                DisplayTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(message.ReceivedTimestamp)
+            };
+
+            ToastNotification toastNotification = new ToastNotification(toastContent.GetXml());
+            if (message.Author.ExpiresInSeconds > 0)
+            {
+                toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
+            }
+            toastNotification.Tag = notificationId;
+            ToastNotificationManager.CreateToastNotifier().Show(toastNotification);
+        }
+
+        private void SendTileNotification(SignalMessage message)
+        {
+            TileBindingContentAdaptive tileBindingContent = new TileBindingContentAdaptive()
+            {
+                PeekImage = new TilePeekImage()
+                {
+                    Source = "ms-appx:///Assets/gambino.png"
+                }
+            };
+            var notificationText = GetNotificationText(message);
+            foreach (var item in notificationText)
+            {
+                tileBindingContent.Children.Add(item);
+            }
+
+            TileBinding tileBinding = new TileBinding()
+            {
+                Content = tileBindingContent
+            };
+
+            TileContent tileContent = new TileContent()
+            {
+                Visual = new TileVisual()
+                {
+                    TileMedium = tileBinding,
+                    TileWide = tileBinding,
+                    TileLarge = tileBinding
+                }
+            };
+
+            TileNotification tileNotification = new TileNotification(tileContent.GetXml());
+            if (message.Author.ExpiresInSeconds > 0)
+            {
+                tileNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
+            }
+            TileUpdateManager.CreateTileUpdaterForApplication().Update(tileNotification);
+        }
+
+        private IList<AdaptiveText> GetNotificationText(SignalMessage message)
+        {
+            List<AdaptiveText> text = new List<AdaptiveText>();
+            AdaptiveText title = new AdaptiveText()
+            {
+                Text = message.Author.ThreadDisplayName,
+                HintMaxLines = 1
+            };
+            AdaptiveText messageText = new AdaptiveText()
+            {
+                Text = message.Content.Content,
+                HintWrap = true
+            };
+            text.Add(title);
+            text.Add(messageText);
+            return text;
         }
     }
 }

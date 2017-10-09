@@ -43,7 +43,6 @@ namespace Signal_Windows
         {
             if (newStyle == PageStyle.Narrow)
             {
-                ContactsPanelScrollViewer.Width = ActualWidth;
                 if (Vm.SelectedThread != null)
                 {
                     Utils.EnableBackButton(Vm.BackButton_Click);
@@ -60,7 +59,26 @@ namespace Signal_Windows
             {
                 Utils.DisableBackButton(Vm.BackButton_Click);
                 MainPanel.IsPaneOpen = false;
-                MainPanel.CompactPaneLength = ContactsPanelScrollViewer.Width = 180;
+                MainPanel.CompactPaneLength = ContactsGrid.Width = 320;
+            }
+            UpdateStyle(newStyle);
+        }
+
+        private void UpdateStyle(PageStyle currentStyle)
+        {
+            if (currentStyle == PageStyle.Narrow)
+            {
+                // TODO: When phone is in landscape mode this is incorrect and some stuff gets cut off, we need to
+                // get the actual useable width (actualwidth - top icon bar - bottom control bar)
+                ContactsGrid.Width = ActualWidth;
+                if (Vm.SelectedThread == null)
+                {
+                    MainPanel.OpenPaneLength = ActualWidth;
+                }
+            }
+            else if (currentStyle == PageStyle.Wide)
+            {
+                MainPanel.CompactPaneLength = MainPanel.OpenPaneLength = ContactsGrid.Width = 320;
             }
         }
 
@@ -75,6 +93,13 @@ namespace Signal_Windows
             await Vm.OnNavigatedTo();
         }
 
+        protected override async void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        {
+            base.OnNavigatingFrom(e);
+            ContactsList.SelectedItem = null;
+            await Vm.OnNavigatingFrom();
+        }
+
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             var oldStyle = Utils.GetViewStyle(e.PreviousSize);
@@ -83,10 +108,7 @@ namespace Signal_Windows
             {
                 SwitchToStyle(newStyle);
             }
-            if (newStyle == PageStyle.Narrow)
-            {
-                ContactsPanelScrollViewer.Width = ActualWidth;
-            }
+            UpdateStyle(newStyle);
         }
 
         public MainPageViewModel Vm
@@ -110,14 +132,6 @@ namespace Signal_Windows
             Vm.ContactsList_SelectionChanged(sender, e);
         }
 
-        private void AddFriendSymbol_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            App.ViewModels.AddContactPageInstance.MainPageVM = Vm;
-            App.ViewModels.AddContactPageInstance.ContactName = "";
-            App.ViewModels.AddContactPageInstance.ContactNumber = "";
-            Frame.Navigate(typeof(AddContactPage));
-        }
-
         public static async Task NotifyNewIdentity(string user)
         {
             var title = "Safety Numbers Change";
@@ -137,6 +151,14 @@ namespace Signal_Windows
         public void ReselectTop()
         {
             ContactsList.SelectedIndex = 0;
+        }
+
+        private void AddContactButton_Click(object sender, RoutedEventArgs e)
+        {
+            App.ViewModels.AddContactPageInstance.MainPageVM = Vm;
+            App.ViewModels.AddContactPageInstance.ContactName = "";
+            App.ViewModels.AddContactPageInstance.ContactNumber = "";
+            Frame.Navigate(typeof(AddContactPage));
         }
     }
 }
