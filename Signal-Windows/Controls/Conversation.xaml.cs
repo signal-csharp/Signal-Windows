@@ -223,6 +223,8 @@ namespace Signal_Windows.Controls
 
         private void ScrollToBottom()
         {
+            if (ConversationItemsControl.Items.Count == 0)
+                return;
             var lastMsg = ConversationItemsControl.Items[ConversationItemsControl.Items.Count - 1] as SignalMessageContainer;
             Debug.WriteLine($"scroll to {lastMsg}");
             ConversationItemsControl.ScrollIntoView(lastMsg);
