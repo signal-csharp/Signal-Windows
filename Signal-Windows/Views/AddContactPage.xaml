@@ -5,6 +5,8 @@
     xmlns:local="using:Signal_Windows.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewmodels="using:Signal_Windows.ViewModels"
+    xmlns:controls="using:Signal_Windows.Controls"
     mc:Ignorable="d"
     DataContext="{Binding AddContactPageInstance, Source={StaticResource Locator}}">
 

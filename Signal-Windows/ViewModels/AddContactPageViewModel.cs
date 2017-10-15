@@ -42,7 +42,7 @@ namespace Signal_Windows.ViewModels
             get { return _ContactNumber; }
             set { _ContactNumber = value; RaisePropertyChanged(nameof(ContactNumber)); }
         }
-        
+
         public AddContactPageViewModel()
         {
             Contacts = new ObservableCollection<PhoneContact>();
