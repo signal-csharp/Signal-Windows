@@ -11,13 +11,26 @@
     DataContext="{Binding AddContactPageInstance, Source={StaticResource Locator}}">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="640"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ContactsList.Width" Value="Auto"/>
+                        <Setter Target="ContactsList.HorizontalAlignment" Value="Stretch"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <StackPanel HorizontalAlignment="Center" Width="360">
-            <TextBlock Text="Add a manual contact" HorizontalAlignment="Center"/>
+        <StackPanel HorizontalAlignment="Center" Width="328">
+            <TextBlock Text="Add a manual contact" HorizontalAlignment="Center" Margin="0,16,0,0"/>
             <TextBlock Text="Name"/>
             <TextBox x:Name="ContactNameTextBox" Text="{x:Bind Vm.ContactName, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNameTextBox_TextChanged" />
             <TextBlock Text="Number" Margin="0,16,0,0" />
@@ -25,7 +38,7 @@
             <Button x:Name="AddButton" Content="Add" IsEnabled="{x:Bind Vm.AddEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,16" Click="AddButton_Click" />
             <AutoSuggestBox x:Name="searchBox" VerticalAlignment="Stretch" QueryIcon="Find" TextChanged="searchBox_TextChanged" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
         </StackPanel>
-        <ListView x:Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts}" IsItemClickEnabled="True" HorizontalAlignment="Center" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Grid.Row="1" Width="360">
+        <ListView x:Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts}" IsItemClickEnabled="True" HorizontalAlignment="Center" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Grid.Row="1" Width="328" Margin="16,0">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <controls:AddContactListElement/>
