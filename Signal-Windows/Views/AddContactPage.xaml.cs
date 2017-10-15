@@ -30,8 +30,6 @@ namespace Signal_Windows.Views
         {
             base.OnNavigatedTo(ev);
             Utils.EnableBackButton(Vm.BackButton_Click);
-            // probably not the best way to do this
-            //Vm.ContactPhoto = null;
             await Vm.OnNavigatedTo();
         }
 
@@ -41,20 +39,31 @@ namespace Signal_Windows.Views
             Utils.DisableBackButton(Vm.BackButton_Click);
         }
 
-        private void AddButton_Click(object sender, RoutedEventArgs e)
+        private async void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            Vm.AddButton_Click(sender, e);
+            await Vm.AddButton_Click(sender, e);
             Frame.Navigate(typeof(MainPage));
         }
 
-        private void PickButton_Click(object sender, RoutedEventArgs e)
+        private async void ContactsList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            Vm.PickButton_Click(sender, e);
+            await Vm.ContactsList_ItemClick(sender, e);
+            Frame.Navigate(typeof(MainPage));
         }
 
-        private void ContactsList_ItemClick(object sender, ItemClickEventArgs e)
+        private void searchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
+            Vm.searchBox_TextChanged(sender, args);
+        }
 
+        private void ContactNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            Vm.ContactNameTextBox_TextChanged(sender, e);
+        }
+
+        private void ContactNumberTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            Vm.ContactNumberTextBox_TextChanged(sender, e);
         }
     }
 }

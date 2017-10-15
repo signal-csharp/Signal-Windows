@@ -13,6 +13,7 @@ namespace Signal_Windows.Models
         public string Name { get; set; }
         public string PhoneNumber { get; set; }
         public ImageSource Photo { get; set; }
+        public bool OnSignal { get; set; }
         public AddContactListElement View;
     }
 }

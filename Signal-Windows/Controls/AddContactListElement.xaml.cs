@@ -62,6 +62,17 @@ namespace Signal_Windows.Controls
             }
         }
 
+        public bool _OnSignal;
+        public bool OnSignal
+        {
+            get { return _OnSignal; }
+            set
+            {
+                _OnSignal = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(OnSignal)));
+            }
+        }
+
         public PhoneContact Model
         {
             get
@@ -82,6 +93,7 @@ namespace Signal_Windows.Controls
                 DisplayName = Model.Name;
                 PhoneNumber = Model.PhoneNumber;
                 ContactPhoto = Model.Photo;
+                OnSignal = Model.OnSignal;
             }
         }
     }

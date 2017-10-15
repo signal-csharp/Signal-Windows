@@ -11,38 +11,26 @@
     DataContext="{Binding AddContactPageInstance, Source={StaticResource Locator}}">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <ListView Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts}" IsItemClickEnabled="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel HorizontalAlignment="Center" Width="360">
+            <TextBlock Text="Add a manual contact" HorizontalAlignment="Center"/>
+            <TextBlock Text="Name"/>
+            <TextBox x:Name="ContactNameTextBox" Text="{x:Bind Vm.ContactName, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNameTextBox_TextChanged" />
+            <TextBlock Text="Number" Margin="0,16,0,0" />
+            <TextBox x:Name="ContactNumberTextBox" Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNumberTextBox_TextChanged" />
+            <Button x:Name="AddButton" Content="Add" IsEnabled="{x:Bind Vm.AddEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,16" Click="AddButton_Click" />
+            <AutoSuggestBox x:Name="searchBox" VerticalAlignment="Stretch" QueryIcon="Find" TextChanged="searchBox_TextChanged" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
+        </StackPanel>
+        <ListView x:Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts}" IsItemClickEnabled="True" HorizontalAlignment="Center" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Grid.Row="1" Width="360">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <controls:AddContactListElement/>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <!--<SemanticZoom>
-            <SemanticZoom.ZoomedInView>
-                
-            </SemanticZoom.ZoomedInView>
-            <SemanticZoom.ZoomedOutView>
-                <GridView>
-                </GridView>
-            </SemanticZoom.ZoomedOutView>
-        </SemanticZoom>-->
-        <!--<ScrollViewer HorizontalContentAlignment="Left" VerticalContentAlignment="Top">
-            <Grid d:LayoutOverrides="LeftPosition, RightPosition, TopPosition, BottomPosition">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0" Width="250">
-                    <Ellipse Stroke="Black" Width="250" d:LayoutOverrides="LeftMargin, RightMargin, LeftPosition, RightPosition" Margin="0" Height="250">
-                        <Ellipse.Fill>
-                            <ImageBrush ImageSource="{x:Bind Vm.ContactPhoto, Mode=OneWay}" />
-                        </Ellipse.Fill>
-                    </Ellipse>
-                    <TextBlock Text="Name" Margin="0,25,0,0" />
-                    <TextBox Text="{x:Bind Vm.ContactName, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" />
-                    <TextBlock Text="Number" Margin="0,24,0,0" />
-                    <TextBox Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" />
-                    <Button x:Name="AddButton" Content="Add" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,24,0,0" Click="AddButton_Click" />
-                    <Button x:Name="PickButton" Content="Pick From Contacts" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,10,0,0" Click="PickButton_Click" />
-                </StackPanel>
-            </Grid>
-        </ScrollViewer>-->
     </Grid>
 </Page>

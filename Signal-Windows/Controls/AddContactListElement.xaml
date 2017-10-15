@@ -13,15 +13,17 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <Ellipse Grid.Column="0" Width="64" Height="64" Margin="8">
             <Ellipse.Fill>
-                <ImageBrush ImageSource="{x:Bind ContactPhoto}"/>
+                <ImageBrush ImageSource="{x:Bind ContactPhoto, Mode=OneWay}"/>
             </Ellipse.Fill>
         </Ellipse>
         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
-            <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="24" FontWeight="SemiLight" Text="{x:Bind DisplayName}" TextTrimming="CharacterEllipsis"/>
-            <TextBlock Text="{x:Bind PhoneNumber}" FontSize="20"/>
+            <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="24" FontWeight="SemiLight" Text="{x:Bind DisplayName, Mode=OneWay}" TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="{x:Bind PhoneNumber, Mode=OneWay}" FontSize="20"/>
         </StackPanel>
+        <SymbolIcon Grid.Column="2" Symbol="Message" Margin="0,0,8,0" Foreground="#FF2190EA" Visibility="{x:Bind OnSignal, Mode=OneWay}"/>
     </Grid>
 </UserControl>
