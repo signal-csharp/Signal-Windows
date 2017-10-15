@@ -86,6 +86,14 @@ namespace Signal_Windows
             }
         }
 
+        public static void AddRange<T>(this ObservableCollection<T> observableCollection, IEnumerable<T> collection)
+        {
+            foreach (var item in collection)
+            {
+                observableCollection.Add(item);
+            }
+        }
+
         public static T FindParent<T>(FrameworkElement reference)
   where T : FrameworkElement
         {

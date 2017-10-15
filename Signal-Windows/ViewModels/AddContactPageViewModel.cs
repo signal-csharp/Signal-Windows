@@ -26,7 +26,8 @@ namespace Signal_Windows.ViewModels
     public class AddContactPageViewModel : ViewModelBase
     {
         public ObservableCollection<PhoneContact> Contacts;
-        private List<PhoneContact> contactList;
+        private List<PhoneContact> signalContacts;
+        private List<PhoneContact> otherContacts;
         private PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.GetInstance();
 
         private string _ContactName = "";
@@ -46,13 +47,15 @@ namespace Signal_Windows.ViewModels
         public AddContactPageViewModel()
         {
             Contacts = new ObservableCollection<PhoneContact>();
-            contactList = new List<PhoneContact>();
+            signalContacts = new List<PhoneContact>();
+            otherContacts = new List<PhoneContact>();
         }
 
         public async Task OnNavigatedTo()
         {
             SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, App.USER_AGENT);
             ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
+            List<PhoneContact> intermediateContacts = new List<PhoneContact>();
             if (contactStore != null)
             {
                 HashSet<string> seenNumbers = new HashSet<string>();
@@ -92,22 +95,28 @@ namespace Signal_Windows.ViewModels
                                         phoneContact.Photo = bitmapImage;
                                     }
                                 }
-                                contactList.Add(phoneContact);
+                                intermediateContacts.Add(phoneContact);
                             }
                         }
                     }
                 }
 
-                var signalContactDetails = accountManager.getContacts(contactList.Select(c => c.PhoneNumber).ToList());
-                foreach (var contact in contactList)
+                var signalContactDetails = accountManager.getContacts(intermediateContacts.Select(c => c.PhoneNumber).ToList());
+                foreach (var contact in intermediateContacts)
                 {
                     var foundContact = signalContactDetails.FirstOrDefault(c => c.getNumber() == contact.PhoneNumber);
                     if (foundContact != null)
                     {
                         contact.OnSignal = true;
+                        signalContacts.Add(contact);
                     }
-                    Contacts.Add(contact);
+                    else
+                    {
+                        otherContacts.Add(contact);
+                    }
                 }
+                Contacts.AddRange(signalContacts);
+                Contacts.AddRange(otherContacts);
             }
             else
             {
@@ -173,15 +182,18 @@ namespace Signal_Windows.ViewModels
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
                 string text = sender.Text;
-                var validContacts = contactList.Where(
-                    c => c.Name.ContainsCaseInsensitive(text) ||
-                    c.PhoneNumber.ContainsCaseInsensitive(text));
+                var validContacts = GetContactsMatchingText(text, signalContacts).ToList();
+                validContacts.AddRange(GetContactsMatchingText(text, otherContacts));
                 Contacts.Clear();
-                foreach (var contact in validContacts)
-                {
-                    Contacts.Add(contact);
-                }
+                Contacts.AddRange(validContacts);
             }
+        }
+
+        private IEnumerable<PhoneContact> GetContactsMatchingText(string text, List<PhoneContact> contacts)
+        {
+            return contacts.Where(
+                c => c.Name.ContainsCaseInsensitive(text) ||
+                c.PhoneNumber.ContainsCaseInsensitive(text));
         }
 
         internal void ContactNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
