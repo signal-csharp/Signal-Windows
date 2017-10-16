@@ -42,9 +42,6 @@
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 </Style>
             </ListView.ItemContainerStyle>
-            <ListView.Style>
-                <Style TargetType="ListView" />
-            </ListView.Style>
         </ListView>
         <Grid Grid.Row="2" BorderBrush="{ThemeResource TextBoxBorderThemeBrush}" BorderThickness="0,1,0,0">
             <Grid.ColumnDefinitions>

@@ -30,7 +30,7 @@ namespace Signal_Windows.Controls
 
     public class VirtualizedCollection : IList, INotifyCollectionChanged
     {
-        private readonly static int PAGE_SIZE = 50;
+        private const int PAGE_SIZE = 50;
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         private Dictionary<int, IList<SignalMessageContainer>> Cache = new Dictionary<int, IList<SignalMessageContainer>>();
         private SignalConversation Conversation;
