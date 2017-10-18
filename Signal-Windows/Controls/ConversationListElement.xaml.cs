@@ -82,7 +82,7 @@ namespace Signal_Windows.Controls
         {
             get
             {
-                return _FillBrush;
+                return _FillBrush;             
             }
             set
             {
@@ -114,7 +114,8 @@ namespace Signal_Windows.Controls
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
                 UnreadCount = Model.UnreadCount;
                 LastMessage = Model.LastMessage?.Content.Content;
-                Initials = Model.ThreadDisplayName.Substring(0, 1);
+                Initials = Model.ThreadDisplayName.Length == 0 ? "#" : Model.ThreadDisplayName.Substring(0, 1);
+                FillBrush = Model is SignalContact ? Utils.GetBrushFromColor(((SignalContact)Model).Color) : Utils.Blue;
             }
         }
 
@@ -124,7 +125,7 @@ namespace Signal_Windows.Controls
             Model.LastActiveTimestamp = thread.LastActiveTimestamp;
             ConversationDisplayName.Text = thread.ThreadDisplayName;
             UnreadCount = thread.UnreadCount;
-            LastMessage = Model.LastMessage?.Content.Content;  
+            LastMessage = Model.LastMessage?.Content.Content;
         }
     }
 }
