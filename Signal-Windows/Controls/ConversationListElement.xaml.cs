@@ -82,7 +82,7 @@ namespace Signal_Windows.Controls
         {
             get
             {
-                return _FillBrush;             
+                return _FillBrush;
             }
             set
             {
