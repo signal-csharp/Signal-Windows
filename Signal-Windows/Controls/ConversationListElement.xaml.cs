@@ -124,7 +124,7 @@ namespace Signal_Windows.Controls
             Model.LastActiveTimestamp = thread.LastActiveTimestamp;
             ConversationDisplayName.Text = thread.ThreadDisplayName;
             UnreadCount = thread.UnreadCount;
-            LastMessage = Model.LastMessage?.Content.Content;            
+            LastMessage = Model.LastMessage?.Content.Content;  
         }
     }
 }
