@@ -13,11 +13,10 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <Ellipse Grid.Column="0" Width="64" Height="64" Margin="8">
-            <Ellipse.Fill>
-                <ImageBrush ImageSource="ms-appx:///Assets/gambino.png"/>
-            </Ellipse.Fill>
-        </Ellipse>
+        <Grid>
+            <Ellipse Grid.Column="0" Width="64" Height="64" Margin="8" Fill="{x:Bind FillBrush, Mode=OneWay}"/>
+            <TextBlock Foreground="White" FontWeight="Light" FontSize="26" Text="{x:Bind Initials, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
             <Grid>
                 <Grid.ColumnDefinitions>

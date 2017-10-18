@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -75,6 +76,36 @@ namespace Signal_Windows.Controls
             }
         }
 
+        private Brush _FillBrush = Utils.Blue;
+
+        public Brush FillBrush
+        {
+            get
+            {
+                return _FillBrush;
+            }
+            set
+            {
+                _FillBrush = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillBrush)));
+            }
+        }
+
+        private string _Initials = string.Empty;
+
+        public string Initials
+        {
+            get
+            {
+                return _Initials;
+            }
+            set
+            {
+                _Initials = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Initials)));
+            }
+        }
+
         private void ThreadListItem_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             if (Model != null)
@@ -83,6 +114,7 @@ namespace Signal_Windows.Controls
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
                 UnreadCount = Model.UnreadCount;
                 LastMessage = Model.LastMessage?.Content.Content;
+                Initials = Model.ThreadDisplayName.Substring(0, 1);
             }
         }
 
@@ -92,7 +124,7 @@ namespace Signal_Windows.Controls
             Model.LastActiveTimestamp = thread.LastActiveTimestamp;
             ConversationDisplayName.Text = thread.ThreadDisplayName;
             UnreadCount = thread.UnreadCount;
-            LastMessage = Model.LastMessage?.Content.Content;
+            LastMessage = Model.LastMessage?.Content.Content;            
         }
     }
 }
