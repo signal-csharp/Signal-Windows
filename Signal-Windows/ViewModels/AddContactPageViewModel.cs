@@ -29,7 +29,8 @@ namespace Signal_Windows.ViewModels
         public ObservableCollection<PhoneContact> Contacts;
         private List<PhoneContact> signalContacts;
         private PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.GetInstance();
-        private CancellationToken cancellationToken;
+        public MainPageViewModel MainPageVM;
+        public AddContactPage View;
 
         private string _ContactName = "";
         public string ContactName
@@ -45,82 +46,25 @@ namespace Signal_Windows.ViewModels
             set { _ContactNumber = value; RaisePropertyChanged(nameof(ContactNumber)); }
         }
 
+        private bool _ContactsVisible = true;
+        public bool ContactsVisible
+        {
+            get { return _ContactsVisible; }
+            set { _ContactsVisible = value; RaisePropertyChanged(nameof(ContactsVisible)); }
+        }
+
+        private bool _RefreshingContacts = false;
+        public bool RefreshingContacts
+        {
+            get { return _RefreshingContacts; }
+            set { _RefreshingContacts = value; RaisePropertyChanged(nameof(RefreshingContacts)); }
+        }
+
         public AddContactPageViewModel()
         {
             Contacts = new ObservableCollection<PhoneContact>();
             signalContacts = new List<PhoneContact>();
         }
-
-        public async Task OnNavigatedTo(CancellationToken? cancellationToken = null)
-        {
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, App.USER_AGENT);
-            ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
-            List<PhoneContact> intermediateContacts = new List<PhoneContact>();
-            if (contactStore != null)
-            {
-                HashSet<string> seenNumbers = new HashSet<string>();
-                var contacts = await contactStore.FindContactsAsync();
-                foreach (var contact in contacts)
-                {
-                    var phones = contact.Phones;
-                    foreach (var phone in contact.Phones)
-                    {
-                        if (phone.Kind == ContactPhoneKind.Mobile)
-                        {
-                            string formattedNumber = null;
-                            try
-                            {
-                                formattedNumber = ParsePhoneNumber(phone.Number);
-                            }
-                            catch (NumberParseException)
-                            {
-                                Debug.WriteLine($"Couldn't parse {phone.Number}");
-                                continue;
-                            }
-                            if (!seenNumbers.Contains(formattedNumber))
-                            {
-                                seenNumbers.Add(formattedNumber);
-                                PhoneContact phoneContact = new PhoneContact
-                                {
-                                    Name = contact.FullName,
-                                    PhoneNumber = formattedNumber,
-                                    OnSignal = false
-                                };
-                                if (contact.SourceDisplayPicture != null)
-                                {
-                                    using (var stream = await contact.SourceDisplayPicture.OpenReadAsync())
-                                    {
-                                        BitmapImage bitmapImage = new BitmapImage();
-                                        await bitmapImage.SetSourceAsync(stream);
-                                        phoneContact.Photo = bitmapImage;
-                                    }
-                                }
-                                intermediateContacts.Add(phoneContact);
-                            }
-                        }
-                    }
-                }
-
-                var signalContactDetails = accountManager.getContacts(intermediateContacts.Select(c => c.PhoneNumber).ToList());
-                foreach (var contact in intermediateContacts)
-                {
-                    var foundContact = signalContactDetails.FirstOrDefault(c => c.getNumber() == contact.PhoneNumber);
-                    if (foundContact != null)
-                    {
-                        contact.OnSignal = true;
-                        signalContacts.Add(contact);
-                    }
-                }
-                Contacts.AddRange(signalContacts);
-            }
-            else
-            {
-                // something something we don't have contact access
-            }
-        }
-
-        public MainPageViewModel MainPageVM;
-        public AddContactPage View;
 
         private bool _UIEnabled = true;
         public bool UIEnabled
@@ -156,6 +100,114 @@ namespace Signal_Windows.ViewModels
                 validNumber = value;
                 SetAddEnabled();
             }
+        }
+
+        public async Task OnNavigatedTo(CancellationToken? cancellationToken = null)
+        {
+            await RefreshContacts(cancellationToken);
+        }
+
+        public async Task RefreshContacts(CancellationToken? cancellationToken = null)
+        {
+            RefreshingContacts = true;
+            Contacts.Clear();
+            signalContacts.Clear();
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, App.USER_AGENT);
+            ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
+            List<PhoneContact> intermediateContacts = new List<PhoneContact>();
+            if (contactStore != null)
+            {
+                HashSet<string> seenNumbers = new HashSet<string>();
+                var contacts = await contactStore.FindContactsAsync();
+                ContactAnnotationStore contactAnnotationStore = await ContactManager.RequestAnnotationStoreAsync(ContactAnnotationStoreAccessType.AppAnnotationsReadWrite);
+                ContactAnnotationList contactAnnotationList;
+                var contactAnnotationLists = await contactAnnotationStore.FindAnnotationListsAsync();
+                if (contactAnnotationLists.Count == 0)
+                {
+                    contactAnnotationList = await contactAnnotationStore.CreateAnnotationListAsync();
+                }
+                else
+                {
+                    contactAnnotationList = contactAnnotationLists[0];
+                }
+
+                foreach (var contact in contacts)
+                {
+                    var phones = contact.Phones;
+                    foreach (var phone in contact.Phones)
+                    {
+                        if (phone.Kind == ContactPhoneKind.Mobile)
+                        {
+                            string formattedNumber = null;
+                            try
+                            {
+                                formattedNumber = ParsePhoneNumber(phone.Number);
+                            }
+                            catch (NumberParseException)
+                            {
+                                Debug.WriteLine($"Couldn't parse {phone.Number}");
+                                continue;
+                            }
+                            if (!seenNumbers.Contains(formattedNumber))
+                            {
+                                seenNumbers.Add(formattedNumber);
+                                PhoneContact phoneContact = new PhoneContact
+                                {
+                                    Id = contact.Id,
+                                    Name = contact.FullName,
+                                    PhoneNumber = formattedNumber,
+                                    OnSignal = false
+                                };
+                                if (contact.SourceDisplayPicture != null)
+                                {
+                                    using (var stream = await contact.SourceDisplayPicture.OpenReadAsync())
+                                    {
+                                        BitmapImage bitmapImage = new BitmapImage();
+                                        await bitmapImage.SetSourceAsync(stream);
+                                        phoneContact.Photo = bitmapImage;
+                                    }
+                                }
+                                intermediateContacts.Add(phoneContact);
+                            }
+                        }
+                    }
+                }
+
+                // check if we've annotated a contact as a Signal contact already, if we have we don't need to ask Signal about them
+                for (int i = 0; i < intermediateContacts.Count; i++)
+                {
+                    var annotatedContact = await contactAnnotationList.FindAnnotationsByRemoteIdAsync(intermediateContacts[i].PhoneNumber);
+                    if (annotatedContact.Count > 0)
+                    {
+                        intermediateContacts[i].OnSignal = true;
+                        signalContacts.Add(intermediateContacts[i]);
+                        intermediateContacts.RemoveAt(i);
+                        i--;
+                    }
+                }
+
+                var signalContactDetails = accountManager.getContacts(intermediateContacts.Select(c => c.PhoneNumber).ToList());
+                foreach (var contact in intermediateContacts)
+                {
+                    var foundContact = signalContactDetails.FirstOrDefault(c => c.getNumber() == contact.PhoneNumber);
+                    if (foundContact != null)
+                    {
+                        contact.OnSignal = true;
+                        ContactAnnotation contactAnnotation = new ContactAnnotation();
+                        contactAnnotation.ContactId = contact.Id;
+                        contactAnnotation.RemoteId = contact.PhoneNumber;
+                        contactAnnotation.SupportedOperations = ContactAnnotationOperations.Message | ContactAnnotationOperations.ContactProfile;
+                        await contactAnnotationList.TrySaveAnnotationAsync(contactAnnotation);
+                        signalContacts.Add(contact);
+                    }
+                }
+                Contacts.AddRange(signalContacts);
+            }
+            else
+            {
+                ContactsVisible = false;
+            }
+            RefreshingContacts = false;
         }
 
         private void SetAddEnabled()

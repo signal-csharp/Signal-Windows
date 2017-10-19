@@ -7,6 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:viewmodels="using:Signal_Windows.ViewModels"
     xmlns:controls="using:Signal_Windows.Controls"
+    xmlns:toolbox="using:Microsoft.Toolkit.Uwp.UI.Controls"
     mc:Ignorable="d"
     DataContext="{Binding AddContactPageInstance, Source={StaticResource Locator}}">
 
@@ -38,12 +39,20 @@
             <Button x:Name="AddButton" Content="Add" IsEnabled="{x:Bind Vm.AddEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,16" Click="AddButton_Click" />
             <AutoSuggestBox x:Name="searchBox" VerticalAlignment="Stretch" QueryIcon="Find" TextChanged="searchBox_TextChanged" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
         </StackPanel>
-        <ListView x:Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts}" IsItemClickEnabled="True" HorizontalAlignment="Center" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Grid.Row="1" Width="328" Margin="16,0">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <controls:AddContactListElement/>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+        <Grid Grid.Row="1" Visibility="{x:Bind Vm.ContactsVisible, Mode=OneWay}">
+            <toolbox:PullToRefreshListView x:Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts, Mode=OneWay}" IsItemClickEnabled="True" HorizontalAlignment="Center" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"
+                                           Width="328" Margin="16,0" RefreshRequested="ContactsList_RefreshRequested" IsPullToRefreshWithMouseEnabled="True">
+                <toolbox:PullToRefreshListView.RefreshIndicatorContent>
+                    <FontIcon Glyph="&#xE72C;" HorizontalAlignment="Center" FontSize="26.667" VerticalAlignment="Bottom"/>
+                </toolbox:PullToRefreshListView.RefreshIndicatorContent>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <controls:AddContactListElement/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </toolbox:PullToRefreshListView>
+            <ProgressRing Width="75" Height="75" IsActive="{x:Bind Vm.RefreshingContacts, Mode=OneWay}"/>
+        </Grid>
+        
     </Grid>
 </Page>

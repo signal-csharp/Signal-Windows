@@ -10,6 +10,7 @@ namespace Signal_Windows.Models
 {
     public class PhoneContact
     {
+        public string Id { get; set; }
         public string Name { get; set; }
         public string PhoneNumber { get; set; }
         public ImageSource Photo { get; set; }

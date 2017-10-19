@@ -65,5 +65,10 @@ namespace Signal_Windows.Views
         {
             Vm.ContactNumberTextBox_TextChanged(sender, e);
         }
+
+        private async void ContactsList_RefreshRequested(object sender, System.EventArgs e)
+        {
+            await Vm.RefreshContacts();
+        }
     }
 }
