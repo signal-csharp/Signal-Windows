@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Windows.UI.Xaml.Controls;
 using System.Globalization;
+using System.Threading;
 
 namespace Signal_Windows.ViewModels
 {
@@ -27,8 +28,8 @@ namespace Signal_Windows.ViewModels
     {
         public ObservableCollection<PhoneContact> Contacts;
         private List<PhoneContact> signalContacts;
-        private List<PhoneContact> otherContacts;
         private PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.GetInstance();
+        private CancellationToken cancellationToken;
 
         private string _ContactName = "";
         public string ContactName
@@ -48,10 +49,9 @@ namespace Signal_Windows.ViewModels
         {
             Contacts = new ObservableCollection<PhoneContact>();
             signalContacts = new List<PhoneContact>();
-            otherContacts = new List<PhoneContact>();
         }
 
-        public async Task OnNavigatedTo()
+        public async Task OnNavigatedTo(CancellationToken? cancellationToken = null)
         {
             SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, App.USER_AGENT);
             ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
@@ -110,13 +110,8 @@ namespace Signal_Windows.ViewModels
                         contact.OnSignal = true;
                         signalContacts.Add(contact);
                     }
-                    else
-                    {
-                        otherContacts.Add(contact);
-                    }
                 }
                 Contacts.AddRange(signalContacts);
-                Contacts.AddRange(otherContacts);
             }
             else
             {
@@ -183,7 +178,6 @@ namespace Signal_Windows.ViewModels
             {
                 string text = sender.Text;
                 var validContacts = GetContactsMatchingText(text, signalContacts).ToList();
-                validContacts.AddRange(GetContactsMatchingText(text, otherContacts));
                 Contacts.Clear();
                 Contacts.AddRange(validContacts);
             }
