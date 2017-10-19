@@ -143,10 +143,10 @@ namespace Signal_Windows
             }
         }
 
-        public static string GetCountryCode()
+        public static string GetCountryISO()
         {
-            var c = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
-            return GetCountryCode(c.ToUpper());
+            var c = CultureInfo.CurrentCulture.Name;
+            return c.Substring(c.Length - 2);
         }
 
         public static bool ContainsCaseInsensitive(this string str, string value)

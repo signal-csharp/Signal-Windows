@@ -130,7 +130,7 @@ namespace Signal_Windows.ViewModels
                 {
                     contactAnnotationList = contactAnnotationLists[0];
                 }
-
+                
                 foreach (var contact in contacts)
                 {
                     var phones = contact.Phones;
@@ -333,9 +333,7 @@ namespace Signal_Windows.ViewModels
         /// <returns>A number in E164 format</returns>
         private string ParsePhoneNumber(string number)
         {
-            // on phone we should try to get their SIM country code
-            // otherwise we should try to use the user's location?
-            PhoneNumber phoneNumber = phoneNumberUtil.Parse(number, "US");
+            PhoneNumber phoneNumber = phoneNumberUtil.Parse(number, Utils.GetCountryISO());
             return phoneNumberUtil.Format(phoneNumber, PhoneNumberFormat.E164);
         }
     }
