@@ -84,6 +84,8 @@ namespace Signal_Windows.Migrations
 
                     b.Property<long?>("LastSeenMessageId");
 
+                    b.Property<long>("LastSeenMessageIndex");
+
                     b.Property<long>("MessagesCount");
 
                     b.Property<string>("ThreadDisplayName");

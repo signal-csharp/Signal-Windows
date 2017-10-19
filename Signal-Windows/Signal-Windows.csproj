@@ -177,6 +177,10 @@
     <Compile Include="Migrations\SignalDB\20170825082857_m2.designer.cs">
       <DependentUpon>20170825082857_m2.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\SignalDB\20170901124533_m3.cs" />
+    <Compile Include="Migrations\SignalDB\20170901124533_m3.designer.cs">
+      <DependentUpon>20170901124533_m3.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\PhoneContact.cs" />
     <Compile Include="Models\SignalEarlyReceipt.cs" />

@@ -242,11 +242,6 @@ namespace Signal_Windows.ViewModels
                         SelectedThread = (SignalConversation)e.AddedItems[0];
                         View.Thread.Load(SelectedThread);
                         View.SwitchToStyle(View.GetCurrentViewStyle());
-                        SignalConversation conversation = await Task.Run(() =>
-                        {
-                            return SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
-                        });
-                        UIResetRead(conversation);
                     }
                     Debug.WriteLine("SelectionChanged lock released");
                 }
@@ -293,23 +288,21 @@ namespace Signal_Windows.ViewModels
 
                         /* update in-memory data */
                         SelectedThread.MessagesCount += 1;
-                        //View.Thread.RemoveUnreadMarker();
+                        SelectedThread.UnreadCount = 0;
+                        SelectedThread.LastMessage = message;
+                        SelectedThread.LastSeenMessageIndex = SelectedThread.MessagesCount;
+                        SelectedThread.View.UpdateConversationDisplay(SelectedThread);
                         var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
                         View.Thread.Append(container, true);
-                        SelectedThread.LastMessage = message;
-                        SelectedThread.View.UpdateConversationDisplay(SelectedThread);
                         MoveThreadToTop(SelectedThread);
 
                         /* save to disk */
                         await Task.Run(() =>
                         {
                             SignalDBContext.SaveMessageLocked(message);
-                            SignalDBContext.ClearUnreadLocked(SelectedThread.ThreadId);
                         });
 
-                        /* update in-memory data with db results */
-                        SelectedThread.LastMessageId = message.Id;
-                        SelectedThread.LastSeenMessageId = message.Id;
+                        /* add to OutgoingCache */
                         View.Thread.AddToOutgoingMessagesCache(container);
 
                         /* send */
@@ -373,7 +366,6 @@ namespace Signal_Windows.ViewModels
                 {
                     SignalDBContext.SaveMessageLocked(message);
                 });
-                long? seenId = null;
                 thread.MessagesCount += 1;
                 if (SelectedThread == thread)
                 {
@@ -382,8 +374,14 @@ namespace Signal_Windows.ViewModels
                     if (message.Direction == SignalMessageDirection.Synced)
                     {
                         View.Thread.AddToOutgoingMessagesCache(container);
+                        unreadCount = 0;
+                        thread.LastSeenMessageIndex = thread.MessagesCount;
                     }
-                    seenId = message.Id;
+                    else
+                    {
+                        //TODO don't increase unread if we did scroll automatically, and mark the message as seen
+                        unreadCount++;
+                    }
                 }
                 else
                 {
@@ -394,34 +392,16 @@ namespace Signal_Windows.ViewModels
                     else if (message.Direction == SignalMessageDirection.Synced)
                     {
                         unreadCount = 0;
-                        thread.LastSeenMessageId = message.Id;
-                        seenId = message.Id;
+                        thread.LastSeenMessageIndex = thread.MessagesCount;
                     }
-                }
-                await Task.Run(() =>
-                {
-                    SignalDBContext.UpdateConversationLocked(message.ThreadId, unreadCount, seenId);
-                });
-                if (message.Read)
-                {
-                    thread.LastSeenMessageId = message.Id;
                 }
                 thread.UnreadCount = unreadCount;
                 thread.LastActiveTimestamp = message.ReceivedTimestamp;
                 thread.LastMessage = message;
-                thread.LastMessageId = message.Id;
                 thread.View.UpdateConversationDisplay(thread);
                 MoveThreadToTop(thread);
             }
             Debug.WriteLine("incoming lock released");
-        }
-
-        public void UIResetRead(SignalConversation conversation)
-        {
-            SignalConversation uiConversation = ThreadsDictionary[conversation.ThreadId];
-            uiConversation.UnreadCount = 0;
-            uiConversation.View.UnreadCount = 0;
-            uiConversation.LastSeenMessageId = conversation.LastMessageId;
         }
 
         public void UIUpdateMessageBox(SignalMessage updatedMessage)
@@ -449,7 +429,6 @@ namespace Signal_Windows.ViewModels
                         View.Thread.Append(container, false);
                     }
                     thread.LastMessage = message;
-                    thread.LastMessageId = message.Id;
                     thread.View.UpdateConversationDisplay(thread);
                 }
             }

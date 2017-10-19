@@ -18,7 +18,7 @@ namespace Signal_Windows.Controls
         {
             get
             {
-                return (SignalMessageContainer) this.DataContext;
+                return DataContext as SignalMessageContainer;
             }
             set
             {
@@ -75,7 +75,7 @@ namespace Signal_Windows.Controls
                     CheckImage.Visibility = Visibility.Collapsed;
                     DoubleCheckImage.Visibility = Visibility.Collapsed;
                     ResendTextBlock.Visibility = Visibility.Collapsed;
-                    if (Model.Message.ThreadId[0] != '+')
+                    if (Model.Message.ThreadId.EndsWith("="))
                     {
                         MessageAuthor.Visibility = Visibility.Visible;
                         MessageAuthor.Text = Model.Message.Author.ThreadDisplayName;
@@ -99,13 +99,12 @@ namespace Signal_Windows.Controls
 
         private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
-
             UpdateUI();
         }
 
         private void ResendTextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            App.ViewModels.MainPageInstance.OutgoingQueue.Add(Model.Message);
         }
 
         internal bool HandleUpdate(SignalMessage updatedMessage)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -35,7 +36,10 @@ namespace Signal_Windows.Controls
 
         private void UnreadMarker_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
-            Model.View = this;
+            if (Model != null)
+            {
+                UnreadText.Text = Model.Text;
+            }
         }
 
         public void SetText(string text)

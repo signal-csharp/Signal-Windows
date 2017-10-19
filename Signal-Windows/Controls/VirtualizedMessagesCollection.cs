@@ -1,4 +1,5 @@
-﻿using Signal_Windows.Models;
+
+using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System;
 using System.Collections;
@@ -22,16 +23,32 @@ namespace Signal_Windows.Controls
         }
     }
 
+    public class SignalUnreadMarker
+    {
+        public string Text = "";
+    }
+
     public class VirtualizedCollection : IList, INotifyCollectionChanged
     {
-        private readonly static int PAGE_SIZE = 50;
+        private const int PAGE_SIZE = 50;
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         private Dictionary<int, IList<SignalMessageContainer>> Cache = new Dictionary<int, IList<SignalMessageContainer>>();
         private SignalConversation Conversation;
+        private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
+        public int UnreadMarkerIndex = -1;
 
         public VirtualizedCollection(SignalConversation c)
         {
             Conversation = c;
+            if (Conversation.LastSeenMessageIndex > 0 && Conversation.LastSeenMessageIndex < Conversation.MessagesCount )
+            {
+                UnreadMarkerIndex = (int) Conversation.LastSeenMessageIndex;
+                UnreadMarker.Text = Conversation.UnreadCount > 1 ? $"{Conversation.UnreadCount} new messages" : "1 new message";
+            }
+            else
+            {
+                UnreadMarkerIndex = -1;
+            }
         }
 
         private static int GetPageIndex(int itemIndex)
@@ -44,24 +61,61 @@ namespace Signal_Windows.Controls
         {
             get
             {
-                int inpageIndex = index % PAGE_SIZE;
-                int pageIndex = GetPageIndex(index);
-                if (!Cache.ContainsKey(pageIndex))
+                if (UnreadMarkerIndex > 0)
                 {
-                    Debug.WriteLine($"cache miss {pageIndex}");
-                    Cache[pageIndex] = SignalDBContext.GetMessagesLocked(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
+                    if (index < UnreadMarkerIndex)
+                    {
+                        return Get(index);
+                    }
+                    else if (index == UnreadMarkerIndex)
+                    {
+                        return UnreadMarker;
+                    }
+                    else
+                    {
+                        return Get(index - 1);
+                    }
                 }
-                var page = Cache[pageIndex];
-                return page[inpageIndex];
+                else
+                {
+                    return Get(index);
+                }
             }
             set => throw new NotImplementedException();
+        }
+
+        private SignalMessageContainer Get(int index)
+        {
+            int inpageIndex = index % PAGE_SIZE;
+            int pageIndex = GetPageIndex(index);
+            if (!Cache.ContainsKey(pageIndex))
+            {
+                Debug.WriteLine($"cache miss {pageIndex}");
+                Cache[pageIndex] = SignalDBContext.GetMessagesLocked(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
+            }
+            var page = Cache[pageIndex];
+            var item = page[inpageIndex];
+            return page[inpageIndex];
         }
 
         public bool IsFixedSize => false;
 
         public bool IsReadOnly => false;
 
-        public int Count => (int)Conversation.MessagesCount;
+        public int Count
+        {
+            get
+            {
+                if (UnreadMarkerIndex > 0)
+                {
+                    return (int)Conversation.MessagesCount + 1;
+                }
+                else
+                {
+                    return (int)Conversation.MessagesCount;
+                }
+            }
+        }
 
         public bool IsSynchronized => false;
 
@@ -70,12 +124,18 @@ namespace Signal_Windows.Controls
         /// <summary>
         /// "Adds" a SignalMessageContainer to this virtualized collection.</summary>
         /// <remarks>
-        /// The method may (if incoming) or may not (if outgoing) already be present in the database, so we explicitly insert at the correct position in the cache line.
+        /// The message may (if incoming) or may not (if outgoing) already be present in the database, so we explicitly insert at the correct position in the cache line.
         /// Count is mapped to the SignalConversation's MessagesCount, so callers must update appropriately before calling this method, and no async method must be called in between.</remarks>
         /// <param name="value">The object to add to the VirtualizedMessagesCollection.</param>
         /// <returns>The position into which the new element was inserted, or -1 to indicate that the item was not inserted into the collection.</returns>
-        public int Add(object value)
+        public int Add(object value, bool forcedScroll)
         {
+            if (forcedScroll && UnreadMarkerIndex > 0)
+            {
+                var old = UnreadMarkerIndex;
+                UnreadMarkerIndex = -1;
+                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, UnreadMarker, old));
+            }
             var message = value as SignalMessageContainer;
             int inpageIndex = message.Index % PAGE_SIZE;
             int pageIndex = GetPageIndex(message.Index);
@@ -85,11 +145,9 @@ namespace Signal_Windows.Controls
                 Cache[pageIndex] = SignalDBContext.GetMessagesLocked(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
             }
             Cache[pageIndex].Insert(inpageIndex, message);
-            if (Cache[pageIndex].IndexOf(message) != inpageIndex  || message.Index != Count-1)
-            {
-                throw new InvalidOperationException("VirtualizedCollection is in an inconsistent state!");
-            }
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, message, message.Index));
+            int virtualIndex = GetVirtualIndex(message.Index);
+            Debug.WriteLine($"NotifyCollectionChangedAction.Add index={message.Index} virtualIndex={virtualIndex}");
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, message, virtualIndex));
             return message.Index;
         }
 
@@ -115,13 +173,38 @@ namespace Signal_Windows.Controls
 
         public int IndexOf(object value)
         {
-            SignalMessageContainer smc = value as SignalMessageContainer;
-            if (smc != null)
+            if (value is SignalMessageContainer)
             {
-                Debug.WriteLine($"IndexOf returning {smc.Index}");
-                return smc.Index;
+                SignalMessageContainer smc = (SignalMessageContainer) value;
+                return GetVirtualIndex(smc.Index);
             }
-            return -1;
+            else if (value is SignalUnreadMarker)
+            {
+                return UnreadMarkerIndex;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+        internal int GetVirtualIndex(int rawIndex)
+        {
+            if (UnreadMarkerIndex > 0)
+            {
+                if (rawIndex < UnreadMarkerIndex)
+                {
+                    return rawIndex;
+                }
+                else
+                {
+                    return rawIndex + 1;
+                }
+            }
+            else
+            {
+                return rawIndex;
+            }
         }
 
         public void Insert(int index, object value)
@@ -135,6 +218,11 @@ namespace Signal_Windows.Controls
         }
 
         public void RemoveAt(int index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Add(object value)
         {
             throw new NotImplementedException();
         }
