@@ -94,19 +94,27 @@ namespace Signal_Windows
             }
         }
 
-        public static int CalculateDefaultColorIndex(string title)
+        public static string CalculateDefaultColor(string title)
         {
-            if (title.Length == 0)
+            return Colors[Math.Abs(JavaStringHashCode(title)) % Colors.Length];
+        }
+
+        public static SolidColorBrush GetDefaultColor(string title)
+        {
+            return GetBrushFromColor(CalculateDefaultColor(title));
+        }
+
+        public static int JavaStringHashCode(string str)
+        {
+            int h = 0;
+            if (str.Length > 0)
             {
-                return 0;
+                for (int i = 0; i < str.Length; i++)
+                {
+                    h = 31 * h + str[i];
+                }
             }
-            var hash = 0;
-            for (int i = 0; i < title.Length; i++)
-            {
-                hash = ((hash << 5) - hash) + title[i];
-                hash = hash & hash;
-            }
-            return Math.Abs(hash) % 15;
+            return h;
         }
 
         public static void EnableBackButton()

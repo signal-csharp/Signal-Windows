@@ -316,7 +316,7 @@ namespace Signal_Windows.ViewModels
                 AvatarFile = null,
                 LastActiveTimestamp = 0,
                 Draft = null,
-                Color = "red",
+                Color = Utils.CalculateDefaultColor(name),
                 UnreadCount = 0
             };
             await Task.Run(() =>
