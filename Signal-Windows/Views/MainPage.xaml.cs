@@ -156,8 +156,8 @@ namespace Signal_Windows
         private void AddContactButton_Click(object sender, RoutedEventArgs e)
         {
             App.ViewModels.AddContactPageInstance.MainPageVM = Vm;
-            App.ViewModels.AddContactPageInstance.ContactName = "";
-            App.ViewModels.AddContactPageInstance.ContactNumber = "";
+            //App.ViewModels.AddContactPageInstance.ContactName = "";
+            //App.ViewModels.AddContactPageInstance.ContactNumber = "";
             Frame.Navigate(typeof(AddContactPage));
         }
     }

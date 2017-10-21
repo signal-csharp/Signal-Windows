@@ -12,7 +12,7 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows
 {
-    public class Utils
+    public static class Utils
     {
         public static string[] Colors = {
             "red",
@@ -86,19 +86,35 @@ namespace Signal_Windows
             }
         }
 
-        public static int CalculateDefaultColorIndex(string title)
+        public static void AddRange<T>(this ObservableCollection<T> observableCollection, IEnumerable<T> collection)
         {
-            if (title.Length == 0)
+            foreach (var item in collection)
             {
-                return 0;
+                observableCollection.Add(item);
             }
-            var hash = 0;
-            for (int i = 0; i < title.Length; i++)
+        }
+
+        public static string CalculateDefaultColor(string title)
+        {
+            return Colors[Math.Abs(JavaStringHashCode(title)) % Colors.Length];
+        }
+
+        public static SolidColorBrush GetDefaultColor(string title)
+        {
+            return GetBrushFromColor(CalculateDefaultColor(title));
+        }
+
+        public static int JavaStringHashCode(string str)
+        {
+            int h = 0;
+            if (str.Length > 0)
             {
-                hash = ((hash << 5) - hash) + title[i];
-                hash = hash & hash;
+                for (int i = 0; i < str.Length; i++)
+                {
+                    h = 31 * h + str[i];
+                }
             }
-            return Math.Abs(hash) % 15;
+            return h;
         }
 
         public static void EnableBackButton()
@@ -135,10 +151,15 @@ namespace Signal_Windows
             }
         }
 
-        private string GetCountryCode()
+        public static string GetCountryISO()
         {
-            var c = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
-            return GetCountryCode(c.ToUpper());
+            var c = CultureInfo.CurrentCulture.Name;
+            return c.Substring(c.Length - 2);
+        }
+
+        public static bool ContainsCaseInsensitive(this string str, string value)
+        {
+            return CultureInfo.InvariantCulture.CompareInfo.IndexOf(str, value, CompareOptions.IgnoreCase) >= 0;
         }
 
         public static string GetCountryCode(string ISO3166) //https://stackoverflow.com/questions/34837436/uwp-get-country-phone-number-prefix
