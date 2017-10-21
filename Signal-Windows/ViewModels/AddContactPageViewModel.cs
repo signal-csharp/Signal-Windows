@@ -32,14 +32,14 @@ namespace Signal_Windows.ViewModels
         public MainPageViewModel MainPageVM;
         public AddContactPage View;
 
-        private string _ContactName = "";
+        private string _ContactName = string.Empty;
         public string ContactName
         {
             get { return _ContactName; }
             set { _ContactName = value; RaisePropertyChanged(nameof(ContactName)); }
         }
 
-        private string _ContactNumber = "";
+        private string _ContactNumber = string.Empty;
         public string ContactNumber
         {
             get { return _ContactNumber; }
@@ -104,6 +104,8 @@ namespace Signal_Windows.ViewModels
 
         public async Task OnNavigatedTo(CancellationToken? cancellationToken = null)
         {
+            ContactName = string.Empty;
+            ContactNumber = string.Empty;
             await RefreshContacts(cancellationToken);
         }
 
