@@ -18,9 +18,9 @@
                         </Ellipse.Fill>
                     </Ellipse>
                     <TextBlock Text="Name" Margin="0,25,0,0" />
-                    <TextBox Text="{x:Bind Vm.ContactName, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" />
+                    <TextBox Text="{x:Bind Vm.ContactName, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" InputScope="PersonalFullName" />
                     <TextBlock Text="Number" Margin="0,24,0,0" />
-                    <TextBox Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" />
+                    <TextBox Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" InputScope="TelephoneNumber" />
                     <Button x:Name="AddButton" Content="Add" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,24,0,0" Click="AddButton_Click" />
                     <Button x:Name="PickButton" Content="Pick From Contacts" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,10,0,0" Click="PickButton_Click" />
                 </StackPanel>
