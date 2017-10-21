@@ -1130,7 +1130,7 @@ namespace Signal_Windows.Storage
                             ThreadDisplayName = username,
                             CanReceive = true,
                             LastActiveTimestamp = timestamp,
-                            Color = Utils.Colors[Utils.CalculateDefaultColorIndex(username)]
+                            Color = Utils.CalculateDefaultColor(username)
                         };
                         ctx.Contacts.Add(contact);
                         ctx.SaveChanges();
