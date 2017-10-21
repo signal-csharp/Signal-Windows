@@ -33,9 +33,9 @@
         <StackPanel HorizontalAlignment="Center" Width="328">
             <TextBlock Text="Add a manual contact" HorizontalAlignment="Center" Margin="0,16,0,0"/>
             <TextBlock Text="Name"/>
-            <TextBox x:Name="ContactNameTextBox" Text="{x:Bind Vm.ContactName, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNameTextBox_TextChanged" />
+            <TextBox x:Name="ContactNameTextBox" Text="{x:Bind Vm.ContactName, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNameTextBox_TextChanged" InputScope="PersonalFullName" />
             <TextBlock Text="Number" Margin="0,16,0,0" />
-            <TextBox x:Name="ContactNumberTextBox" Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNumberTextBox_TextChanged" />
+            <TextBox x:Name="ContactNumberTextBox" Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNumberTextBox_TextChanged" InputScope="TelephoneNumber" />
             <Button x:Name="AddButton" Content="Add" IsEnabled="{x:Bind Vm.AddEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,16" Click="AddButton_Click" />
             <AutoSuggestBox x:Name="searchBox" VerticalAlignment="Stretch" QueryIcon="Find" TextChanged="searchBox_TextChanged" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
         </StackPanel>
