@@ -151,6 +151,51 @@ namespace Signal_Windows
             }
         }
 
+        public static string GetTimestamp(long timestamp)
+        {
+            DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(timestamp / 1000);
+            DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
+            return GetTimestamp(dt);
+        }
+
+        public static string GetTimestamp(DateTime dateTime)
+        {
+            string formattedTimestamp = string.Empty;
+            DateTime now = DateTimeOffset.Now.LocalDateTime;
+            if (GetMidnightDateTime(now) - GetMidnightDateTime(dateTime) < TimeSpan.FromDays(7))
+            {
+                if (now.Day == dateTime.Day)
+                {
+                    // on the same day
+                    formattedTimestamp = dateTime.ToString("t");
+                }
+                else
+                {
+                    // within the last week
+                    formattedTimestamp = $"{dateTime.ToString("ddd")}, {dateTime.ToString("t")}";
+                }
+            }
+            else
+            {
+                if (now.Year == dateTime.Year)
+                {
+                    // greater than one week and in the same year
+                    formattedTimestamp = $"{dateTime.ToString("M")}, {dateTime.ToString("t")}";
+                }
+                else
+                {
+                    // not in the same year
+                    formattedTimestamp = dateTime.ToString("g");
+                }
+            }
+            return formattedTimestamp;
+        }
+
+        public static DateTime GetMidnightDateTime(DateTime dateTime)
+        {
+            return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0, dateTime.Kind);
+        }
+
         public static string GetCountryISO()
         {
             var c = CultureInfo.CurrentCulture.Name;

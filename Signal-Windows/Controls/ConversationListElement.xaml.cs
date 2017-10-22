@@ -106,6 +106,13 @@ namespace Signal_Windows.Controls
             }
         }
 
+        private string _LastMessageTimestamp = string.Empty;
+        public string LastMessageTimestamp
+        {
+            get { return _LastMessageTimestamp; }
+            set { _LastMessageTimestamp = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastMessageTimestamp))); }
+        }
+
         private void ThreadListItem_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             if (Model != null)
@@ -116,6 +123,7 @@ namespace Signal_Windows.Controls
                 LastMessage = Model.LastMessage?.Content.Content;
                 Initials = Model.ThreadDisplayName.Length == 0 ? "#" : Model.ThreadDisplayName.Substring(0, 1);
                 FillBrush = Model is SignalContact ? Utils.GetBrushFromColor(((SignalContact)Model).Color) : Utils.Blue;
+                LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
             }
         }
 
@@ -126,6 +134,7 @@ namespace Signal_Windows.Controls
             ConversationDisplayName.Text = thread.ThreadDisplayName;
             UnreadCount = thread.UnreadCount;
             LastMessage = Model.LastMessage?.Content.Content;
+            LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
         }
     }
 }

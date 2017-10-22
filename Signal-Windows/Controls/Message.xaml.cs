@@ -91,42 +91,8 @@ namespace Signal_Windows.Controls
                     HorizontalAlignment = HorizontalAlignment.Left;
                     FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;
                 }
-                DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(Model.Message.ComposedTimestamp / 1000);
-                DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
-                DateTime now = DateTimeOffset.Now.LocalDateTime;
-                if (GetMidnightDateTime(now) - GetMidnightDateTime(dt) < TimeSpan.FromDays(7))
-                {
-                    if (now.Day == dt.Day)
-                    {
-                        // on the same day
-                        FancyTimestampBlock.Text = dt.ToString("t");
-                    }
-                    else
-                    {
-                        // within the last week
-                        FancyTimestampBlock.Text = $"{dt.ToString("ddd")}, {dt.ToString("t")}";
-                    }
-                    
-                }
-                else
-                {
-                    if (now.Year == dt.Year)
-                    {
-                        // greater than one week and in the same year
-                        FancyTimestampBlock.Text = $"{dt.ToString("M")}, {dt.ToString("t")}";
-                    }
-                    else
-                    {
-                        // not in the same year
-                        FancyTimestampBlock.Text = dt.ToString("g");
-                    }
-                }
+                FancyTimestampBlock.Text = Utils.GetTimestamp(Model.Message.ComposedTimestamp);
             }
-        }
-
-        private DateTime GetMidnightDateTime(DateTime dateTime)
-        {
-            return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 0, 0, 0, dateTime.Kind);
         }
 
         private void MessageBox_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)

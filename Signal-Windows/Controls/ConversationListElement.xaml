@@ -24,7 +24,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="15" FontWeight="SemiLight" Text="Sanders Lauture" TextTrimming="CharacterEllipsis"/>
-                <TextBlock x:Name="LastActiveTextBlock" Grid.Column="1" Text="11:11p" FontSize="11" Foreground="#999999" TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="LastActiveTextBlock" Grid.Column="1" Text="{x:Bind LastMessageTimestamp, Mode=OneWay}" FontSize="11" Foreground="#999999" TextTrimming="CharacterEllipsis"/>
             </Grid>
             <TextBlock Text="{x:Bind LastMessage, Mode=OneWay}" FontSize="12"/>
         </StackPanel>
