@@ -34,7 +34,7 @@
                 </Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" Margin="0,0,0,8" HorizontalAlignment="Left">
                     <TextBlock Text="Display Name" Margin="0,0,0,4" FontSize="15"/>
-                    <TextBox x:Name="DisplayNameTextBox" Text="{x:Bind Vm.DisplayName, Mode=TwoWay}" Width="300" LostFocus="DisplayNameTextBox_LostFocus"/>
+                    <TextBox x:Name="DisplayNameTextBox" Text="{x:Bind Vm.DisplayName, Mode=TwoWay}" Width="300" LostFocus="DisplayNameTextBox_LostFocus" InputScope="PersonalFullName"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Margin="0,8" HorizontalAlignment="Left">
                     <TextBlock Text="Mute conversation" FontSize="15" Margin="0,0,0,4"/>
