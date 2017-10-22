@@ -112,6 +112,14 @@ namespace Signal_Windows
                 LaunchActivatedEventArgs args = e as LaunchActivatedEventArgs;
                 if (args.PrelaunchActivated == false)
                 {
+                    if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
+                    {
+                        var sb = Windows.UI.ViewManagement.StatusBar.GetForCurrentView();
+                        sb.BackgroundColor = Windows.UI.Color.FromArgb(1, 0x20, 0x90, 0xEA);
+                        sb.BackgroundOpacity = 1;
+                        sb.ForegroundColor = Windows.UI.Colors.White;
+                    }
+
                     if (rootFrame.Content == null)
                     {
                         // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
