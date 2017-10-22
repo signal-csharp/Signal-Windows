@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Globalization;
 using Windows.Foundation;
 using Windows.Foundation.Metadata;
+using Windows.UI;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -15,22 +16,39 @@ namespace Signal_Windows
 {
     public static class Utils
     {
+        public const string RED = "red";
+        public const string PINK = "pink";
+        public const string PURPLE = "purple";
+        public const string DEEP_PURPLE = "deep_purple";
+        public const string INDIGO = "indigo";
+        public const string BLUE = "blue";
+        public const string LIGHT_BLUE = "light_blue";
+        public const string CYAN = "cyan";
+        public const string TEAL = "teal";
+        public const string GREEN = "green";
+        public const string LIGHT_GREEN = "light_green";
+        public const string ORANGE = "orange";
+        public const string DEEP_ORANGE = "deep_orange";
+        public const string AMBER = "amber";
+        public const string BLUE_GREY = "blue_grey";
+        public const string GREY = "grey";
+
         public static string[] Colors = {
-            "red",
-            "pink",
-            "purple",
-            "deep_purple",
-            "indigo",
-            "blue",
-            "light_blue",
-            "cyan",
-            "teal",
-            "green",
-            "light_green",
-            "orange",
-            "deep_orange",
-            "amber",
-            "blue_grey"};
+            RED,
+            PINK,
+            PURPLE,
+            DEEP_PURPLE,
+            INDIGO,
+            BLUE,
+            LIGHT_BLUE,
+            CYAN,
+            TEAL,
+            GREEN,
+            LIGHT_GREEN,
+            ORANGE,
+            DEEP_ORANGE,
+            AMBER,
+            BLUE_GREY};
 
         public static SolidColorBrush Red = GetSolidColorBrush(255, "#EF5350");
         public static SolidColorBrush Pink = GetSolidColorBrush(255, "#EC407A");
@@ -67,24 +85,47 @@ namespace Signal_Windows
         {
             switch (signalcolor)
             {
-                case "red": return Red;
-                case "pink": return Pink;
-                case "purple": return Purple;
-                case "deep_purple": return Deep_Purple;
-                case "indigo": return Indigo;
-                case "blue": return Blue;
-                case "light_blue": return Light_Blue;
-                case "cyan": return Cyan;
-                case "teal": return Teal;
-                case "green": return Green;
-                case "light_green": return Light_Green;
-                case "orange": return Orange;
-                case "deep_orange": return Deep_Orange;
-                case "amber": return Amber;
-                case "blue_grey": return Blue_Grey;
-                case "grey": return Grey;
+                case RED: return Red;
+                case PINK: return Pink;
+                case PURPLE: return Purple;
+                case DEEP_PURPLE: return Deep_Purple;
+                case INDIGO: return Indigo;
+                case BLUE: return Blue;
+                case LIGHT_BLUE: return Light_Blue;
+                case CYAN: return Cyan;
+                case TEAL: return Teal;
+                case GREEN: return Green;
+                case LIGHT_GREEN: return Light_Green;
+                case ORANGE: return Orange;
+                case DEEP_ORANGE: return Deep_Orange;
+                case AMBER: return Amber;
+                case BLUE_GREY: return Blue_Grey;
+                case GREY: return Grey;
+                case "system": return new SolidColorBrush((Color)App.Current.Resources["SystemAccentColor"]);
                 default: return Default;
             }
+        }
+
+        public static string GetColorFromBrush(SolidColorBrush brush)
+        {
+            Color color = brush.Color;
+            if (color == Red.Color) { return RED; }
+            else if (color == Pink.Color) { return PINK; }
+            else if (color == Purple.Color) { return PURPLE; }
+            else if (color == Deep_Purple.Color) { return DEEP_PURPLE; }
+            else if (color == Indigo.Color) { return INDIGO; }
+            else if (color == Blue.Color) { return BLUE; }
+            else if (color == Light_Blue.Color) { return LIGHT_BLUE; }
+            else if (color == Cyan.Color) { return CYAN; }
+            else if (color == Teal.Color) { return TEAL; }
+            else if (color == Green.Color) { return GREEN; }
+            else if (color == Light_Green.Color) { return LIGHT_GREEN; }
+            else if (color == Orange.Color) { return ORANGE; }
+            else if (color == Deep_Orange.Color) { return DEEP_ORANGE; }
+            else if (color == Amber.Color) { return AMBER; }
+            else if (color == Blue_Grey.Color) { return BLUE_GREY; }
+            else if (color == Grey.Color) { return GREY; }
+            else { return GREY; }
         }
 
         public static void AddRange<T>(this ObservableCollection<T> observableCollection, IEnumerable<T> collection)
@@ -138,6 +179,11 @@ namespace Signal_Windows
         {
             SystemNavigationManager.GetForCurrentView().AppViewBackButtonVisibility = AppViewBackButtonVisibility.Collapsed;
             SystemNavigationManager.GetForCurrentView().BackRequested -= handler;
+        }
+
+        public static string GetInitials(string name)
+        {
+            return name.Length == 0 ? "#" : name.Substring(0, 1);
         }
 
         public static PageStyle GetViewStyle(Size s)

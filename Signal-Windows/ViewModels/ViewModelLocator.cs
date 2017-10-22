@@ -34,6 +34,7 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<RegisterFinalizationPageViewModel>();
             SimpleIoc.Default.Register<LinkPageViewModel>();
             SimpleIoc.Default.Register<FinishRegistrationPageViewModel>();
+            SimpleIoc.Default.Register<ConversationSettingsPageViewModel>();
         }
 
         // <summary>
@@ -93,6 +94,11 @@ namespace Signal_Windows.ViewModels
         public FinishRegistrationPageViewModel FinishRegistrationPageInstance
         {
             get { return ServiceLocator.Current.GetInstance<FinishRegistrationPageViewModel>(); }
+        }
+
+        public ConversationSettingsPageViewModel ConversationSettingsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<ConversationSettingsPageViewModel>(); }
         }
 
         // <summary>

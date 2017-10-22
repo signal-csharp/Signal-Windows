@@ -2,6 +2,7 @@ using libsignalservice.util;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
+using Signal_Windows.Views;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -258,6 +259,15 @@ namespace Signal_Windows.Controls
                     var lastUnreadMsg = ConversationItemsControl.Items[Collection.Count - 1];
                     ConversationItemsControl.ScrollIntoView(lastUnreadMsg, ScrollIntoViewAlignment.Leading);
                 }
+            }
+        }
+
+        private void ConversationSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SignalConversation is SignalContact)
+            {
+                App.ViewModels.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
+                GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
             }
         }
     }

@@ -30,11 +30,29 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Background="{x:Bind HeaderBackground, Mode=OneWay}">
-            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Name="Displayname" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadDisplayName, Mode=OneWay}" />
-                <TextBlock Name="Separator" xml:space="preserve" Visibility="{x:Bind SeparatorVisibility, Mode=OneWay}">&#160;&#160;&#x2022;&#160;&#160;</TextBlock>
-                <TextBlock Name="Username" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadUsername, Mode=OneWay}" Visibility="{x:Bind ThreadUsernameVisibility, Mode=OneWay}" />
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="50"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Name="Displayname" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadDisplayName, Mode=OneWay}" />
+                    <TextBlock Name="Separator" xml:space="preserve" Visibility="{x:Bind SeparatorVisibility, Mode=OneWay}">&#160;&#160;&#x2022;&#160;&#160;</TextBlock>
+                    <TextBlock Name="Username" IsTextSelectionEnabled="True" HorizontalAlignment="Center" Text="{x:Bind ThreadUsername, Mode=OneWay}" Visibility="{x:Bind ThreadUsernameVisibility, Mode=OneWay}" />
+                </StackPanel>
+                <Button Grid.Column="1" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{x:Bind HeaderBackground, Mode=OneWay}">
+                    <SymbolIcon Symbol="More"/>
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem x:Name="ConversationSettingsButton" Text="Conversation settings" Click="ConversationSettingsButton_Click"/>
+                            <MenuFlyoutItem Text="Disappearing messages" IsEnabled="False"/>
+                            <MenuFlyoutItem Text="All media" IsEnabled="False"/>
+                            <ToggleMenuFlyoutItem Text="Mute conversation" IsEnabled="False"/>
+                            <MenuFlyoutItem Text="Reset secure session" IsEnabled="False"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+            </Grid>
         </Border>
         <ListView Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" ItemTemplateSelector="{StaticResource MessageDataTemplateSelector}" SelectionMode="None">
             <ListView.ItemContainerStyle>
