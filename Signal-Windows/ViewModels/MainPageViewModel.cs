@@ -123,6 +123,7 @@ namespace Signal_Windows.ViewModels
 
         public async Task Init()
         {
+            App.MainPageActive = true;
             Debug.WriteLine("Init lock wait");
             using (await ActionInProgress.LockAsync(CancelSource.Token))
             {

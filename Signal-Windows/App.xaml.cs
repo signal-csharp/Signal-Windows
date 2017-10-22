@@ -41,6 +41,7 @@ namespace Signal_Windows
         {
             this.InitializeComponent();
             this.Suspending += OnSuspending;
+            this.Resuming += App_Resuming;
             try
             {
                 Init = Task.Run(() =>
@@ -187,6 +188,19 @@ namespace Signal_Windows
             Debug.WriteLine("shutdown successful");
             //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden
             deferral.Complete();
+        }
+
+        private async void App_Resuming(object sender, object e)
+        {
+            Debug.WriteLine("Resuming app");
+            if (ViewModels.MainPageInstance != null)
+            {
+                await ViewModels.MainPageInstance.Init();
+            }
+            else
+            {
+                Debug.WriteLine("We can't resume");
+            }
         }
     }
 }
