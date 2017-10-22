@@ -121,7 +121,7 @@ namespace Signal_Windows.Controls
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
                 UnreadCount = Model.UnreadCount;
                 LastMessage = Model.LastMessage?.Content.Content;
-                Initials = Model.ThreadDisplayName.Length == 0 ? "#" : Model.ThreadDisplayName.Substring(0, 1);
+                Initials = Utils.GetInitials(Model.ThreadDisplayName);
                 FillBrush = Model is SignalContact ? Utils.GetBrushFromColor(((SignalContact)Model).Color) : Utils.Blue;
                 LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
             }
