@@ -43,7 +43,7 @@
         <TextBlock x:Name="TitleTextBlock" Grid.Row="0" Foreground="White" FontSize="34" HorizontalAlignment="Center" FontWeight="Light" Text="Connect with Signal" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="1">
             <TextBlock Foreground="White" HorizontalAlignment="Center" Text="Enter your SMS verification code" FontSize="24" FontWeight="SemiLight"/>
-            <TextBox Width="200" Text="{x:Bind Vm.VerificationCode, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,16,0,0"/>
+            <TextBox Width="200" Text="{x:Bind Vm.VerificationCode, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,16,0,0" InputScope="Number"/>
             <Button Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Width="200" Margin="20 20 20 20" Click="FinishButton_Click" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Content="Finish Registration"/>
         </StackPanel>
     </Grid>
