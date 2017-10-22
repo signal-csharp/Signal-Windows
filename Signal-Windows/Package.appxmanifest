@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="d77d01c7-0786-44e4-9ef4-dd3cde64124b" Publisher="CN=Benni" Version="0.2.0.0" />
-  <mp:PhoneIdentity PhoneProductId="d77d01c7-0786-44e4-9ef4-dd3cde64124b" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Identity Name="2383BenediktRadtke.SignalPrivateMessenger" Publisher="CN=83951ACF-6CF8-48C5-BDC4-D778CAFD26C0" Version="0.2.1.0" />
+  <mp:PhoneIdentity PhoneProductId="25d58032-97d6-4555-96ed-ffe17d57a51f" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>Signal-Windows</DisplayName>
-    <PublisherDisplayName>Benni</PublisherDisplayName>
+    <DisplayName>Signal Private Messenger</DisplayName>
+    <PublisherDisplayName>Benedikt Radtke</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
