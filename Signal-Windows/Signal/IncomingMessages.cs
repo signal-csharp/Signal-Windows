@@ -424,10 +424,15 @@ namespace Signal_Windows.ViewModels
                 }
             }
             Debug.WriteLine("received message: " + message.Content);
-            if (!App.WindowActive && type == SignalMessageDirection.Incoming)
+            if (type == SignalMessageDirection.Incoming)
             {
-                SendTileNotification(message);
-                SendMessageNotification(message);
+                if (App.WindowActive)
+                    Utils.TryVibrate(true);
+                else
+                {
+                    SendTileNotification(message);
+                    SendMessageNotification(message);
+                }
             }
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
             {
