@@ -14,6 +14,8 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Windows.ApplicationModel.Contacts;
+using Windows.UI.Xaml.Media.Imaging;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -51,8 +53,8 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public ImageSource _ContactPhoto = null;
-        public ImageSource ContactPhoto
+        public BitmapImage _ContactPhoto = null;
+        public BitmapImage ContactPhoto
         {
             get { return _ContactPhoto; }
             set
@@ -70,6 +72,17 @@ namespace Signal_Windows.Controls
             {
                 _OnSignal = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(OnSignal)));
+            }
+        }
+
+        public Contact _Contact;
+        public Contact Contact
+        {
+            get { return _Contact; }
+            set
+            {
+                _Contact = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Contact)));
             }
         }
 
@@ -92,8 +105,17 @@ namespace Signal_Windows.Controls
                 Model.View = this;
                 DisplayName = Model.Name;
                 PhoneNumber = Model.PhoneNumber;
-                ContactPhoto = Model.Photo;
+                if (Model.Photo == null)
+                {
+                    BitmapImage image = new BitmapImage(new Uri("ms-appx:///Assets/gambino.png"));
+                    ContactPhoto = image;
+                }
+                else
+                {
+                    ContactPhoto = Model.Photo;
+                }
                 OnSignal = Model.OnSignal;
+                Contact = Model.Contact;
             }
         }
     }

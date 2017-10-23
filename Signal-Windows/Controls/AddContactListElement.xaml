@@ -5,6 +5,8 @@
     xmlns:local="using:Signal_Windows.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:contract5Present="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract,5)"
+    xmlns:contract5NotPresent="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractNotPresent(Windows.Foundation.UniversalApiContract,5)"
     mc:Ignorable="d"
     d:DesignHeight="80"
     d:DesignWidth="500">
@@ -15,11 +17,12 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Ellipse Grid.Column="0" Width="64" Height="64" Margin="8">
+        <contract5Present:PersonPicture Grid.Column="0" Width="64" Height="64" Margin="8" Contact="{x:Bind Contact, Mode=OneWay}"/>
+        <contract5NotPresent:Ellipse Grid.Column="0" Width="64" Height="64" Margin="8">
             <Ellipse.Fill>
-                <ImageBrush ImageSource="{x:Bind ContactPhoto, Mode=OneWay}"/>
+                <ImageBrush ImageSource="ms-appx:///Assets/gambino.png"/>
             </Ellipse.Fill>
-        </Ellipse>
+        </contract5NotPresent:Ellipse>
         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
             <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="24" FontWeight="SemiLight" Text="{x:Bind DisplayName, Mode=OneWay}" TextTrimming="CharacterEllipsis"/>
             <TextBlock Text="{x:Bind PhoneNumber, Mode=OneWay}" FontSize="20"/>

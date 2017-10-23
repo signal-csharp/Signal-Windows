@@ -158,7 +158,8 @@ namespace Signal_Windows.ViewModels
                                     Id = contact.Id,
                                     Name = contact.FullName,
                                     PhoneNumber = formattedNumber,
-                                    OnSignal = false
+                                    OnSignal = false,
+                                    Contact = contact
                                 };
                                 if (contact.SourceDisplayPicture != null)
                                 {
@@ -168,6 +169,10 @@ namespace Signal_Windows.ViewModels
                                         await bitmapImage.SetSourceAsync(stream);
                                         phoneContact.Photo = bitmapImage;
                                     }
+                                }
+                                else
+                                {
+                                    phoneContact.Photo = new BitmapImage(new Uri("ms-appx:///Assets/gambino.png"));
                                 }
                                 intermediateContacts.Add(phoneContact);
                             }
