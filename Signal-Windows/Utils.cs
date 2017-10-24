@@ -154,6 +154,8 @@ namespace Signal_Windows
 
         public static string GetTimestamp(long timestamp)
         {
+            if (timestamp == 0) return String.Empty;
+
             DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(timestamp / 1000);
             DateTime dt = dateTimeOffset.UtcDateTime.ToLocalTime();
             return GetTimestamp(dt);
