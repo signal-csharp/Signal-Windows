@@ -19,7 +19,8 @@ This is an unofficial Signal client for the Universal Windows Platform. It is (c
 Found a bug? Great! Open a pull request or an issue.
 
 ## Contributing
-Contributions fixing bugs or implementing features on the roadmap are welcome.
+
+[See the contributing docs](CONTRIBUTING.md).
 
 # Legal things
 ## Cryptography Notice
