@@ -5,7 +5,7 @@
 ### Requirements
 
 1. Windows 10 v1703 build 15063 (Creators Update) or greater
-2. Visual Studio 2017
+2. Visual Studio 2017 15.4 RC or greater
 
 ### Steps
 
@@ -16,15 +16,24 @@
 
 ## Testing Changes on Signal
 
-### Using Two Devices
+Signal-Windows is able to exchange messages with every other signal device. You may also send messages to yourself, they will be sent to all sibling devices. Use any signal client you like, and setup your deployed Signal-Windows instance:
 
-With this method it's recommended that you have another device with Signal installed so that you can send messages between your debugging client, typically your desktop, and your other device. It's also recommended that you set up your debugging client to use a [Google Voice](https://www.google.com/voice) number instead of your main phone number. Setup your other device, typically your phone, to use your main phone number. This way you can send messages between your two devices and you don't need to worry about losing important messages on your debugging client.
+### Using Signal-Windows as a master device
 
-### Using signal-cli
+Note: Signal-Windows master devices cannot yet link slaves.
+You can register Signal-Windows as a master on any supported W10 device using a virtual (e.g. [Google Voice](https://www.google.com/voice)), mobile or landline phone number.
 
-If you only have your desktop you can use [signal-cli](https://github.com/AsamK/signal-cli) to send messages to your debugging client. You still will need another number to register signal-cli with.
+### Using Signal-Windows as a slave device
+You can link Signal-Windows as a slave to any signal device capable of linking slaves.
+
+#### Using a Signal-Android or Signal-iOS master
+Same procedure as with Signal-Desktop: Scan the qr-code.
+
+#### Using a signal-cli master
+Signal-Windows kindly also displays the tsdevice string below the qrcode. Use `signal-cli addDevice --uri` like you would with a Signal-Desktop slave.
 
 ## Backing Up the Database
+#### Beware: Only backup Libsignal.db if you know what you are doing. The Signal Protocol is stateful, so replacing the database with an older version will most likely corrupt existing sessions with your contacts.
 
 If you want to backup your database files, `Libsignal.db` and `Signal.db`, you can find them in `C:\Users\<USERNAME>\AppData\Local\Packages\2383BenediktRadtke.SignalPrivateMessenger_teak1p7hcx9ga\LocalCache\`  
 
