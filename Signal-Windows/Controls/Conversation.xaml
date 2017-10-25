@@ -48,7 +48,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" TextChanged="InputTextBox_TextChanged" InputScope="Chat"/>
+            <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" TextChanged="InputTextBox_TextChanged" InputScope="Chat" IsTextPredictionEnabled="False" IsSpellCheckEnabled="False" />
             <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendEnabled, Mode=OneWay}" Background="{x:Bind HeaderBackground}" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50">
                 <SymbolIcon Symbol="Send"/>
             </Button>
