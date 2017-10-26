@@ -22,7 +22,7 @@ using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.ViewModels
 {
-    public partial class MainPageViewModel : ViewModelBase, MessagePipeCallback
+    public partial class MainPageViewModel : ViewModelBase, IMessagePipeCallback
     {
         private Visibility _ThreadVisibility = Visibility.Collapsed;
 

@@ -12,6 +12,7 @@ using System.Diagnostics;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Windows.UI.Notifications;
 using Microsoft.QueryStringDotNET;
+using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.ViewModels
 {
@@ -42,38 +43,23 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("HandleIncomingMessages finished");
         }
 
-        /// <summary>
-        /// onMessages is called from the pipe after it received messages
-        /// </summary>
-        /// <param name="envelopes"></param>
-        public void onMessages(SignalServiceEnvelope[] envelopes)
+        public void OnMessage(SignalServiceMessagePipeMessage message)
         {
-            List<SignalMessage> messages = new List<SignalMessage>();
-            foreach (var envelope in envelopes)
+            if (message is SignalServiceEnvelope)
             {
-                if (envelope == null)
+                SignalServiceEnvelope envelope = (SignalServiceEnvelope)message;
+                List<SignalMessage> messages = new List<SignalMessage>();
+                if (envelope.isReceipt())
                 {
-                    continue;
+                    SignalDBContext.IncreaseReceiptCountLocked(envelope, this);
                 }
-                try
+                else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
                 {
-                    if (envelope.isReceipt())
-                    {
-                        SignalDBContext.IncreaseReceiptCountLocked(envelope, this);
-                    }
-                    else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
-                    {
-                        HandleMessage(envelope);
-                    }
-                    else
-                    {
-                        Debug.WriteLine("received message of unknown type " + envelope.getType() + " from " + envelope.getSource());
-                    }
+                    HandleMessage(envelope);
                 }
-                catch (Exception e)
+                else
                 {
-                    Debug.WriteLine(e.Message);
-                    Debug.WriteLine(e.StackTrace);
+                    Debug.WriteLine("received message of unknown type " + envelope.getType() + " from " + envelope.getSource());
                 }
             }
         }
