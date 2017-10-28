@@ -196,7 +196,6 @@
     <Compile Include="Models\SignalSignedPreKey.cs" />
     <Compile Include="Models\SignalStore.cs" />
     <Compile Include="Models\SignalConversation.cs" />
-    <Compile Include="SignalLogging.cs" />
     <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
     <Compile Include="Storage\SignalLogging.cs" />
@@ -313,7 +312,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="libsignal-service-dotnet">
-      <Version>2.5.10.6</Version>
+      <Version>2.5.10.7</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore">
       <Version>1.1.2</Version>
