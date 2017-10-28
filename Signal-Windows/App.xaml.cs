@@ -1,4 +1,5 @@
 using libsignalservice.push;
+using libsignalservice;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
@@ -14,6 +15,8 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using Microsoft.QueryStringDotNET;
 using Windows.UI.Notifications;
+using Microsoft.Extensions.Logging;
+using Windows.Foundation.Diagnostics;
 
 namespace Signal_Windows
 {
@@ -39,6 +42,7 @@ namespace Signal_Windows
         /// </summary>
         public App()
         {
+            LibsignalLogging.LoggerFactory.AddProvider(new SignalLoggerProvider());
             this.InitializeComponent();
             this.Suspending += OnSuspending;
             this.Resuming += App_Resuming;
