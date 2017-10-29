@@ -19,7 +19,7 @@ namespace Signal_Windows.RC
 
         private Semaphore semaphore;
 
-        public async void Run(IBackgroundTaskInstance taskInstance)
+        public void Run(IBackgroundTaskInstance taskInstance)
         {
             taskInstance.Canceled += TaskInstance_Canceled;
             deferral = taskInstance.GetDeferral();

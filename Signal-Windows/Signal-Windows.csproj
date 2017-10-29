@@ -142,6 +142,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AppUtils.cs" />
     <Compile Include="Controls\AddContactListElement.xaml.cs">
       <DependentUpon>AddContactListElement.xaml</DependentUpon>
     </Compile>
@@ -165,42 +166,10 @@
       <DependentUpon>Welcome.xaml</DependentUpon>
     </Compile>
     <Compile Include="Logging\LoggerProvider.cs" />
-    <Compile Include="Migrations\SignalDB\20170806163624_s1.cs" />
-    <Compile Include="Migrations\SignalDB\20170806163624_s1.designer.cs">
-      <DependentUpon>20170806163624_s1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.cs" />
-    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.designer.cs">
-      <DependentUpon>20170806145530_ls1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\LibsignalDB\LibsignalDBContextModelSnapshot.cs" />
-    <Compile Include="Migrations\SignalDB\20170825082857_m2.cs" />
-    <Compile Include="Migrations\SignalDB\20170825082857_m2.designer.cs">
-      <DependentUpon>20170825082857_m2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\SignalDB\20170901124533_m3.cs" />
-    <Compile Include="Migrations\SignalDB\20170901124533_m3.designer.cs">
-      <DependentUpon>20170901124533_m3.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
-    <Compile Include="Models\PhoneContact.cs" />
-    <Compile Include="Models\SignalEarlyReceipt.cs" />
-    <Compile Include="Models\SignalIdentity.cs" />
-    <Compile Include="Models\SignalAttachment.cs" />
-    <Compile Include="Models\SignalGroup.cs" />
-    <Compile Include="Models\SignalMessage.cs" />
-    <Compile Include="Models\SignalContact.cs" />
-    <Compile Include="Models\SignalMessageContent.cs" />
-    <Compile Include="Models\SignalPreKey.cs" />
-    <Compile Include="Models\SignalSession.cs" />
-    <Compile Include="Models\SignalSignedPreKey.cs" />
-    <Compile Include="Models\SignalStore.cs" />
-    <Compile Include="Models\SignalConversation.cs" />
     <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
     <Compile Include="Storage\SignalLogging.cs" />
     <Compile Include="Storage\Store.cs" />
-    <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
     <Compile Include="ViewModels\ConversationSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\FinishRegistrationPageViewModel.cs" />
@@ -226,7 +195,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Storage\DB.cs" />
     <Compile Include="Views\RegisterFinalizationPage.xaml.cs">
       <DependentUpon>RegisterFinalizationPage.xaml</DependentUpon>
     </Compile>
@@ -362,6 +330,10 @@
     </SDKReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Signal-Windows.Lib\Signal-Windows.Lib.csproj">
+      <Project>{534495a9-6ec0-45ce-82f3-92e72d4035a6}</Project>
+      <Name>Signal-Windows.Lib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Signal-Windows.RC\Signal-Windows.RC.csproj">
       <Project>{c85230a9-ba91-4a0a-93b0-4f83bbf2c934}</Project>
       <Name>Signal-Windows.RC</Name>

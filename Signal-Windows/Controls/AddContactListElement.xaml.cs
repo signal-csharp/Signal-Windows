@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using Signal_Windows.Models;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -14,6 +13,7 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Signal_Windows.Lib.Models;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -89,7 +89,6 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                Model.View = this;
                 DisplayName = Model.Name;
                 PhoneNumber = Model.PhoneNumber;
                 ContactPhoto = Model.Photo;

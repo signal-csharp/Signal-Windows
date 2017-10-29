@@ -1,6 +1,5 @@
 using GalaSoft.MvvmLight;
 using libsignalservice.util;
-using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
 using System;
@@ -21,6 +20,8 @@ using System.Linq;
 using Windows.UI.Xaml.Controls;
 using System.Globalization;
 using System.Threading;
+using Signal_Windows.Lib.Models;
+using Signal_Windows.Lib.Constants;
 
 namespace Signal_Windows.ViewModels
 {
@@ -114,7 +115,8 @@ namespace Signal_Windows.ViewModels
             RefreshingContacts = true;
             Contacts.Clear();
             signalContacts.Clear();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, App.USER_AGENT);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls,
+                SignalConstants.Store.Username, SignalConstants.Store.Password, (int)SignalConstants.Store.DeviceId, App.USER_AGENT);
             ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
             List<PhoneContact> intermediateContacts = new List<PhoneContact>();
             if (contactStore != null)
@@ -323,7 +325,7 @@ namespace Signal_Windows.ViewModels
             };
             await Task.Run(() =>
             {
-                SignalDBContext.InsertOrUpdateContactLocked(contact, MainPageVM);
+                SignalDBContext.InsertOrUpdateContactLocked(contact);
             });
         }
 

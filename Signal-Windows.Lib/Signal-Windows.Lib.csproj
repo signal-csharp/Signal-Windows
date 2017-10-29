@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C85230A9-BA91-4A0A-93B0-4F83BBF2C934}</ProjectGuid>
-    <OutputType>winmdobj</OutputType>
+    <ProjectGuid>{534495A9-6EC0-45CE-82F3-92E72D4035A6}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Signal_Windows.RC</RootNamespace>
-    <AssemblyName>Signal-Windows.RC</AssemblyName>
+    <RootNamespace>Signal_Windows.Lib</RootNamespace>
+    <AssemblyName>Signal-Windows.Lib</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.16299.0</TargetPlatformVersion>
@@ -16,7 +16,6 @@
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <AllowCrossPlatformRetargeting>false</AllowCrossPlatformRetargeting>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -107,22 +106,69 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="SignalBackgroundTask.cs" />
+    <Compile Include="Events\IdentityKeyChangeEventArgs.cs" />
+    <Compile Include="Events\NewSignalContactEventArgs.cs" />
+    <Compile Include="Events\NewSignalGroupEventArgs.cs" />
+    <Compile Include="Events\SignalContactUpdatedEventArgs.cs" />
+    <Compile Include="Events\SignalGroupUpdatedEventArgs.cs" />
+    <Compile Include="Events\UpdateMessageStatusEventArgs.cs" />
+    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.cs" />
+    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.Designer.cs">
+      <DependentUpon>20170806145530_ls1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\LibsignalDB\LibsignalDBContextModelSnapshot.cs" />
+    <Compile Include="Migrations\SignalDB\20170806163624_s1.cs" />
+    <Compile Include="Migrations\SignalDB\20170806163624_s1.designer.cs">
+      <DependentUpon>20170806163624_s1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\SignalDB\20170825082857_m2.cs" />
+    <Compile Include="Migrations\SignalDB\20170825082857_m2.Designer.cs">
+      <DependentUpon>20170825082857_m2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\SignalDB\20170901124533_m3.cs" />
+    <Compile Include="Migrations\SignalDB\20170901124533_m3.Designer.cs">
+      <DependentUpon>20170901124533_m3.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
+    <Compile Include="Storage\DB.cs" />
+    <Compile Include="Models\PhoneContact.cs" />
+    <Compile Include="Models\SignalAttachment.cs" />
+    <Compile Include="Models\SignalContact.cs" />
+    <Compile Include="Models\SignalConversation.cs" />
+    <Compile Include="Models\SignalEarlyReceipt.cs" />
+    <Compile Include="Models\SignalGroup.cs" />
+    <Compile Include="Models\SignalIdentity.cs" />
+    <Compile Include="Models\SignalMessage.cs" />
+    <Compile Include="Models\SignalMessageContent.cs" />
+    <Compile Include="Models\SignalPreKey.cs" />
+    <Compile Include="Models\SignalSession.cs" />
+    <Compile Include="Models\SignalSignedPreKey.cs" />
+    <Compile Include="Models\SignalStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SignalConstants.cs" />
+    <Compile Include="SignalMessageContainer.cs" />
+    <Compile Include="Utils.cs" />
+    <EmbeddedResource Include="Properties\Signal_Windows.Lib.rd.xml" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="libsignal-service-dotnet">
       <Version>2.5.10.7</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore">
+      <Version>1.1.3</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <Version>1.1.3</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite">
+      <Version>1.1.3</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
+      <Version>1.1.2</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.0.1</Version>
     </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Signal-Windows.Lib\Signal-Windows.Lib.csproj">
-      <Project>{534495a9-6ec0-45ce-82f3-92e72d4035a6}</Project>
-      <Name>Signal-Windows.Lib</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

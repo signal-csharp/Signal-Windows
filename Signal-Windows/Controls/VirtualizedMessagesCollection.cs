@@ -1,5 +1,3 @@
-
-using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System;
 using System.Collections;
@@ -9,20 +7,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Signal_Windows.RC;
+using Signal_Windows.Lib;
+using Signal_Windows.Lib.Models;
 
 namespace Signal_Windows.Controls
 {
-    public class SignalMessageContainer
-    {
-        public SignalMessage Message;
-        public int Index;
-        public SignalMessageContainer(SignalMessage message, int index)
-        {
-            Message = message;
-            Index = index;
-        }
-    }
-
     public class SignalUnreadMarker
     {
         public string Text = "";

@@ -1,6 +1,5 @@
 using libsignalservice.push;
 using libsignalservice;
-using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
@@ -18,8 +17,9 @@ using Windows.UI.Notifications;
 using Microsoft.Extensions.Logging;
 using Windows.Foundation.Diagnostics;
 using Windows.ApplicationModel.Background;
-using Signal_Windows.RC;
+using Signal_Windows.Lib.Constants;
 using System.Threading;
+using Signal_Windows.Lib.Models;
 
 namespace Signal_Windows
 {
@@ -32,10 +32,8 @@ namespace Signal_Windows
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
         public static StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
         public static ViewModelLocator ViewModels = (ViewModelLocator)Current.Resources["Locator"];
-        public static SignalStore Store;
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
-        public static uint PREKEY_BATCH_SIZE = 100;
         public static bool WindowActive = false;
         private Task<SignalStore> Init;
         public static bool BackgroundTaskRunning;
@@ -166,8 +164,8 @@ namespace Signal_Windows
                         // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
                         // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
                         // übergeben werden
-                        Store = await Init;
-                        if (Store == null || !Store.Registered)
+                        SignalConstants.Store = await Init;
+                        if (SignalConstants.Store == null || !SignalConstants.Store.Registered)
                         {
                             rootFrame.Navigate(typeof(StartPage), args.Arguments);
                         }

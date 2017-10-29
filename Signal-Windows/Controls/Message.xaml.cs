@@ -1,4 +1,5 @@
-using Signal_Windows.Models;
+using Signal_Windows.Lib;
+using Signal_Windows.Lib.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

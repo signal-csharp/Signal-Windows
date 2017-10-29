@@ -3,7 +3,8 @@ using libsignal;
 using libsignal.util;
 using libsignalservice;
 using libsignalservice.util;
-using Signal_Windows.Models;
+using Signal_Windows.Lib.Constants;
+using Signal_Windows.Lib.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
 using System;
@@ -110,7 +111,7 @@ namespace Signal_Windows.ViewModels
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         UIEnabled = false;
-                        App.Store = store;
+                        SignalConstants.Store = store;
                     }).AsTask().Wait();
 
                     /* create prekeys */
@@ -121,7 +122,7 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
+                        SignalConstants.Store = store;
                         View.Finish(true);
                     }).AsTask().Wait();
                 });

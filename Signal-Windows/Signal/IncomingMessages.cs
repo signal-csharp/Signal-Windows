@@ -3,7 +3,6 @@ using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.util;
 using Nito.AsyncEx;
-using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Strilanc.Value;
 using System;
@@ -13,6 +12,8 @@ using Microsoft.Toolkit.Uwp.Notifications;
 using Windows.UI.Notifications;
 using Microsoft.QueryStringDotNET;
 using static libsignalservice.SignalServiceMessagePipe;
+using Signal_Windows.Lib.Models;
+using Signal_Windows.Lib.Constants;
 
 namespace Signal_Windows.ViewModels
 {
@@ -51,7 +52,7 @@ namespace Signal_Windows.ViewModels
                 List<SignalMessage> messages = new List<SignalMessage>();
                 if (envelope.isReceipt())
                 {
-                    SignalDBContext.IncreaseReceiptCountLocked(envelope, this);
+                    SignalDBContext.IncreaseReceiptCountLocked(envelope);
                 }
                 else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
                 {
@@ -66,7 +67,7 @@ namespace Signal_Windows.ViewModels
 
         private void HandleMessage(SignalServiceEnvelope envelope)
         {
-            var cipher = new SignalServiceCipher(new SignalServiceAddress(App.Store.Username), new Store());
+            var cipher = new SignalServiceCipher(new SignalServiceAddress(SignalConstants.Store.Username), new Store());
             var content = cipher.decrypt(envelope);
             long timestamp = Util.CurrentTimeMillis();
 
@@ -165,7 +166,7 @@ namespace Signal_Windows.ViewModels
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
                 composedTimestamp = envelope.getTimestamp();
                 if (message.Group != null)
@@ -220,7 +221,7 @@ namespace Signal_Windows.ViewModels
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
                 composedTimestamp = envelope.getTimestamp();
                 conversationId = envelope.getSource();
@@ -259,12 +260,12 @@ namespace Signal_Windows.ViewModels
                 {
                     displayname = group.Name;
                 }
-                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(groupid, displayname, avatarfile, true, timestamp, this);
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(groupid, displayname, avatarfile, true, timestamp);
                 if (group.Members != null)
                 {
                     foreach (var member in group.Members)
                     {
-                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, 0, this).Id);
+                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, 0).Id);
                     }
                 }
 
@@ -288,7 +289,7 @@ namespace Signal_Windows.ViewModels
                 {
                     status = 0;
                     type = SignalMessageDirection.Incoming;
-                    author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                    author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
                     prefix = $"{author.ThreadDisplayName} has";
                     composedTimestamp = envelope.getTimestamp();
                 }
@@ -330,7 +331,7 @@ namespace Signal_Windows.ViewModels
             {
                 var rawId = dataMessage.Group.GroupId;
                 threadId = Base64.encodeBytes(rawId);
-                var g = SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp, this);
+                var g = SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp);
                 if (!g.CanReceive)
                 {
                     SignalServiceGroup group = new SignalServiceGroup()
@@ -352,12 +353,12 @@ namespace Signal_Windows.ViewModels
                 if (isSync)
                 {
                     var sent = content.SynchronizeMessage.getSent().ForceGetValue();
-                    threadId = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), timestamp, this).ThreadId;
+                    threadId = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), timestamp).ThreadId;
                     composedTimestamp = sent.getTimestamp();
                 }
                 else
                 {
-                    threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this).ThreadId;
+                    threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp).ThreadId;
                     composedTimestamp = envelope.getTimestamp();
                 }
             }
@@ -372,7 +373,7 @@ namespace Signal_Windows.ViewModels
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
             }
 
             List<SignalAttachment> attachments = new List<SignalAttachment>();
@@ -413,7 +414,7 @@ namespace Signal_Windows.ViewModels
             if (type == SignalMessageDirection.Incoming)
             {
                 if (App.WindowActive)
-                    Utils.TryVibrate(true);
+                    AppUtils.TryVibrate(true);
                 else
                 {
                     SendTileNotification(message);
