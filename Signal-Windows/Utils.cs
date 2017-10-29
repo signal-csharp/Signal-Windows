@@ -264,6 +264,11 @@ namespace Signal_Windows
             }
         }
 
+        public static bool IsWindowsMobile()
+        {
+            return ApiInformation.IsApiContractPresent("Windows.Phone.PhoneContract", 1);
+        }
+
         public static string GetCountryCode(string ISO3166) //https://stackoverflow.com/questions/34837436/uwp-get-country-phone-number-prefix
         {
             var dictionary = new Dictionary<string, string>();

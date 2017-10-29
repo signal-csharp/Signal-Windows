@@ -17,6 +17,9 @@ using Microsoft.QueryStringDotNET;
 using Windows.UI.Notifications;
 using Microsoft.Extensions.Logging;
 using Windows.Foundation.Diagnostics;
+using Windows.ApplicationModel.Background;
+using Signal_Windows.RC;
+using System.Threading;
 
 namespace Signal_Windows
 {
@@ -35,6 +38,8 @@ namespace Signal_Windows
         public static uint PREKEY_BATCH_SIZE = 100;
         public static bool WindowActive = false;
         private Task<SignalStore> Init;
+        public static bool BackgroundTaskRunning;
+        public static Semaphore AppSemaphore;
 
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
@@ -88,6 +93,38 @@ namespace Signal_Windows
         /// <returns></returns>
         private async Task OnLaunchedOrActivated(IActivatedEventArgs e, bool launched = true)
         {
+            AttemptSemaphoreSetup();
+
+            string TaskName = "SignalMessageBackgroundTask";
+            BackgroundExecutionManager.RemoveAccess();
+            bool foundTask = false;
+
+            foreach (var task in BackgroundTaskRegistration.AllTasks)
+            {
+                if (task.Value.Name == TaskName)
+                {
+                    foundTask = true;
+                }
+            }
+
+            if (!foundTask)
+            {
+                var builder = new BackgroundTaskBuilder();
+                builder.Name = TaskName;
+                builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
+                builder.IsNetworkRequested = true;
+                builder.SetTrigger(new TimeTrigger(15, false));
+                builder.SetTrigger(new SystemTrigger(SystemTriggerType.ServicingComplete, false));
+                builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
+                var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
+                if (requestStatus != BackgroundAccessStatus.DeniedBySystemPolicy ||
+                    requestStatus != BackgroundAccessStatus.DeniedByUser ||
+                    requestStatus != BackgroundAccessStatus.Unspecified)
+                {
+                    builder.Register();
+                }
+            }
+
             Debug.WriteLine("Signal-Windows " + LocalFolder.Path.ToString());
             Window.Current.Activated += Current_Activated;
             WindowActive = true;
@@ -197,6 +234,10 @@ namespace Signal_Windows
                     await ViewModels.MainPageInstance.Shutdown();
                 }
             }
+            if (AppSemaphore != null)
+            {
+                AppSemaphore.Release();
+            }
             Debug.WriteLine("shutdown successful");
             //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden
             deferral.Complete();
@@ -212,6 +253,26 @@ namespace Signal_Windows
             else
             {
                 Debug.WriteLine("We can't resume");
+            }
+        }
+
+        private void AttemptSemaphoreSetup()
+        {
+            AppSemaphore = null;
+            BackgroundTaskRunning = true;
+            try
+            {
+                AppSemaphore = Semaphore.OpenExisting("Signal_Windows_Semaphore");
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                BackgroundTaskRunning = false;
+            }
+
+            if (!BackgroundTaskRunning)
+            {
+                AppSemaphore = new Semaphore(1, 1, "Signal_Windows_Semaphore");
+                AppSemaphore.WaitOne();
             }
         }
     }

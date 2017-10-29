@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
 using Windows.UI.Core;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -123,6 +124,25 @@ namespace Signal_Windows.ViewModels
 
         public async Task Init()
         {
+            if (Utils.IsWindowsMobile())
+            {
+                var statusBarProgressIndicator = StatusBar.GetForCurrentView().ProgressIndicator;
+                await statusBarProgressIndicator.ShowAsync();
+                statusBarProgressIndicator.Text = "Connecting to Signal...";
+            }
+            if (App.BackgroundTaskRunning)
+            {
+                try
+                {
+                    App.AppSemaphore = Semaphore.OpenExisting("Signal_Windows_Semaphore");
+                }
+                catch (WaitHandleCannotBeOpenedException)
+                {
+                    App.AppSemaphore = new Semaphore(1, 1, "Signal_Windows_Semaphore");
+                }
+                App.AppSemaphore.WaitOne();
+                App.BackgroundTaskRunning = false;
+            }
             App.MainPageActive = true;
             Debug.WriteLine("Init lock wait");
             using (await ActionInProgress.LockAsync(CancelSource.Token))
@@ -203,8 +223,21 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
                 }
+                finally
+                {
+                    if (Utils.IsWindowsMobile())
+                    {
+                        var statusBarProgressIndicator = StatusBar.GetForCurrentView().ProgressIndicator;
+                        await statusBarProgressIndicator.HideAsync();
+                    }
+                }
             }
             Debug.WriteLine("Init lock released");
+            if (Utils.IsWindowsMobile())
+            {
+                var statusBarProgressIndicator = StatusBar.GetForCurrentView().ProgressIndicator;
+                await statusBarProgressIndicator.HideAsync();
+            }
         }
 
         public async Task OnNavigatingFrom()
