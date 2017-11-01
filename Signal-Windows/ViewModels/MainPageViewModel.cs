@@ -2,6 +2,7 @@ using GalaSoft.MvvmLight;
 using libsignalservice;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using Signal_Windows.Controls;
 using Signal_Windows.Models;
@@ -24,6 +25,7 @@ namespace Signal_Windows.ViewModels
 {
     public partial class MainPageViewModel : ViewModelBase, IMessagePipeCallback
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<MainPageViewModel>();
         private Visibility _ThreadVisibility = Visibility.Collapsed;
 
         public Visibility ThreadVisibility
@@ -80,10 +82,10 @@ namespace Signal_Windows.ViewModels
 
         internal async void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
-            Debug.WriteLine("MPVMBack lock wait");
+            Logger.LogDebug("BackButton_Click() locking");
             using (await ActionInProgress.LockAsync())
             {
-                Debug.WriteLine("MPVMBack lock grabbed");
+                Logger.LogDebug("BackButton_Click() locked");
                 SelectedThread = null;
                 View.Thread.DisposeCurrentThread();
                 ThreadVisibility = Visibility.Collapsed;
@@ -92,7 +94,7 @@ namespace Signal_Windows.ViewModels
                 Utils.DisableBackButton(BackButton_Click);
                 e.Handled = true;
             }
-            Debug.WriteLine("MPVMBack lock released");
+            Logger.LogDebug("BackButton_Click() released");
         }
 
         public void UIUpdateThread(SignalConversation thread)
@@ -124,10 +126,10 @@ namespace Signal_Windows.ViewModels
         public async Task Init()
         {
             App.MainPageActive = true;
-            Debug.WriteLine("Init lock wait");
+            Logger.LogDebug("Init() locking");
             using (await ActionInProgress.LockAsync(CancelSource.Token))
             {
-                Debug.WriteLine("Init lock grabbed");
+                Logger.LogDebug("Init() locked");
                 Running = true;
                 CancelSource = new CancellationTokenSource();
                 try
@@ -180,8 +182,8 @@ namespace Signal_Windows.ViewModels
                             }
                             catch (Exception e)
                             {
-                                Debug.WriteLine(e.Message);
-                                Debug.WriteLine(e.StackTrace);
+                                var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                                Logger.LogError("Init() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
                             }
                         });
                         MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
@@ -193,18 +195,18 @@ namespace Signal_Windows.ViewModels
                 }
                 catch (AuthorizationFailedException)
                 {
-                    Debug.WriteLine("OWS server rejected our credentials - redirecting to StartPage");
+                    Logger.LogError("Init(): OWS server rejected our credentials - redirecting to StartPage");
                     Running = false;
                     CancelSource.Cancel();
                     View.Frame.Navigate(typeof(StartPage));
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e.Message);
-                    Debug.WriteLine(e.StackTrace);
+                    var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                    Logger.LogError("Init() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
                 }
             }
-            Debug.WriteLine("Init lock released");
+            Logger.LogDebug("Init() released");
         }
 
         public async Task OnNavigatingFrom()
@@ -215,17 +217,17 @@ namespace Signal_Windows.ViewModels
 
         public async Task Shutdown()
         {
-            Debug.WriteLine("Shutdown lock await");
+            Logger.LogDebug("Shutdown() locking");
             using (await ActionInProgress.LockAsync())
             {
                 Running = false;
                 App.MainPageActive = false;
-                Debug.WriteLine("Shutdown lock grabbed");
+                Logger.LogDebug("Shutdown() locked");
                 CancelSource.Cancel();
                 await IncomingMessagesTask;
                 await OutgoingMessagesTask;
             }
-            Debug.WriteLine("Shutdown lock released");
+            Logger.LogDebug("Shutdown() released");
         }
 
         internal async void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -234,22 +236,22 @@ namespace Signal_Windows.ViewModels
             {
                 try
                 {
-                    Debug.WriteLine("SelectionChanged lock await");
+                    Logger.LogDebug("ContactsList_SelectionChanged() locking");
                     using (await ActionInProgress.LockAsync())
                     {
-                        Debug.WriteLine("SelectionChanged lock grabbed");
+                        Logger.LogDebug("ContactsList_SelectionChanged() locked");
                         WelcomeVisibility = Visibility.Collapsed;
                         ThreadVisibility = Visibility.Visible;
                         SelectedThread = (SignalConversation)e.AddedItems[0];
                         View.Thread.Load(SelectedThread);
                         View.SwitchToStyle(View.GetCurrentViewStyle());
                     }
-                    Debug.WriteLine("SelectionChanged lock released");
+                    Logger.LogDebug("ContactsList_SelectionChanged() released");
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.Message);
-                    Debug.WriteLine(ex.StackTrace);
+                    var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
+                    Logger.LogError("ContactsList_SelectionChanged() failed in line {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
                 }
             }
         }
@@ -265,7 +267,7 @@ namespace Signal_Windows.ViewModels
 
         private async Task<bool> SendMessage(string messageText)
         {
-            Debug.WriteLine("starting sendmessage");
+            Logger.LogTrace("SendMessage()");
             try
             {
                 if (messageText != string.Empty)
@@ -282,10 +284,10 @@ namespace Signal_Windows.ViewModels
                         Read = true,
                         Type = SignalMessageType.Normal
                     };
-                    Debug.WriteLine("keydown lock await");
+                    Logger.LogTrace("SendMessage() locking");
                     using (await ActionInProgress.LockAsync())
                     {
-                        Debug.WriteLine("keydown lock grabbed");
+                        Logger.LogTrace("SendMessage() locked");
 
                         /* update in-memory data */
                         SelectedThread.MessagesCount += 1;
@@ -309,15 +311,14 @@ namespace Signal_Windows.ViewModels
                         /* send */
                         OutgoingQueue.Add(message);
                     }
-                    Debug.WriteLine("keydown lock released");
+                    Logger.LogTrace("SendMessage() released");
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
-                Debug.WriteLine(ex.Message);
-                Debug.WriteLine(ex.StackTrace);
+                var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
+                Logger.LogError("SendMessage() failed in line {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
                 return false;
             }
         }
@@ -353,10 +354,10 @@ namespace Signal_Windows.ViewModels
 
         public async Task UIHandleIncomingMessage(SignalMessage message)
         {
-            Debug.WriteLine("incoming lock await");
+            Logger.LogTrace("UIHandleIncomingMessage() locking");
             using (await ActionInProgress.LockAsync())
             {
-                Debug.WriteLine("incoming lock grabbed");
+                Logger.LogTrace("UIHandleIncomingMessage() locked");
                 var thread = ThreadsDictionary[message.ThreadId];
                 uint unreadCount = thread.UnreadCount;
                 if (SelectedThread == thread)
@@ -402,7 +403,7 @@ namespace Signal_Windows.ViewModels
                 thread.View.UpdateConversationDisplay(thread);
                 MoveThreadToTop(thread);
             }
-            Debug.WriteLine("incoming lock released");
+            Logger.LogTrace("UIHandleIncomingMessage() locked");
         }
 
         public void UIUpdateMessageBox(SignalMessage updatedMessage)
@@ -415,10 +416,10 @@ namespace Signal_Windows.ViewModels
 
         public async Task UIHandleIdentityKeyChange(string number)
         {
-            Debug.WriteLine("IKChange lock await");
+            Logger.LogTrace("UIHandleIncomingMessage() locking");
             using (await ActionInProgress.LockAsync())
             {
-                Debug.WriteLine("IKChange lock grabbed");
+                Logger.LogTrace("UIHandleIncomingMessage() locked");
                 var messages = SignalDBContext.InsertIdentityChangedMessages(number);
                 foreach (var message in messages)
                 {
@@ -433,7 +434,7 @@ namespace Signal_Windows.ViewModels
                     thread.View.UpdateConversationDisplay(thread);
                 }
             }
-            Debug.WriteLine("IKChange lock released");
+            Logger.LogTrace("UIHandleIncomingMessage() released");
         }
 
         #endregion UIThread

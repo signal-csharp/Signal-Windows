@@ -21,11 +21,13 @@ using System.Linq;
 using Windows.UI.Xaml.Controls;
 using System.Globalization;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Signal_Windows.ViewModels
 {
     public class AddContactPageViewModel : ViewModelBase
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<AddContactPageViewModel>();
         public ObservableCollection<PhoneContact> Contacts;
         private List<PhoneContact> signalContacts;
         private PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.GetInstance();
@@ -147,7 +149,7 @@ namespace Signal_Windows.ViewModels
                             }
                             catch (NumberParseException)
                             {
-                                Debug.WriteLine($"Couldn't parse {phone.Number}");
+                                Logger.LogWarning("RefreshContacts() could not parse number");
                                 continue;
                             }
                             if (!seenNumbers.Contains(formattedNumber))

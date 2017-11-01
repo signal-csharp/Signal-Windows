@@ -13,6 +13,7 @@ using Microsoft.Toolkit.Uwp.Notifications;
 using Windows.UI.Notifications;
 using Microsoft.QueryStringDotNET;
 using static libsignalservice.SignalServiceMessagePipe;
+using Microsoft.Extensions.Logging;
 
 namespace Signal_Windows.ViewModels
 {
@@ -23,7 +24,7 @@ namespace Signal_Windows.ViewModels
         /// </summary>
         public void HandleIncomingMessages()
         {
-            Debug.WriteLine("HandleIncomingMessages starting...");
+            Logger.LogDebug("HandleIncomingMessages()");
             try
             {
                 while (Running)
@@ -32,15 +33,19 @@ namespace Signal_Windows.ViewModels
                     {
                         Pipe.ReadBlocking(this);
                     }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
                     catch (Exception e)
                     {
-                        Debug.WriteLine(e.Message);
-                        Debug.WriteLine(e.StackTrace);
+                        var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                        Logger.LogWarning("HandleIncomingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
                     }
                 }
             }
             catch (Exception) { }
-            Debug.WriteLine("HandleIncomingMessages finished");
+            Logger.LogInformation("HandleIncomingMessages() finished");
         }
 
         public void OnMessage(SignalServiceMessagePipeMessage message)
@@ -59,7 +64,7 @@ namespace Signal_Windows.ViewModels
                 }
                 else
                 {
-                    Debug.WriteLine("received message of unknown type " + envelope.getType() + " from " + envelope.getSource());
+                    Logger.LogWarning("OnMessage() could not handle unknown message type {0}", envelope.getType());
                 }
             }
         }
@@ -131,7 +136,7 @@ namespace Signal_Windows.ViewModels
             } //TODO callmessages
             else
             {
-                Debug.WriteLine("HandleMessage got unrecognized message from " + envelope.getSource());
+                Logger.LogWarning("HandleMessage() received unrecognized message");
             }
         }
 
@@ -313,7 +318,7 @@ namespace Signal_Windows.ViewModels
             }
             else
             {
-                Debug.WriteLine("received group update without group info!");
+                Logger.LogError("HandleGroupUpdateMessage() received group update without group info");
             }
         }
 
@@ -409,7 +414,6 @@ namespace Signal_Windows.ViewModels
                     attachments.Add(sa);
                 }
             }
-            Debug.WriteLine("received message: " + message.Content);
             if (type == SignalMessageDirection.Incoming)
             {
                 if (App.WindowActive)

@@ -53,7 +53,6 @@ namespace Signal_Windows.ViewModels
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();
-                    Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         App.Store = store;

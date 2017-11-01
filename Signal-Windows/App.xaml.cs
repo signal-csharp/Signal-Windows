@@ -25,9 +25,10 @@ namespace Signal_Windows
     /// </summary>
     sealed partial class App : Application
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<App>();
         public static string URL = "https://textsecure-service.whispersystems.org";
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
-        public static StorageFolder LocalFolder = ApplicationData.Current.LocalFolder;
+        public static StorageFolder LocalCacheFolder = ApplicationData.Current.LocalCacheFolder;
         public static ViewModelLocator ViewModels = (ViewModelLocator)Current.Resources["Locator"];
         public static SignalStore Store;
         public static bool MainPageActive = false;
@@ -42,10 +43,11 @@ namespace Signal_Windows
         /// </summary>
         public App()
         {
-            LibsignalLogging.LoggerFactory.AddProvider(new SignalLoggerProvider());
+            SignalLogging.SetupLogging(true);
             this.InitializeComponent();
             this.Suspending += OnSuspending;
-            this.Resuming += App_Resuming;
+            this.Resuming += OnResuming;
+            this.UnhandledException += OnUnhandledException;
             try
             {
                 Init = Task.Run(() =>
@@ -57,9 +59,16 @@ namespace Signal_Windows
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e.Message);
-                Debug.WriteLine(e.StackTrace);
+                var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                Logger.LogError("App() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
             }
+        }
+
+        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs ex)
+        {
+            Exception e = ex.Exception;
+            var frame = new StackTrace(e, true).GetFrames()[0];
+            Logger.LogError("UnhandledException occured in {0}/{1}: {2}\n{3}", frame.GetFileName(), frame.GetFileLineNumber(), e.Message, e.StackTrace);
         }
 
         /// <summary>
@@ -88,7 +97,7 @@ namespace Signal_Windows
         /// <returns></returns>
         private async Task OnLaunchedOrActivated(IActivatedEventArgs e, bool launched = true)
         {
-            Debug.WriteLine("Signal-Windows " + LocalFolder.Path.ToString());
+            Logger.LogDebug(LocalCacheFolder.Path);
             Window.Current.Activated += Current_Activated;
             WindowActive = true;
             Frame rootFrame = Window.Current.Content as Frame;
@@ -197,21 +206,21 @@ namespace Signal_Windows
                     await ViewModels.MainPageInstance.Shutdown();
                 }
             }
-            Debug.WriteLine("shutdown successful");
+            Logger.LogInformation("OnSuspending() shutdown successful");
             //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden
             deferral.Complete();
         }
 
-        private async void App_Resuming(object sender, object e)
+        private async void OnResuming(object sender, object e)
         {
-            Debug.WriteLine("Resuming app");
+            Logger.LogInformation("OnResuming()");
             if (ViewModels.MainPageInstance != null)
             {
                 await ViewModels.MainPageInstance.Init();
             }
             else
             {
-                Debug.WriteLine("We can't resume");
+                Logger.LogError("OnResuming() failed");
             }
         }
     }

@@ -164,7 +164,6 @@
     <Compile Include="Controls\Welcome.xaml.cs">
       <DependentUpon>Welcome.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Logging\LoggerProvider.cs" />
     <Compile Include="Migrations\SignalDB\20170806163624_s1.cs" />
     <Compile Include="Migrations\SignalDB\20170806163624_s1.designer.cs">
       <DependentUpon>20170806163624_s1.cs</DependentUpon>
@@ -198,7 +197,7 @@
     <Compile Include="Models\SignalConversation.cs" />
     <Compile Include="Signal\IncomingMessages.cs" />
     <Compile Include="Signal\OutgoingMessages.cs" />
-    <Compile Include="Storage\SignalLogging.cs" />
+    <Compile Include="Logging\SignalLogging.cs" />
     <Compile Include="Storage\Store.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />

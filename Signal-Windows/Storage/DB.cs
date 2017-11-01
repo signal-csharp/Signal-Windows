@@ -7,6 +7,7 @@ using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Controls;
 using Signal_Windows.Models;
 using Signal_Windows.ViewModels;
@@ -590,6 +591,7 @@ namespace Signal_Windows.Storage
 
     public class SignalDBContext : DbContext
     {
+        private static readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalDBContext>();
         private static readonly object DBLock = new object();
         public DbSet<SignalContact> Contacts { get; set; }
         public DbSet<SignalMessage> Messages { get; set; }
@@ -720,7 +722,7 @@ namespace Signal_Windows.Storage
                     }
                     else
                     {
-                        Debug.WriteLine("InsertIdentityChangedMessages for non-existing contact!");
+                        Logger.LogWarning("InsertIdentityChangedMessages() contact does not exist");
                     }
                     ctx.SaveChanges();
                 }
@@ -802,7 +804,7 @@ namespace Signal_Windows.Storage
 
         public static List<SignalMessageContainer> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
         {
-            Debug.WriteLine($"GetMessagesLocked {thread.ThreadId} Skip({startIndex}) Take({count})");
+            Logger.LogTrace("GetMessagesLocked() skip {0} take {1}", startIndex, count);
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
