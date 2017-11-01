@@ -3,6 +3,7 @@ using libsignal;
 using libsignal.util;
 using libsignalservice;
 using libsignalservice.util;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
@@ -17,6 +18,7 @@ namespace Signal_Windows.ViewModels
 {
     public class LinkPageViewModel : ViewModelBase
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<LinkPageViewModel>();
         public LinkPage View;
         private CancellationTokenSource CancelSource;
         private bool UIEnabled = true;
@@ -118,7 +120,6 @@ namespace Signal_Windows.ViewModels
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();
-                    Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         App.Store = store;
@@ -129,8 +130,8 @@ namespace Signal_Windows.ViewModels
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e.Message);
-                Debug.WriteLine(e.StackTrace);
+                var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                Logger.LogError("BeginLinking() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
             }
         }
 
@@ -147,8 +148,8 @@ namespace Signal_Windows.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine(ex.Message);
-                        Debug.WriteLine(ex.StackTrace);
+                        var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
+                        Logger.LogError("BackButton_Click() failed in line {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
                     }
                 }
                 await Task.Run(() =>

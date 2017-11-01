@@ -1,4 +1,6 @@
 
+using libsignalservice;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System;
@@ -30,6 +32,7 @@ namespace Signal_Windows.Controls
 
     public class VirtualizedCollection : IList, INotifyCollectionChanged
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<VirtualizedCollection>();
         private const int PAGE_SIZE = 50;
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         private Dictionary<int, IList<SignalMessageContainer>> Cache = new Dictionary<int, IList<SignalMessageContainer>>();
@@ -90,7 +93,7 @@ namespace Signal_Windows.Controls
             int pageIndex = GetPageIndex(index);
             if (!Cache.ContainsKey(pageIndex))
             {
-                Debug.WriteLine($"cache miss {pageIndex}");
+                Logger.LogTrace("Get() cache miss ({0})", pageIndex);
                 Cache[pageIndex] = SignalDBContext.GetMessagesLocked(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
             }
             var page = Cache[pageIndex];
@@ -139,14 +142,14 @@ namespace Signal_Windows.Controls
             var message = value as SignalMessageContainer;
             int inpageIndex = message.Index % PAGE_SIZE;
             int pageIndex = GetPageIndex(message.Index);
-            Debug.WriteLine($"VirtualizedCollection.Add Id={message.Message.Id} Index={message.Index} PageIndex={pageIndex} InpageIndex={inpageIndex} ");
+            Logger.LogTrace("Add() Id={0} Index={1} PageIndex={2} InpageIndex={3}", message.Message.Id, message.Index, pageIndex, inpageIndex);
             if (!Cache.ContainsKey(pageIndex))
             {
                 Cache[pageIndex] = SignalDBContext.GetMessagesLocked(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
             }
             Cache[pageIndex].Insert(inpageIndex, message);
             int virtualIndex = GetVirtualIndex(message.Index);
-            Debug.WriteLine($"NotifyCollectionChangedAction.Add index={message.Index} virtualIndex={virtualIndex}");
+            Logger.LogTrace("Add() Index={0} VirtualIndex={1}", message.Index, virtualIndex);
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, message, virtualIndex));
             return message.Index;
         }

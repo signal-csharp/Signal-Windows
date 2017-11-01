@@ -4,6 +4,7 @@ using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System;
@@ -26,7 +27,7 @@ namespace Signal_Windows.ViewModels
         /// </summary>
         public void HandleOutgoingMessages()
         {
-            Debug.WriteLine("HandleOutgoingMessages starting...");
+            Logger.LogDebug("HandleOutgoingMessages()");
             CancellationToken token = CancelSource.Token;
             while (!token.IsCancellationRequested)
             {
@@ -74,16 +75,13 @@ namespace Signal_Windows.ViewModels
                 }
                 catch (OperationCanceledException e)
                 {
-                    Debug.WriteLine(e.Message);
-                    Debug.WriteLine(e.StackTrace);
-                    Debug.WriteLine("HandleOutgoingMessages finished");
+                    Logger.LogInformation("HandleOutgoingMessages() finished");
                     return;
                 }
                 catch (EncapsulatedExceptions exceptions)
                 {
                     outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
-                    Debug.WriteLine(exceptions.Message);
-                    Debug.WriteLine(exceptions.StackTrace);
+                    Logger.LogError("HandleOutgoingMessages() encountered libsignal exceptions");
                     IList<UntrustedIdentityException> identityExceptions = exceptions.getUntrustedIdentityExceptions();
                     if (exceptions.getNetworkExceptions().Count > 0)
                     {
@@ -102,16 +100,14 @@ namespace Signal_Windows.ViewModels
                         LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(e.getE164Number(), 1), Base64.encodeBytes(e.getIdentityKey().serialize()));
                     }
                 }
-                catch (RateLimitException e)
+                catch (RateLimitException)
                 {
-                    Debug.WriteLine(e.Message);
-                    Debug.WriteLine(e.StackTrace);
+                    Logger.LogError("HandleOutgoingMessages() could not send due to rate limits");
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Ratelimit;
                 }
                 catch (UntrustedIdentityException e)
                 {
-                    Debug.WriteLine(e.Message);
-                    Debug.WriteLine(e.StackTrace);
+                    Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Identity;
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
                     {
@@ -121,13 +117,13 @@ namespace Signal_Windows.ViewModels
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e.Message);
-                    Debug.WriteLine(e.StackTrace);
+                    var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                    Logger.LogError("HandleOutgoingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Unknown;
                 }
                 SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
             }
-            Debug.WriteLine("HandleOutgoingMessages finished");
+            Logger.LogInformation("HandleOutgoingMessages() finished");
         }
     }
 }

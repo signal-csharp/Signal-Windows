@@ -12,11 +12,14 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Core;
 using libsignalservice.util;
 using Windows.UI.Popups;
+using libsignalservice;
+using Microsoft.Extensions.Logging;
 
 namespace Signal_Windows.ViewModels
 {
     public class RegisterPageViewModel : ViewModelBase
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<RegisterPageViewModel>();
         public CancellationTokenSource CancelSource = new CancellationTokenSource();
         public IEnumerable<string> CountriesList { get; set; } = CountryArrays.Names;
         public RegisterPage View { get; set; }
@@ -82,12 +85,11 @@ namespace Signal_Windows.ViewModels
                     MessageDialog dialog = new MessageDialog(content, title);
                     var result = dialog.ShowAsync();
                 }
-                Debug.WriteLine(number);
             }
             catch(Exception ex)
             {
-                Debug.WriteLine(ex.Message);
-                Debug.WriteLine(ex.StackTrace);
+                var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
+                Logger.LogError("RegisterButton_Click() failed in line {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
             }
         }
 
