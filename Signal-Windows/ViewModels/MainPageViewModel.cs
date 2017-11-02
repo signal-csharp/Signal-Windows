@@ -186,19 +186,6 @@ namespace Signal_Windows.ViewModels
                 await statusBarProgressIndicator.ShowAsync();
                 statusBarProgressIndicator.Text = "Connecting to Signal...";
             }
-            if (App.BackgroundTaskRunning)
-            {
-                try
-                {
-                    App.AppSemaphore = Semaphore.OpenExisting("Signal_Windows_Semaphore");
-                }
-                catch (WaitHandleCannotBeOpenedException)
-                {
-                    App.AppSemaphore = new Semaphore(1, 1, "Signal_Windows_Semaphore");
-                }
-                App.AppSemaphore.WaitOne();
-                App.BackgroundTaskRunning = false;
-            }
             App.MainPageActive = true;
             Debug.WriteLine("Init lock wait");
             using (await ActionInProgress.LockAsync(CancelSource.Token))
