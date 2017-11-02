@@ -149,7 +149,7 @@ namespace Signal_Windows.ViewModels
                             }
                             catch (NumberParseException)
                             {
-                                Logger.LogWarning("RefreshContacts() could not parse number");
+                                Logger.LogDebug("RefreshContacts() could not parse number");
                                 continue;
                             }
                             if (!seenNumbers.Contains(formattedNumber))
