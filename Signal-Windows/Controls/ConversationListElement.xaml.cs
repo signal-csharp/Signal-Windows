@@ -1,4 +1,4 @@
-using Signal_Windows.Models;
+using Signal_Windows.Lib.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using Windows.UI.Xaml;
@@ -117,7 +117,6 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                Model.View = this;
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
                 UnreadCount = Model.UnreadCount;
                 LastMessage = Model.LastMessage?.Content.Content;
@@ -125,16 +124,6 @@ namespace Signal_Windows.Controls
                 FillBrush = Model is SignalContact ? Utils.GetBrushFromColor(((SignalContact)Model).Color) : Utils.Blue;
                 LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
             }
-        }
-
-        public void UpdateConversationDisplay(SignalConversation thread)
-        {
-            Model.ThreadDisplayName = thread.ThreadDisplayName;
-            Model.LastActiveTimestamp = thread.LastActiveTimestamp;
-            ConversationDisplayName.Text = thread.ThreadDisplayName;
-            UnreadCount = thread.UnreadCount;
-            LastMessage = Model.LastMessage?.Content.Content;
-            LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
         }
     }
 }

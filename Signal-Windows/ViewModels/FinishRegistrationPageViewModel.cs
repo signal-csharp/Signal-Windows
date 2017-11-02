@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
 using libsignalservice;
 using libsignalservice.util;
-using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
 using Windows.UI.Popups;
+using Signal_Windows.Lib.Models;
+using Signal_Windows.Lib.Constants;
 
 namespace Signal_Windows.ViewModels
 {
@@ -44,7 +45,7 @@ namespace Signal_Windows.ViewModels
                     LibsignalDBContext.SaveOrUpdateSignalStore(store);
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
+                        SignalConstants.Store = store;
                     }).AsTask().Wait();
 
                     /* create prekeys */
@@ -56,12 +57,12 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine("success!");
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
+                        SignalConstants.Store = store;
                     }).AsTask().Wait();
                 });
                 View.Frame.Navigate(typeof(MainPage));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 var title = "Verification failed";
                 var content = "Please enter the correct verification code.";

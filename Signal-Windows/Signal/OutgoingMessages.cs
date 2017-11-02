@@ -4,7 +4,8 @@ using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
-using Signal_Windows.Models;
+using Signal_Windows.Lib.Constants;
+using Signal_Windows.Lib.Models;
 using Signal_Windows.Storage;
 using System;
 using System.Collections.Concurrent;
@@ -52,10 +53,10 @@ namespace Signal_Windows.ViewModels
                     else
                     {
                         List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                        SignalGroup g = SignalDBContext.GetOrCreateGroupLocked(outgoingSignalMessage.ThreadId, 0, this);
+                        SignalGroup g = SignalDBContext.GetOrCreateGroupLocked(outgoingSignalMessage.ThreadId, 0);
                         foreach (GroupMembership sc in g.GroupMemberships)
                         {
-                            if (sc.Contact.ThreadId != App.Store.Username)
+                            if (sc.Contact.ThreadId != SignalConstants.Store.Username)
                             {
                                 recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
                             }
@@ -125,7 +126,7 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine(e.StackTrace);
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Unknown;
                 }
-                SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
+                SignalDBContext.UpdateMessageStatus(outgoingSignalMessage);
             }
             Debug.WriteLine("HandleOutgoingMessages finished");
         }

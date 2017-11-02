@@ -1,5 +1,6 @@
 using libsignalservice.util;
-using Signal_Windows.Models;
+using Signal_Windows.Lib;
+using Signal_Windows.Lib.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;

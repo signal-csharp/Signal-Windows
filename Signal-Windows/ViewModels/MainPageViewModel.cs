@@ -4,7 +4,9 @@ using libsignalservice.push.exceptions;
 using libsignalservice.util;
 using Nito.AsyncEx;
 using Signal_Windows.Controls;
-using Signal_Windows.Models;
+using Signal_Windows.Lib;
+using Signal_Windows.Lib.Constants;
+using Signal_Windows.Lib.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
 using System;
@@ -15,9 +17,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
 using Windows.UI.Core;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
+using System.Linq;
 using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.ViewModels
@@ -64,18 +68,21 @@ namespace Signal_Windows.ViewModels
         public ObservableCollection<SignalConversation> Threads = new ObservableCollection<SignalConversation>();
         private Dictionary<string, SignalConversation> ThreadsDictionary = new Dictionary<string, SignalConversation>();
 
-        public void AddThread(SignalConversation contact)
+        public async Task AddThread(SignalConversation contact)
         {
-            // only add a contact to Threads if it isn't already there
-            foreach (var thread in Threads)
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                if (thread.ThreadId == contact.ThreadId)
+                // only add a contact to Threads if it isn't already there
+                foreach (var thread in Threads)
                 {
-                    return;
+                    if (thread.ThreadId == contact.ThreadId)
+                    {
+                        return;
+                    }
                 }
-            }
-            Threads.Add(contact);
-            ThreadsDictionary[contact.ThreadId] = contact;
+                Threads.Add(contact);
+                ThreadsDictionary[contact.ThreadId] = contact;
+            });
         }
 
         internal async void BackButton_Click(object sender, BackRequestedEventArgs e)
@@ -95,15 +102,18 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("MPVMBack lock released");
         }
 
-        public void UIUpdateThread(SignalConversation thread)
+        public async Task UIUpdateThread(SignalConversation thread)
         {
-            SignalConversation uiThread = ThreadsDictionary[thread.ThreadId];
-            uiThread.CanReceive = thread.CanReceive;
-            uiThread.View.UpdateConversationDisplay(thread);
-            if (SelectedThread == uiThread)
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                View.Thread.Update(thread);
-            }
+                SignalConversation uiThread = ThreadsDictionary[thread.ThreadId];
+                uiThread.CanReceive = thread.CanReceive;
+                UpdateThread(thread);
+                if (SelectedThread == uiThread)
+                {
+                    View.Thread.Update(thread);
+                }
+            });
         }
 
         #endregion Contacts
@@ -119,10 +129,63 @@ namespace Signal_Windows.ViewModels
             {
                 await Init();
             }
+            LibsignalDBContext.IdentityKeyChange += LibsignalDBContext_IdentityKeyChange;
+            SignalDBContext.MessageStatusUpdated += SignalDBContext_MessageStatusUpdated;
+            SignalDBContext.NewSignalGroup += SignalDBContext_NewSignalGroup;
+            SignalDBContext.SignalGroupUpdated += SignalDBContext_SignalGroupUpdated;
+            SignalDBContext.NewSignalContact += SignalDBContext_NewSignalContact;
+            SignalDBContext.SignalContactUpdated += SignalDBContext_SignalContactUpdated;
+        }
+
+        public void OnNavigatingFrom()
+        {
+            LibsignalDBContext.IdentityKeyChange -= LibsignalDBContext_IdentityKeyChange;
+            SignalDBContext.MessageStatusUpdated -= SignalDBContext_MessageStatusUpdated;
+            SignalDBContext.NewSignalGroup -= SignalDBContext_NewSignalGroup;
+            SignalDBContext.SignalGroupUpdated -= SignalDBContext_SignalGroupUpdated;
+            SignalDBContext.NewSignalContact -= SignalDBContext_NewSignalContact;
+            SelectedThread = null;
+            View.Thread.DisposeCurrentThread();
+        }
+
+        private async void LibsignalDBContext_IdentityKeyChange(object sender, Lib.Events.IdentityKeyChangeEventArgs e)
+        {
+            await UIHandleIdentityKeyChange(e.Number);
+        }
+
+        private async void SignalDBContext_MessageStatusUpdated(object sender, Lib.Events.UpdateMessageStatusEventArgs e)
+        {
+            await UIUpdateMessageBox(e.Message);
+        }
+
+        private async void SignalDBContext_NewSignalGroup(object sender, Lib.Events.NewSignalGroupEventArgs e)
+        {
+            await AddThread(e.Group);
+        }
+
+        private async void SignalDBContext_SignalGroupUpdated(object sender, Lib.Events.SignalGroupUpdatedEventArgs e)
+        {
+            await UIUpdateThread(e.Group);
+        }
+
+        private async void SignalDBContext_NewSignalContact(object sender, Lib.Events.NewSignalContactEventArgs e)
+        {
+            await AddThread(e.Contact);
+        }
+
+        private async void SignalDBContext_SignalContactUpdated(object sender, Lib.Events.SignalContactUpdatedEventArgs e)
+        {
+            await UIUpdateThread(e.Contact);
         }
 
         public async Task Init()
         {
+            if (AppUtils.IsWindowsMobile())
+            {
+                var statusBarProgressIndicator = StatusBar.GetForCurrentView().ProgressIndicator;
+                await statusBarProgressIndicator.ShowAsync();
+                statusBarProgressIndicator.Text = "Connecting to Signal...";
+            }
             App.MainPageActive = true;
             Debug.WriteLine("Init lock wait");
             using (await ActionInProgress.LockAsync(CancelSource.Token))
@@ -137,7 +200,7 @@ namespace Signal_Windows.ViewModels
                         SignalDBContext.FailAllPendingMessages();
                         List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
                         List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
-                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
                         {
                             try
                             {
@@ -156,25 +219,25 @@ namespace Signal_Windows.ViewModels
                                             if (contact.LastActiveTimestamp > group.LastActiveTimestamp)
                                             {
                                                 contactsIdx++;
-                                                AddThread(contact);
+                                                await AddThread(contact);
                                             }
                                             else
                                             {
                                                 groupsIdx++;
-                                                AddThread(group);
+                                                await AddThread(group);
                                             }
                                         }
                                         else
                                         {
                                             contactsIdx++;
-                                            AddThread(contact);
+                                            await AddThread(contact);
                                         }
                                     }
                                     else if (groupsIdx < amountGroups)
                                     {
                                         SignalConversation group = groups[groupsIdx];
                                         groupsIdx++;
-                                        AddThread(group);
+                                        await AddThread(group);
                                     }
                                 }
                             }
@@ -184,9 +247,11 @@ namespace Signal_Windows.ViewModels
                                 Debug.WriteLine(e.StackTrace);
                             }
                         });
-                        MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(App.Store.Username, App.Store.Password, App.Store.SignalingKey, (int)App.Store.DeviceId), App.USER_AGENT);
+                        MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, App.ServiceUrls, new StaticCredentialsProvider(SignalConstants.Store.Username,
+                            SignalConstants.Store.Password, SignalConstants.Store.SignalingKey, (int)SignalConstants.Store.DeviceId), App.USER_AGENT);
                         Pipe = MessageReceiver.createMessagePipe();
-                        MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
+                        MessageSender = new SignalServiceMessageSender(CancelSource.Token, App.ServiceUrls, SignalConstants.Store.Username, SignalConstants.Store.Password,
+                            (int)SignalConstants.Store.DeviceId, new Store(), Pipe, null, App.USER_AGENT);
                         IncomingMessagesTask = Task.Factory.StartNew(HandleIncomingMessages, TaskCreationOptions.LongRunning);
                         OutgoingMessagesTask = Task.Factory.StartNew(HandleOutgoingMessages, TaskCreationOptions.LongRunning);
                     });
@@ -203,14 +268,21 @@ namespace Signal_Windows.ViewModels
                     Debug.WriteLine(e.Message);
                     Debug.WriteLine(e.StackTrace);
                 }
+                finally
+                {
+                    if (AppUtils.IsWindowsMobile())
+                    {
+                        var statusBarProgressIndicator = StatusBar.GetForCurrentView().ProgressIndicator;
+                        await statusBarProgressIndicator.HideAsync();
+                    }
+                }
             }
             Debug.WriteLine("Init lock released");
-        }
-
-        public async Task OnNavigatingFrom()
-        {
-            SelectedThread = null;
-            View.Thread.DisposeCurrentThread();
+            if (AppUtils.IsWindowsMobile())
+            {
+                var statusBarProgressIndicator = StatusBar.GetForCurrentView().ProgressIndicator;
+                await statusBarProgressIndicator.HideAsync();
+            }
         }
 
         public async Task Shutdown()
@@ -292,7 +364,7 @@ namespace Signal_Windows.ViewModels
                         SelectedThread.UnreadCount = 0;
                         SelectedThread.LastMessage = message;
                         SelectedThread.LastSeenMessageIndex = SelectedThread.MessagesCount;
-                        SelectedThread.View.UpdateConversationDisplay(SelectedThread);
+                        UpdateThread(SelectedThread);
                         var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
                         View.Thread.Append(container, true);
                         MoveThreadToTop(SelectedThread);
@@ -399,43 +471,70 @@ namespace Signal_Windows.ViewModels
                 thread.UnreadCount = unreadCount;
                 thread.LastActiveTimestamp = message.ReceivedTimestamp;
                 thread.LastMessage = message;
-                thread.View.UpdateConversationDisplay(thread);
+                UpdateThread(thread);
                 MoveThreadToTop(thread);
             }
             Debug.WriteLine("incoming lock released");
         }
 
-        public void UIUpdateMessageBox(SignalMessage updatedMessage)
+        public async Task UIUpdateMessageBox(SignalMessage updatedMessage)
         {
-            if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                View.Thread.UpdateMessageBox(updatedMessage);
-            }
+                if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
+                {
+                    View.Thread.UpdateMessageBox(updatedMessage);
+                }
+            });
         }
 
         public async Task UIHandleIdentityKeyChange(string number)
         {
-            Debug.WriteLine("IKChange lock await");
-            using (await ActionInProgress.LockAsync())
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
             {
-                Debug.WriteLine("IKChange lock grabbed");
-                var messages = SignalDBContext.InsertIdentityChangedMessages(number);
-                foreach (var message in messages)
+                Debug.WriteLine("IKChange lock await");
+                using (await ActionInProgress.LockAsync())
                 {
-                    var thread = ThreadsDictionary[message.ThreadId];
-                    thread.MessagesCount += 1;
-                    if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                    Debug.WriteLine("IKChange lock grabbed");
+                    var messages = SignalDBContext.InsertIdentityChangedMessages(number);
+                    foreach (var message in messages)
                     {
-                        var container = new SignalMessageContainer(message, (int) thread.MessagesCount - 1);
-                        View.Thread.Append(container, false);
+                        var thread = ThreadsDictionary[message.ThreadId];
+                        thread.MessagesCount += 1;
+                        if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+                        {
+                            var container = new SignalMessageContainer(message, (int)thread.MessagesCount - 1);
+                            View.Thread.Append(container, false);
+                        }
+                        thread.LastMessage = message;
+                        UpdateThread(thread);
                     }
-                    thread.LastMessage = message;
-                    thread.View.UpdateConversationDisplay(thread);
                 }
-            }
-            Debug.WriteLine("IKChange lock released");
+                Debug.WriteLine("IKChange lock released");
+            });
         }
 
         #endregion UIThread
+
+        private int? GetThreadIndex(SignalConversation conversation)
+        {
+            for (int i = 0; i < Threads.Count; i++)
+            {
+                if (conversation.Id == Threads[i].Id)
+                {
+                    return i;
+                }
+            }
+            return null;
+        }
+
+        private void UpdateThread(SignalConversation conversation)
+        {
+            int? index = GetThreadIndex(conversation);
+            if (index.HasValue)
+            {
+                Threads[index.Value] = conversation;
+            }
+        }
     }
 }
