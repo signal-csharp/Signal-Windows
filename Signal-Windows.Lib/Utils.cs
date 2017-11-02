@@ -101,7 +101,7 @@ namespace Signal_Windows
                 case AMBER: return Amber;
                 case BLUE_GREY: return Blue_Grey;
                 case GREY: return Grey;
-                case "system": return new SolidColorBrush((Color)App.Current.Resources["SystemAccentColor"]);
+                case "system": return new SolidColorBrush((Color)Application.Current.Resources["SystemAccentColor"]);
                 default: return Default;
             }
         }

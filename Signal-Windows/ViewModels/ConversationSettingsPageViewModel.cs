@@ -1,5 +1,4 @@
 ﻿using GalaSoft.MvvmLight;
-using Signal_Windows.Models;
 using Signal_Windows.Views;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using Windows.UI;
 using Windows.UI.Xaml.Media;
 using Signal_Windows.Storage;
 using Windows.UI.Core;
+using Signal_Windows.Lib.Models;
 
 namespace Signal_Windows.ViewModels
 {
@@ -77,7 +77,7 @@ namespace Signal_Windows.ViewModels
                 Contact.ThreadDisplayName = DisplayName.Trim();
                 await Task.Run(() =>
                 {
-                    SignalDBContext.InsertOrUpdateContactLocked(Contact, App.ViewModels.MainPageInstance);
+                    SignalDBContext.InsertOrUpdateContactLocked(Contact);
                 });
             }
         }
@@ -98,7 +98,7 @@ namespace Signal_Windows.ViewModels
             Contact.Color = color;
             await Task.Run(() =>
             {
-                SignalDBContext.InsertOrUpdateContactLocked(Contact, App.ViewModels.MainPageInstance);
+                SignalDBContext.InsertOrUpdateContactLocked(Contact);
             });
             FillBrush = Utils.GetBrushFromColor(Contact.Color);
         }
