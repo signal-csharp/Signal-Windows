@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Signal-Windows", "Signal-Windows\Signal-Windows.csproj", "{41736A64-5B66-44AF-879A-501192A46920}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E} = {1934FD82-A5EA-4B71-B915-A1826593CB6E}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Signal-Windows.Lib", "Signal-Windows.Lib\Signal-Windows.Lib.csproj", "{1934FD82-A5EA-4B71-B915-A1826593CB6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +43,22 @@ Global
 		{41736A64-5B66-44AF-879A-501192A46920}.Release|x86.ActiveCfg = Release|x86
 		{41736A64-5B66-44AF-879A-501192A46920}.Release|x86.Build.0 = Release|x86
 		{41736A64-5B66-44AF-879A-501192A46920}.Release|x86.Deploy.0 = Release|x86
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|ARM.ActiveCfg = Debug|ARM
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|ARM.Build.0 = Debug|ARM
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|x64.ActiveCfg = Debug|x64
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|x64.Build.0 = Debug|x64
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|x86.ActiveCfg = Debug|x86
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Debug|x86.Build.0 = Debug|x86
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|ARM.ActiveCfg = Release|ARM
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|ARM.Build.0 = Release|ARM
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|x64.ActiveCfg = Release|x64
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|x64.Build.0 = Release|x64
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|x86.ActiveCfg = Release|x86
+		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

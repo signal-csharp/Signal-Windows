@@ -154,7 +154,7 @@ namespace Signal_Windows.ViewModels
                 }
                 await Task.Run(() =>
                 {
-                    LibsignalDBContext.PurgeAccountData();
+                    App.Handle.PurgeAccountData();
                 });
                 View.Frame.GoBack();
                 e.Handled = true;

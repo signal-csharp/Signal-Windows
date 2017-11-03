@@ -1,77 +1,97 @@
+﻿using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
 using libsignalservice.push;
 using libsignalservice.util;
-using Nito.AsyncEx;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Strilanc.Value;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.Toolkit.Uwp.Notifications;
-using Windows.UI.Notifications;
-using Microsoft.QueryStringDotNET;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using static libsignalservice.SignalServiceMessagePipe;
-using Microsoft.Extensions.Logging;
 
-namespace Signal_Windows.ViewModels
+namespace Signal_Windows.Lib
 {
-    public partial class MainPageViewModel
+    class IncomingMessages : IMessagePipeCallback
     {
-        /// <summary>
-        /// Reads, decrypts, handles and schedules storing and displaying of incoming messages from the pipe
-        /// </summary>
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<IncomingMessages>();
+        private readonly CancellationToken Token;
+        private readonly SignalServiceMessagePipe Pipe;
+        private readonly SignalLibHandle Handle;
+
+        public IncomingMessages(CancellationToken token, SignalServiceMessagePipe pipe, SignalLibHandle handle)
+        {
+            Token = token;
+            Pipe = pipe;
+            Handle = handle;
+        }
+
         public void HandleIncomingMessages()
         {
             Logger.LogDebug("HandleIncomingMessages()");
-            try
+            while (!Token.IsCancellationRequested)
             {
-                while (Running)
+                try
                 {
-                    try
-                    {
-                        Pipe.ReadBlocking(this);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
-                    catch (Exception e)
-                    {
-                        var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
-                        Logger.LogWarning("HandleIncomingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
-                    }
+                    Pipe.ReadBlocking(this);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception e)
+                {
+                    var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                    Logger.LogWarning("HandleIncomingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
                 }
             }
-            catch (Exception) { }
             Logger.LogInformation("HandleIncomingMessages() finished");
         }
 
         public void OnMessage(SignalServiceMessagePipeMessage message)
         {
-            if (message is SignalServiceEnvelope)
+            Logger.LogTrace("OnMessage() locking");
+            Handle.SemaphoreSlim.Wait();
+            Logger.LogTrace("OnMessage() locked");
+            try
             {
-                SignalServiceEnvelope envelope = (SignalServiceEnvelope)message;
-                List<SignalMessage> messages = new List<SignalMessage>();
-                if (envelope.isReceipt())
+                if (message is SignalServiceEnvelope envelope)
                 {
-                    SignalDBContext.IncreaseReceiptCountLocked(envelope, this);
+                    List<SignalMessage> messages = new List<SignalMessage>();
+                    if (envelope.isReceipt())
+                    {
+                        SignalMessage update = SignalDBContext.IncreaseReceiptCountLocked(envelope);
+                        if (update != null)
+                        {
+                            Handle.DispatchMessageUpdate(update);
+                        }
+                    }
+                    else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
+                    {
+                        HandleMessage(envelope);
+                    }
+                    else
+                    {
+                        Logger.LogWarning("OnMessage() could not handle unknown message type {0}", envelope.getType());
+                    }
                 }
-                else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
-                {
-                    HandleMessage(envelope);
-                }
-                else
-                {
-                    Logger.LogWarning("OnMessage() could not handle unknown message type {0}", envelope.getType());
-                }
+            }
+            finally
+            {
+                Handle.SemaphoreSlim.Release();
+                Logger.LogTrace("OnMessage() released");
             }
         }
 
         private void HandleMessage(SignalServiceEnvelope envelope)
         {
-            var cipher = new SignalServiceCipher(new SignalServiceAddress(App.Store.Username), new Store());
+            var cipher = new SignalServiceCipher(new SignalServiceAddress(SignalLibHandle.Instance.Store.Username), new Store());
             var content = cipher.decrypt(envelope);
             long timestamp = Util.CurrentTimeMillis();
 
@@ -146,7 +166,7 @@ namespace Signal_Windows.ViewModels
             SignalContact author;
             SignalMessageStatus status;
             string prefix;
-            string conversationId;
+            SignalConversation conversation;
             long composedTimestamp;
 
             if (isSync)
@@ -159,30 +179,30 @@ namespace Signal_Windows.ViewModels
                 prefix = "You have";
                 if (message.Group != null)
                 {
-                    conversationId = Base64.encodeBytes(message.Group.GroupId);
+                    conversation = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(message.Group.GroupId), 0);
                 }
                 else
                 {
-                    conversationId = sent.getDestination().ForceGetValue();
+                    conversation = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), 0);
                 }
             }
             else
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
                 composedTimestamp = envelope.getTimestamp();
                 if (message.Group != null)
                 {
-                    conversationId = Base64.encodeBytes(message.Group.GroupId);
+                    conversation = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(message.Group.GroupId), 0);
                 }
                 else
                 {
-                    conversationId = envelope.getSource();
+                    conversation = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), 0);
                 }
             }
-            SignalDBContext.UpdateExpiresInLocked(new SignalConversation() { ThreadId = conversationId }, (uint)message.ExpiresInSeconds);
+            SignalDBContext.UpdateExpiresInLocked(conversation, (uint)message.ExpiresInSeconds);
             SignalMessage sm = new SignalMessage()
             {
                 Direction = type,
@@ -190,16 +210,13 @@ namespace Signal_Windows.ViewModels
                 Status = status,
                 Author = author,
                 Content = new SignalMessageContent() { Content = $"{prefix} set the expiration timer to {message.ExpiresInSeconds} seconds." },
-                ThreadId = conversationId,
+                ThreadId = conversation.ThreadId,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
             };
-            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-            {
-                await UIHandleIncomingMessage(sm);
-            }).AsTask().Wait();
+            SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, conversation);
         }
 
         private void HandleSessionResetMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
@@ -225,7 +242,7 @@ namespace Signal_Windows.ViewModels
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
                 composedTimestamp = envelope.getTimestamp();
                 conversationId = envelope.getSource();
@@ -245,10 +262,7 @@ namespace Signal_Windows.ViewModels
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
             };
-            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-            {
-                await UIHandleIncomingMessage(sm);
-            }).AsTask().Wait();
+            SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, author);
         }
 
         private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
@@ -264,12 +278,12 @@ namespace Signal_Windows.ViewModels
                 {
                     displayname = group.Name;
                 }
-                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(groupid, displayname, avatarfile, true, timestamp, this);
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(groupid, displayname, avatarfile, true, timestamp);
                 if (group.Members != null)
                 {
                     foreach (var member in group.Members)
                     {
-                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, 0, this).Id);
+                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, 0).Id);
                     }
                 }
 
@@ -293,7 +307,7 @@ namespace Signal_Windows.ViewModels
                 {
                     status = 0;
                     type = SignalMessageDirection.Incoming;
-                    author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                    author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
                     prefix = $"{author.ThreadDisplayName} has";
                     composedTimestamp = envelope.getTimestamp();
                 }
@@ -311,10 +325,9 @@ namespace Signal_Windows.ViewModels
                     ComposedTimestamp = composedTimestamp,
                     ReceivedTimestamp = timestamp,
                 };
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-                {
-                    await UIHandleIncomingMessage(sm);
-                }).AsTask().Wait();
+                SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, dbgroup);
+                Handle.DispatchAddOrUpdateConversation(dbgroup); //first update the conversation (including MessagesCount)...
+                Handle.DispatchHandleMessage(sm); //then pass the message
             }
             else
             {
@@ -327,16 +340,16 @@ namespace Signal_Windows.ViewModels
             SignalMessageDirection type;
             SignalContact author;
             SignalMessageStatus status;
-            string threadId;
+            SignalConversation conversation;
             long composedTimestamp;
-            string body = dataMessage.Body != null ? dataMessage.Body : "";
+            string body = dataMessage.Body ?? "";
 
             if (dataMessage.Group != null)
             {
                 var rawId = dataMessage.Group.GroupId;
-                threadId = Base64.encodeBytes(rawId);
-                var g = SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp, this);
-                if (!g.CanReceive)
+                var threadId = Base64.encodeBytes(rawId);
+                conversation = SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp);
+                if (!conversation.CanReceive)
                 {
                     SignalServiceGroup group = new SignalServiceGroup()
                     {
@@ -348,7 +361,7 @@ namespace Signal_Windows.ViewModels
                         Group = group,
                         Timestamp = Util.CurrentTimeMillis()
                     };
-                    MessageSender.sendMessage(envelope.getSourceAddress(), requestInfoMessage);
+                    //MessageSender.sendMessage(envelope.getSourceAddress(), requestInfoMessage); TODO
                 }
                 composedTimestamp = envelope.getTimestamp();
             }
@@ -357,12 +370,12 @@ namespace Signal_Windows.ViewModels
                 if (isSync)
                 {
                     var sent = content.SynchronizeMessage.getSent().ForceGetValue();
-                    threadId = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), timestamp, this).ThreadId;
+                    conversation = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), timestamp);
                     composedTimestamp = sent.getTimestamp();
                 }
                 else
                 {
-                    threadId = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this).ThreadId;
+                    conversation = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
                     composedTimestamp = envelope.getTimestamp();
                 }
             }
@@ -377,7 +390,7 @@ namespace Signal_Windows.ViewModels
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp, this);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
             }
 
             List<SignalAttachment> attachments = new List<SignalAttachment>();
@@ -387,7 +400,7 @@ namespace Signal_Windows.ViewModels
                 Status = status,
                 Author = author,
                 Content = new SignalMessageContent() { Content = body },
-                ThreadId = threadId,
+                ThreadId = conversation.ThreadId,
                 DeviceId = (uint)envelope.getSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = composedTimestamp,
@@ -414,7 +427,8 @@ namespace Signal_Windows.ViewModels
                     attachments.Add(sa);
                 }
             }
-            if (type == SignalMessageDirection.Incoming)
+            /*
+            if (type == SignalMessageDirection.Incoming) //TODO move this do the corewindow's handler
             {
                 if (App.WindowActive)
                     Utils.TryVibrate(true);
@@ -424,105 +438,8 @@ namespace Signal_Windows.ViewModels
                     SendMessageNotification(message);
                 }
             }
-            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-            {
-                await UIHandleIncomingMessage(message);
-            }).AsTask().Wait();
-        }
-
-        private void SendMessageNotification(SignalMessage message)
-        {
-            // notification tags can only be 16 chars (64 after creators update)
-            // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Notifications.ToastNotification#Windows_UI_Notifications_ToastNotification_Tag
-            string notificationId = message.ThreadId;
-            ToastBindingGeneric toastBinding = new ToastBindingGeneric()
-            {
-                AppLogoOverride = new ToastGenericAppLogo()
-                {
-                    Source = "ms-appx:///Assets/gambino.png",
-                    HintCrop = ToastGenericAppLogoCrop.Circle
-                }
-            };
-
-            var notificationText = GetNotificationText(message);
-            foreach (var item in notificationText)
-            {
-                toastBinding.Children.Add(item);
-            }
-
-            ToastContent toastContent = new ToastContent()
-            {
-                Launch = notificationId,
-                Visual = new ToastVisual()
-                {
-                    BindingGeneric = toastBinding
-                },
-                DisplayTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(message.ReceivedTimestamp)
-            };
-
-            ToastNotification toastNotification = new ToastNotification(toastContent.GetXml());
-            if (message.Author.ExpiresInSeconds > 0)
-            {
-                toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
-            }
-            toastNotification.Tag = notificationId;
-            ToastNotificationManager.CreateToastNotifier().Show(toastNotification);
-        }
-
-        private void SendTileNotification(SignalMessage message)
-        {
-            TileBindingContentAdaptive tileBindingContent = new TileBindingContentAdaptive()
-            {
-                PeekImage = new TilePeekImage()
-                {
-                    Source = "ms-appx:///Assets/gambino.png"
-                }
-            };
-            var notificationText = GetNotificationText(message);
-            foreach (var item in notificationText)
-            {
-                tileBindingContent.Children.Add(item);
-            }
-
-            TileBinding tileBinding = new TileBinding()
-            {
-                Content = tileBindingContent
-            };
-
-            TileContent tileContent = new TileContent()
-            {
-                Visual = new TileVisual()
-                {
-                    TileMedium = tileBinding,
-                    TileWide = tileBinding,
-                    TileLarge = tileBinding
-                }
-            };
-
-            TileNotification tileNotification = new TileNotification(tileContent.GetXml());
-            if (message.Author.ExpiresInSeconds > 0)
-            {
-                tileNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
-            }
-            TileUpdateManager.CreateTileUpdaterForApplication().Update(tileNotification);
-        }
-
-        private IList<AdaptiveText> GetNotificationText(SignalMessage message)
-        {
-            List<AdaptiveText> text = new List<AdaptiveText>();
-            AdaptiveText title = new AdaptiveText()
-            {
-                Text = message.Author.ThreadDisplayName,
-                HintMaxLines = 1
-            };
-            AdaptiveText messageText = new AdaptiveText()
-            {
-                Text = message.Content.Content,
-                HintWrap = true
-            };
-            text.Add(title);
-            text.Add(messageText);
-            return text;
+            */
+            SignalLibHandle.Instance.SaveAndDispatchSignalMessage(message, conversation);
         }
     }
 }

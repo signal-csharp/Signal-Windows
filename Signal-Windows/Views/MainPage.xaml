@@ -37,7 +37,7 @@
                     <TextBlock Text="+" FontSize="34" FontWeight="Light" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
                 </Button>
                 <AutoSuggestBox Grid.Row="1" Margin="16"/>
-                <ListView Grid.Row="2" Name="ContactsList" ItemsSource="{x:Bind Vm.Threads}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
+                <ListView Grid.Row="2" Name="ContactsList" ItemsSource="{x:Bind Vm.Conversations}" SelectionMode="Single" SelectionChanged="ContactsList_SelectionChanged">
                     <ListView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel></StackPanel>

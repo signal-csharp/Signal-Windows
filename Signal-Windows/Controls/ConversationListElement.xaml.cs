@@ -32,7 +32,6 @@ namespace Signal_Windows.Controls
         }
 
         private uint _UnreadCount;
-
         public uint UnreadCount
         {
             get
@@ -62,7 +61,6 @@ namespace Signal_Windows.Controls
         }
 
         private string _LastMessage = "@";
-
         public string LastMessage
         {
             get
@@ -77,7 +75,6 @@ namespace Signal_Windows.Controls
         }
 
         private Brush _FillBrush = Utils.Blue;
-
         public Brush FillBrush
         {
             get
@@ -92,7 +89,6 @@ namespace Signal_Windows.Controls
         }
 
         private string _Initials = string.Empty;
-
         public string Initials
         {
             get
@@ -117,23 +113,20 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                Model.View = this;
-                ConversationDisplayName.Text = Model.ThreadDisplayName;
-                UnreadCount = Model.UnreadCount;
-                LastMessage = Model.LastMessage?.Content.Content;
-                Initials = Utils.GetInitials(Model.ThreadDisplayName);
-                FillBrush = Model is SignalContact ? Utils.GetBrushFromColor(((SignalContact)Model).Color) : Utils.Blue;
-                LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
+                UpdateConversationDisplay();
+                Model.UpdateUI = UpdateConversationDisplay;
             }
         }
 
-        public void UpdateConversationDisplay(SignalConversation thread)
+        public void UpdateConversationDisplay()
         {
-            Model.ThreadDisplayName = thread.ThreadDisplayName;
-            Model.LastActiveTimestamp = thread.LastActiveTimestamp;
-            ConversationDisplayName.Text = thread.ThreadDisplayName;
-            UnreadCount = thread.UnreadCount;
+            Model.ThreadDisplayName = Model.ThreadDisplayName;
+            Model.LastActiveTimestamp = Model.LastActiveTimestamp;
+            ConversationDisplayName.Text = Model.ThreadDisplayName;
+            UnreadCount = Model.UnreadCount;
             LastMessage = Model.LastMessage?.Content.Content;
+            Initials = Utils.GetInitials(Model.ThreadDisplayName);
+            FillBrush = Model is SignalContact ? Utils.GetBrushFromColor(((SignalContact)Model).Color) : Utils.Blue;
             LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
         }
     }
