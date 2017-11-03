@@ -325,7 +325,7 @@ namespace Signal_Windows.ViewModels
             };
             await Task.Run(() =>
             {
-                SignalDBContext.InsertOrUpdateContactLocked(contact, MainPageVM);
+                //TODO inform UI
             });
         }
 

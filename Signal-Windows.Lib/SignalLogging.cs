@@ -11,7 +11,7 @@ using Windows.Storage;
 
 namespace Signal_Windows.Storage
 {
-    class SignalLogging
+    public class SignalLogging
     {
         public static void SetupLogging(bool ui)
         {

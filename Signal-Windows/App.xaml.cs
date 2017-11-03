@@ -13,10 +13,13 @@ using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
-using Microsoft.QueryStringDotNET;
 using Windows.UI.Notifications;
 using Microsoft.Extensions.Logging;
-using Windows.Foundation.Diagnostics;
+using Signal_Windows.Lib;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
+using Windows.UI.ViewManagement;
+using System.Collections.Generic;
 
 namespace Signal_Windows
 {
@@ -34,8 +37,9 @@ namespace Signal_Windows
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
-        public static bool WindowActive = false;
-        private Task<SignalStore> Init;
+        public static SignalLibHandle Handle;
+        Dictionary<int, CoreDispatcher> Views = new Dictionary<int, CoreDispatcher>();
+        private int MainViewId;
 
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
@@ -44,24 +48,15 @@ namespace Signal_Windows
         public App()
         {
             SignalLogging.SetupLogging(true);
+            Logger.LogInformation("Signal-Windows App launching");
             this.InitializeComponent();
-            this.Suspending += OnSuspending;
-            this.Resuming += OnResuming;
             this.UnhandledException += OnUnhandledException;
-            try
-            {
-                Init = Task.Run(() =>
-                {
-                    SignalDBContext.Migrate();
-                    LibsignalDBContext.Migrate();
-                    return LibsignalDBContext.GetSignalStore();
-                });
-            }
-            catch (Exception e)
-            {
-                var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
-                Logger.LogError("App() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
-            }
+            this.Suspending += App_Suspending;
+        }
+
+        private void App_Suspending(object sender, SuspendingEventArgs e)
+        {
+            Handle.Release();
         }
 
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs ex)
@@ -71,35 +66,9 @@ namespace Signal_Windows
             Logger.LogError("UnhandledException occured in {0}/{1}: {2}\n{3}", frame.GetFileName(), frame.GetFileLineNumber(), e.Message, e.StackTrace);
         }
 
-        /// <summary>
-        /// Wird aufgerufen, wenn die Anwendung durch den Endbenutzer normal gestartet wird. Weitere Einstiegspunkte
-        /// werden z. B. verwendet, wenn die Anwendung gestartet wird, um eine bestimmte Datei zu öffnen.
-        /// </summary>
-        /// <param name="e">Details über Startanforderung und -prozess.</param>
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
-            await OnLaunchedOrActivated(e);
-        }
-
-        protected override async void OnActivated(IActivatedEventArgs args)
-        {
-            await OnLaunchedOrActivated(args, false);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="e"></param>
-        /// <param name="launched">
-        /// If OnLaunched this is true
-        /// If OnActivated this is false
-        /// </param>
-        /// <returns></returns>
-        private async Task OnLaunchedOrActivated(IActivatedEventArgs e, bool launched = true)
-        {
             Logger.LogDebug(LocalCacheFolder.Path);
-            Window.Current.Activated += Current_Activated;
-            WindowActive = true;
             Frame rootFrame = Window.Current.Content as Frame;
 
             // App-Initialisierung nicht wiederholen, wenn das Fenster bereits Inhalte enthält.
@@ -118,64 +87,71 @@ namespace Signal_Windows
 
                 // Den Frame im aktuellen Fenster platzieren
                 Window.Current.Content = rootFrame;
+                var currView = ApplicationView.GetForCurrentView();
+                Views.Add(currView.Id, Window.Current.Dispatcher);
+                MainViewId = currView.Id;
             }
 
-            if (launched)
+            if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
             {
-                LaunchActivatedEventArgs args = e as LaunchActivatedEventArgs;
-                if (args.PrelaunchActivated == false)
-                {
-                    if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
-                    {
-                        var sb = Windows.UI.ViewManagement.StatusBar.GetForCurrentView();
-                        sb.BackgroundColor = Windows.UI.Color.FromArgb(1, 0x20, 0x90, 0xEA);
-                        sb.BackgroundOpacity = 1;
-                        sb.ForegroundColor = Windows.UI.Colors.White;
-                    }
+                var sb = Windows.UI.ViewManagement.StatusBar.GetForCurrentView();
+                sb.BackgroundColor = Windows.UI.Color.FromArgb(1, 0x20, 0x90, 0xEA);
+                sb.BackgroundOpacity = 1;
+                sb.ForegroundColor = Windows.UI.Colors.White;
+            }
 
-                    if (rootFrame.Content == null)
+            if (rootFrame.Content == null)
+            {
+                // Creating the rootFrame for the first time
+                try
+                {
+                    await Task.Run(() =>
                     {
-                        // Wenn der Navigationsstapel nicht wiederhergestellt wird, zur ersten Seite navigieren
-                        // und die neue Seite konfigurieren, indem die erforderlichen Informationen als Navigationsparameter
-                        // übergeben werden
-                        Store = await Init;
-                        if (Store == null || !Store.Registered)
-                        {
-                            rootFrame.Navigate(typeof(StartPage), args.Arguments);
-                        }
-                        else
-                        {
-                            rootFrame.Navigate(typeof(MainPage), args.Arguments);
-                        }
-                    }
+                        Handle = new SignalLibHandle(false);
+                    });
+                    rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    Window.Current.Activate();
+                }
+                catch (Exception ex)
+                {
+                    var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
+                    Logger.LogError("OnLaunchedOrActivated() could not load signal handle: {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
+                    rootFrame.Navigate(typeof(StartPage), e.Arguments);
                 }
             }
             else
             {
-                if (e is ToastNotificationActivatedEventArgs)
+                // user has requested a new window
+                CoreApplicationView newView = CoreApplication.CreateNewView();
+                int newViewId = 0;
+                await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    var args = e as ToastNotificationActivatedEventArgs;
-                    QueryString queryString = QueryString.Parse(args.Argument);
-                    if (!(rootFrame.Content is MainPage))
-                    {
-                        rootFrame.Navigate(typeof(MainPage), queryString);
-                    }
-                }
+                    Frame frame = new Frame();
+                    frame.Navigate(typeof(MainPage), e.Arguments);
+                    Window.Current.Content = frame;
+                    Window.Current.Activate();
+                    var currView = ApplicationView.GetForCurrentView();
+                    currView.Consolidated += CurrView_Consolidated;
+                    newViewId = currView.Id;
+                });
+                Views.Add(newViewId, newView.Dispatcher);
+                await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId,
+                        ViewSizePreference.Default,
+                        e.CurrentlyShownApplicationViewId,
+                        ViewSizePreference.Default);
             }
             TileUpdateManager.CreateTileUpdaterForApplication().Clear();
-            // Sicherstellen, dass das aktuelle Fenster aktiv ist
-            Window.Current.Activate();
         }
 
-        private void Current_Activated(object sender, Windows.UI.Core.WindowActivatedEventArgs e)
+        private void CurrView_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)
         {
-            if (e.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.Deactivated)
+            sender.Consolidated -= CurrView_Consolidated;
+            var dispatcher = Views[sender.Id];
+            Views.Remove(sender.Id);
+            Handle.RemoveWindow(dispatcher);
+            if (sender.Id != MainViewId)
             {
-                WindowActive = false;
-            }
-            else
-            {
-                WindowActive = true;
+                Window.Current.Close();
             }
         }
 
@@ -187,41 +163,6 @@ namespace Signal_Windows
         private void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
         {
             throw new Exception("Failed to load Page " + e.SourcePageType.FullName);
-        }
-
-        /// <summary>
-        /// Wird aufgerufen, wenn die Ausführung der Anwendung angehalten wird.  Der Anwendungszustand wird gespeichert,
-        /// ohne zu wissen, ob die Anwendung beendet oder fortgesetzt wird und die Speicherinhalte dabei
-        /// unbeschädigt bleiben.
-        /// </summary>
-        /// <param name="sender">Die Quelle der Anhalteanforderung.</param>
-        /// <param name="e">Details zur Anhalteanforderung.</param>
-        private async void OnSuspending(object sender, SuspendingEventArgs e)
-        {
-            var deferral = e.SuspendingOperation.GetDeferral();
-            if (MainPageActive)
-            {
-                if (ViewModels.MainPageInstance != null)
-                {
-                    await ViewModels.MainPageInstance.Shutdown();
-                }
-            }
-            Logger.LogInformation("OnSuspending() shutdown successful");
-            //TODO: Anwendungszustand speichern und alle Hintergrundaktivitäten beenden
-            deferral.Complete();
-        }
-
-        private async void OnResuming(object sender, object e)
-        {
-            Logger.LogInformation("OnResuming()");
-            if (ViewModels.MainPageInstance != null)
-            {
-                await ViewModels.MainPageInstance.Init();
-            }
-            else
-            {
-                Logger.LogError("OnResuming() failed");
-            }
         }
     }
 }

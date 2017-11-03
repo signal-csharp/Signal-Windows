@@ -164,41 +164,6 @@
     <Compile Include="Controls\Welcome.xaml.cs">
       <DependentUpon>Welcome.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\SignalDB\20170806163624_s1.cs" />
-    <Compile Include="Migrations\SignalDB\20170806163624_s1.designer.cs">
-      <DependentUpon>20170806163624_s1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.cs" />
-    <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.designer.cs">
-      <DependentUpon>20170806145530_ls1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\LibsignalDB\LibsignalDBContextModelSnapshot.cs" />
-    <Compile Include="Migrations\SignalDB\20170825082857_m2.cs" />
-    <Compile Include="Migrations\SignalDB\20170825082857_m2.designer.cs">
-      <DependentUpon>20170825082857_m2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\SignalDB\20170901124533_m3.cs" />
-    <Compile Include="Migrations\SignalDB\20170901124533_m3.designer.cs">
-      <DependentUpon>20170901124533_m3.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
-    <Compile Include="Models\PhoneContact.cs" />
-    <Compile Include="Models\SignalEarlyReceipt.cs" />
-    <Compile Include="Models\SignalIdentity.cs" />
-    <Compile Include="Models\SignalAttachment.cs" />
-    <Compile Include="Models\SignalGroup.cs" />
-    <Compile Include="Models\SignalMessage.cs" />
-    <Compile Include="Models\SignalContact.cs" />
-    <Compile Include="Models\SignalMessageContent.cs" />
-    <Compile Include="Models\SignalPreKey.cs" />
-    <Compile Include="Models\SignalSession.cs" />
-    <Compile Include="Models\SignalSignedPreKey.cs" />
-    <Compile Include="Models\SignalStore.cs" />
-    <Compile Include="Models\SignalConversation.cs" />
-    <Compile Include="Signal\IncomingMessages.cs" />
-    <Compile Include="Signal\OutgoingMessages.cs" />
-    <Compile Include="Logging\SignalLogging.cs" />
-    <Compile Include="Storage\Store.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
     <Compile Include="ViewModels\ConversationSettingsPageViewModel.cs" />
@@ -225,7 +190,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Storage\DB.cs" />
     <Compile Include="Views\RegisterFinalizationPage.xaml.cs">
       <DependentUpon>RegisterFinalizationPage.xaml</DependentUpon>
     </Compile>
@@ -318,21 +282,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="libsignal-service-dotnet">
-      <Version>2.5.10.9</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore">
-      <Version>1.1.2</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
-      <Version>1.1.2</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite">
-      <Version>1.1.2</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
-      <Version>1.1.1</Version>
-    </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.0.1</Version>
     </PackageReference>
@@ -345,9 +294,6 @@
     <PackageReference Include="MvvmLight">
       <Version>5.3.0</Version>
     </PackageReference>
-    <PackageReference Include="Nito.AsyncEx">
-      <Version>4.0.1</Version>
-    </PackageReference>
     <PackageReference Include="QueryString.NET">
       <Version>1.0.0</Version>
     </PackageReference>
@@ -359,6 +305,13 @@
     <SDKReference Include="WindowsMobile, Version=10.0.16299.0">
       <Name>Windows Mobile Extensions for the UWP</Name>
     </SDKReference>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Signal-Windows.Lib\Signal-Windows.Lib.csproj">
+      <Project>{1934fd82-a5ea-4b71-b915-a1826593cb6e}</Project>
+      <Name>Signal-Windows.Lib</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

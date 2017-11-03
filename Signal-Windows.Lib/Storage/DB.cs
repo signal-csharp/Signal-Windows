@@ -8,12 +8,10 @@ using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Signal_Windows.Controls;
+using Signal_Windows.Lib;
 using Signal_Windows.Models;
-using Signal_Windows.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Signal_Windows.Storage
@@ -97,6 +95,67 @@ namespace Signal_Windows.Storage
             }
         }
 
+        public static LinkedList<SignalMessage> InsertIdentityChangedMessagesLocked(string number)
+        {
+            lock (DBLock)
+            {
+                return InsertIdentityChangedMessages(number);
+            }
+        }
+        private static LinkedList<SignalMessage> InsertIdentityChangedMessages(string number)
+        {
+            long now = Util.CurrentTimeMillis();
+            LinkedList<SignalMessage> messages = new LinkedList<SignalMessage>();
+            using (var ctx = new SignalDBContext())
+            {
+                SignalContact contact = ctx.Contacts
+                    .Where(c => c.ThreadId == number)
+                    .SingleOrDefault();
+                if (contact != null)
+                {
+                    string str = $"Your safety numbers with {contact.ThreadDisplayName} have changed.";
+                    SignalMessage msg = new SignalMessage()
+                    {
+                        Author = contact,
+                        ComposedTimestamp = now,
+                        ReceivedTimestamp = now,
+                        Direction = SignalMessageDirection.Incoming,
+                        Type = SignalMessageType.IdentityKeyChange,
+                        ThreadId = contact.ThreadId,
+                        Content = new SignalMessageContent() { Content = str }
+                    };
+                    contact.LastMessage = msg;
+                    contact.MessagesCount += 1;
+                    contact.UnreadCount += 1;
+                    ctx.Messages.Add(msg);
+                    messages.AddLast(msg);
+                    var groups = ctx.GroupMemberships
+                        .Where(gm => gm.ContactId == contact.Id)
+                        .Include(gm => gm.Group);
+                    foreach (var gm in groups)
+                    {
+                        msg = new SignalMessage()
+                        {
+                            Author = contact,
+                            ComposedTimestamp = now,
+                            ReceivedTimestamp = now,
+                            Direction = SignalMessageDirection.Incoming,
+                            Type = SignalMessageType.IdentityKeyChange,
+                            ThreadId = gm.Group.ThreadId,
+                            Content = new SignalMessageContent() { Content = str }
+                        };
+                        gm.Group.LastMessage = msg;
+                        gm.Group.MessagesCount += 1;
+                        gm.Group.UnreadCount += 1;
+                        ctx.Messages.Add(msg);
+                        messages.AddLast(msg);
+                    }
+                }
+                ctx.SaveChanges();
+            }
+            return messages;
+        }
+
         public static void SaveIdentityLocked(SignalProtocolAddress address, string identity)
         {
             lock (DBLock)
@@ -125,16 +184,13 @@ namespace Signal_Windows.Storage
                         var childSessions = ctx.Sessions
                             .Where(s => s.Username == address.Name && s.DeviceId != address.DeviceId);
                         ctx.Sessions.RemoveRange(childSessions);
-                        Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-                        {
-                            await App.ViewModels.MainPageInstance.UIHandleIdentityKeyChange(address.Name);
-                        }).AsTask().Wait();
+                        var messages = InsertIdentityChangedMessages(address.Name);
+                        SignalLibHandle.Instance.DispatchHandleIdentityKeyChange(messages);
                     }
                     ctx.SaveChanges();
                 }
             }
         }
-
         #endregion Identities
 
         #region Account
@@ -536,16 +592,16 @@ namespace Signal_Windows.Storage
         private static List<PreKeyRecord> GeneratePreKeys()
         {
             List<PreKeyRecord> records = new List<PreKeyRecord>();
-            for (uint i = 1; i < App.PREKEY_BATCH_SIZE; i++)
+            for (uint i = 1; i < LibUtils.PREKEY_BATCH_SIZE; i++)
             {
-                uint preKeyId = (App.Store.PreKeyIdOffset + i) % Medium.MAX_VALUE;
+                uint preKeyId = (SignalLibHandle.Instance.Store.PreKeyIdOffset + i) % Medium.MAX_VALUE;
                 ECKeyPair keyPair = Curve.generateKeyPair();
                 PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
 
                 StorePreKey(preKeyId, record);
                 records.Add(record);
             }
-            UpdatePreKeyIdOffset((App.Store.PreKeyIdOffset + App.PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE);
+            UpdatePreKeyIdOffset((SignalLibHandle.Instance.Store.PreKeyIdOffset + LibUtils.PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE);
             return records;
         }
 
@@ -574,10 +630,10 @@ namespace Signal_Windows.Storage
             {
                 ECKeyPair keyPair = Curve.generateKeyPair();
                 byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
-                SignedPreKeyRecord record = new SignedPreKeyRecord(App.Store.NextSignedPreKeyId, (ulong)DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
+                SignedPreKeyRecord record = new SignedPreKeyRecord(SignalLibHandle.Instance.Store.NextSignedPreKeyId, (ulong)DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond, keyPair, signature);
 
-                StoreSignedPreKey(App.Store.NextSignedPreKeyId, record);
-                UpdateNextSignedPreKeyId((App.Store.NextSignedPreKeyId + 1) % Medium.MAX_VALUE);
+                StoreSignedPreKey(SignalLibHandle.Instance.Store.NextSignedPreKeyId, record);
+                UpdateNextSignedPreKeyId((SignalLibHandle.Instance.Store.NextSignedPreKeyId + 1) % Medium.MAX_VALUE);
                 return record;
             }
             catch (InvalidKeyException e)
@@ -589,7 +645,7 @@ namespace Signal_Windows.Storage
         #endregion PreKeys
     }
 
-    public class SignalDBContext : DbContext
+    internal class SignalDBContext : DbContext
     {
         private static readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalDBContext>();
         private static readonly object DBLock = new object();
@@ -669,65 +725,6 @@ namespace Signal_Windows.Storage
                     ctx.SaveChanges();
                 }
             }
-        }
-
-        public static LinkedList<SignalMessage> InsertIdentityChangedMessages(string number)
-        {
-            long now = Util.CurrentTimeMillis();
-            LinkedList<SignalMessage> messages = new LinkedList<SignalMessage>();
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    SignalContact contact = ctx.Contacts
-                        .Where(c => c.ThreadId == number)
-                        .SingleOrDefault();
-                    if (contact != null)
-                    {
-                        string str = $"Your safety numbers with {contact.ThreadDisplayName} have changed.";
-                        SignalMessage msg = new SignalMessage()
-                        {
-                            Author = contact,
-                            ComposedTimestamp = now,
-                            ReceivedTimestamp = now,
-                            Direction = SignalMessageDirection.Incoming,
-                            Type = SignalMessageType.IdentityKeyChange,
-                            ThreadId = contact.ThreadId,
-                            Content = new SignalMessageContent() { Content = str }
-                        };
-                        contact.LastMessage = msg;
-                        contact.MessagesCount += 1;
-                        ctx.Messages.Add(msg);
-                        messages.AddLast(msg);
-                        var groups = ctx.GroupMemberships
-                            .Where(gm => gm.ContactId == contact.Id)
-                            .Include(gm => gm.Group);
-                        foreach (var gm in groups)
-                        {
-                            msg = new SignalMessage()
-                            {
-                                Author = contact,
-                                ComposedTimestamp = now,
-                                ReceivedTimestamp = now,
-                                Direction = SignalMessageDirection.Incoming,
-                                Type = SignalMessageType.IdentityKeyChange,
-                                ThreadId = gm.Group.ThreadId,
-                                Content = new SignalMessageContent() { Content = str }
-                            };
-                            gm.Group.LastMessage = msg;
-                            gm.Group.MessagesCount += 1;
-                            ctx.Messages.Add(msg);
-                            messages.AddLast(msg);
-                        }
-                    }
-                    else
-                    {
-                        Logger.LogWarning("InsertIdentityChangedMessages() contact does not exist");
-                    }
-                    ctx.SaveChanges();
-                }
-            }
-            return messages;
         }
 
         public static void SaveMessageLocked(SignalMessage message)
@@ -829,7 +826,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void UpdateMessageStatus(SignalMessage outgoingSignalMessage, MainPageViewModel mpvm)
+        public static SignalMessage UpdateMessageStatus(SignalMessage outgoingSignalMessage)
         {
             SignalMessage m;
             lock (DBLock)
@@ -856,15 +853,12 @@ namespace Signal_Windows.Storage
                         }
                         ctx.SaveChanges();
                     }
+                    return m;
                 }
             }
-            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-            {
-                mpvm.UIUpdateMessageBox(m);
-            }).AsTask().Wait();
         }
 
-        public static void IncreaseReceiptCountLocked(SignalServiceEnvelope envelope, MainPageViewModel mpvm)
+        public static SignalMessage IncreaseReceiptCountLocked(SignalServiceEnvelope envelope)
         {
             SignalMessage m;
             bool set_mark = false;
@@ -894,13 +888,7 @@ namespace Signal_Windows.Storage
                     ctx.SaveChanges();
                 }
             }
-            if (set_mark)
-            {
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                {
-                    mpvm.UIUpdateMessageBox(m);
-                }).AsTask().Wait();
-            }
+            return set_mark? m : null;
         }
 
         #endregion Messages
@@ -958,10 +946,9 @@ namespace Signal_Windows.Storage
 
         #region Groups
 
-        public static SignalGroup GetOrCreateGroupLocked(string groupId, long timestamp, MainPageViewModel mpvm)
+        public static SignalGroup GetOrCreateGroupLocked(string groupId, long timestamp)
         {
             SignalGroup dbgroup;
-            bool is_new = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -973,7 +960,6 @@ namespace Signal_Windows.Storage
                         .SingleOrDefault();
                     if (dbgroup == null)
                     {
-                        is_new = true;
                         dbgroup = new SignalGroup()
                         {
                             ThreadId = groupId,
@@ -988,21 +974,13 @@ namespace Signal_Windows.Storage
                         ctx.SaveChanges();
                     }
                 }
-                if (is_new)
-                {
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        mpvm.AddThread(dbgroup);
-                    }).AsTask().Wait();
-                }
             }
             return dbgroup;
         }
 
-        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, bool canReceive, long timestamp, MainPageViewModel mpvm)
+        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, bool canReceive, long timestamp)
         {
             SignalGroup dbgroup;
-            bool is_new = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -1014,7 +992,6 @@ namespace Signal_Windows.Storage
                         .SingleOrDefault();
                     if (dbgroup == null)
                     {
-                        is_new = true;
                         dbgroup = new SignalGroup()
                         {
                             ThreadId = groupId,
@@ -1035,20 +1012,6 @@ namespace Signal_Windows.Storage
                         dbgroup.CanReceive = true;
                     }
                     ctx.SaveChanges();
-                }
-                if (is_new)
-                {
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        mpvm.AddThread(dbgroup);
-                    }).AsTask().Wait();
-                }
-                else
-                {
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        mpvm.UIUpdateThread(dbgroup);
-                    }).AsTask().Wait();
                 }
             }
             return dbgroup;
@@ -1112,10 +1075,9 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static SignalContact GetOrCreateContactLocked(string username, long timestamp, MainPageViewModel mpvm)
+        public static SignalContact GetOrCreateContactLocked(string username, long timestamp)
         {
             SignalContact contact;
-            bool is_new = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -1125,33 +1087,25 @@ namespace Signal_Windows.Storage
                         .SingleOrDefault();
                     if (contact == null)
                     {
-                        is_new = true;
                         contact = new SignalContact()
                         {
                             ThreadId = username,
                             ThreadDisplayName = username,
                             CanReceive = true,
                             LastActiveTimestamp = timestamp,
-                            Color = Utils.CalculateDefaultColor(username)
+                            Color = null //Utils.CalculateDefaultColor(username)
                         };
                         ctx.Contacts.Add(contact);
                         ctx.SaveChanges();
                     }
                 }
-                if (is_new)
-                {
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        mpvm.AddThread(contact);
-                    }).AsTask().Wait();
-                }
             }
             return contact;
         }
 
-        public static void InsertOrUpdateContactLocked(SignalContact contact, MainPageViewModel mpvm)
+        public static void InsertOrUpdateContactLocked(SignalContact contact, out bool isNew)
         {
-            bool is_new = false;
+            isNew = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -1159,7 +1113,7 @@ namespace Signal_Windows.Storage
                     var c = ctx.Contacts.SingleOrDefault(b => b.ThreadId == contact.ThreadId);
                     if (c == null)
                     {
-                        is_new = true;
+                        isNew = true;
                         ctx.Contacts.Add(contact);
                     }
                     else
@@ -1173,20 +1127,6 @@ namespace Signal_Windows.Storage
                         c.UnreadCount = contact.UnreadCount;
                     }
                     ctx.SaveChanges();
-                }
-                if (is_new)
-                {
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        mpvm.AddThread(contact);
-                    }).AsTask().Wait();
-                }
-                else
-                {
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        mpvm.UIUpdateThread(contact);
-                    }).AsTask().Wait();
                 }
             }
         }

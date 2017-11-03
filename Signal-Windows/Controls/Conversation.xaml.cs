@@ -1,4 +1,5 @@
 using libsignalservice.util;
+using Signal_Windows.Lib;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
@@ -101,9 +102,8 @@ namespace Signal_Windows.Controls
         {
             ThreadDisplayName = thread.ThreadDisplayName;
             ThreadUsername = thread.ThreadId;
-            if (thread is SignalContact)
+            if (thread is SignalContact contact)
             {
-                SignalContact contact = (SignalContact)thread;
                 HeaderBackground = Utils.GetBrushFromColor(contact.Color);
                 if (ThreadUsername != ThreadDisplayName)
                 {
@@ -139,7 +139,7 @@ namespace Signal_Windows.Controls
              */
             ConversationItemsControl.ItemsSource = new List<object>();
             UpdateLayout();
-            Collection =  new VirtualizedCollection(conversation);
+            Collection =  new VirtualizedCollection(conversation, this);
             ConversationItemsControl.ItemsSource = Collection;
             UpdateLayout();
             InputTextBox.IsEnabled = conversation.CanReceive;
@@ -236,7 +236,7 @@ namespace Signal_Windows.Controls
 
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
-            await GetMainPageVm().SendMessageButton_Click(InputTextBox);
+            //await GetMainPageVm().SendMessageButton_Click(InputTextBox); TODO
         }
 
         private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -267,7 +267,7 @@ namespace Signal_Windows.Controls
             if (SignalConversation is SignalContact)
             {
                 App.ViewModels.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
-                GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
+                //GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage)); TODO
             }
         }
     }

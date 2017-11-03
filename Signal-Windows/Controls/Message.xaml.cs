@@ -1,3 +1,4 @@
+using Signal_Windows.Lib;
 using Signal_Windows.Models;
 using System;
 using System.Collections.Generic;
@@ -102,7 +103,8 @@ namespace Signal_Windows.Controls
 
         private void ResendTextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            App.ViewModels.MainPageInstance.OutgoingQueue.Add(Model.Message);
+            //App.ViewModels.MainPageInstance.OutgoingQueue.Add(Model.Message);
+            //TODO
         }
 
         internal bool HandleUpdate(SignalMessage updatedMessage)

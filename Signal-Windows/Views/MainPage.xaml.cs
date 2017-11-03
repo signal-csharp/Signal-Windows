@@ -1,4 +1,6 @@
 using Signal_Windows.Controls;
+using Signal_Windows.Lib;
+using Signal_Windows.Models;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
 using System;
@@ -23,6 +25,7 @@ namespace Signal_Windows
         {
             this.InitializeComponent();
             Vm.View = this;
+            Vm.LoadConversations(SignalLibHandle.Instance.AddWindow(Window.Current.Dispatcher, Vm));
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
         }
@@ -87,17 +90,10 @@ namespace Signal_Windows
             return Utils.GetViewStyle(new Size(ActualWidth, ActualHeight));
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            await Vm.OnNavigatedTo();
-        }
-
-        protected override async void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
             base.OnNavigatingFrom(e);
             ContactsList.SelectedItem = null;
-            await Vm.OnNavigatingFrom();
         }
 
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -129,7 +125,14 @@ namespace Signal_Windows
 
         private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Vm.ContactsList_SelectionChanged(sender, e);
+            if (e.AddedItems.Count == 1 && Vm.SelectedThread != e.AddedItems[0])
+            {
+                Vm.WelcomeVisibility = Visibility.Collapsed;
+                Vm.ThreadVisibility = Visibility.Visible;
+                Vm.SelectedThread = (SignalConversation)e.AddedItems[0];
+                ConversationControl.Load(Vm.SelectedThread);
+                SwitchToStyle(GetCurrentViewStyle());
+            }
         }
 
         public static async Task NotifyNewIdentity(string user)

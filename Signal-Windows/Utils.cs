@@ -50,26 +50,26 @@ namespace Signal_Windows
             AMBER,
             BLUE_GREY};
 
-        public static SolidColorBrush Red = GetSolidColorBrush(255, "#EF5350");
-        public static SolidColorBrush Pink = GetSolidColorBrush(255, "#EC407A");
-        public static SolidColorBrush Purple = GetSolidColorBrush(255, "#AB47BC");
-        public static SolidColorBrush Deep_Purple = GetSolidColorBrush(255, "#7E57C2");
-        public static SolidColorBrush Indigo = GetSolidColorBrush(255, "#5C6BC0");
-        public static SolidColorBrush Blue = GetSolidColorBrush(255, "#2196F3");
-        public static SolidColorBrush Light_Blue = GetSolidColorBrush(255, "#03A9F4");
-        public static SolidColorBrush Cyan = GetSolidColorBrush(255, "#00BCD4");
-        public static SolidColorBrush Teal = GetSolidColorBrush(255, "#009688");
-        public static SolidColorBrush Green = GetSolidColorBrush(255, "#4CAF50");
-        public static SolidColorBrush Light_Green = GetSolidColorBrush(255, "#7CB342");
-        public static SolidColorBrush Orange = GetSolidColorBrush(255, "#FF9800");
-        public static SolidColorBrush Deep_Orange = GetSolidColorBrush(255, "#FF5722");
-        public static SolidColorBrush Amber = GetSolidColorBrush(255, "#FFB300");
-        public static SolidColorBrush Blue_Grey = GetSolidColorBrush(255, "#607D8B");
-        public static SolidColorBrush Grey = GetSolidColorBrush(255, "#999999");
-        public static SolidColorBrush Default = GetSolidColorBrush(255, "#2090ea");
-        public static SolidColorBrush BackgroundOutgoing = GetSolidColorBrush(255, "#f3f3f3");
-        public static SolidColorBrush ForegroundIncoming = GetSolidColorBrush(255, "#ffffff");
-        public static SolidColorBrush ForegroundOutgoing = GetSolidColorBrush(255, "#454545");
+        public static SolidColorBrush Red => GetSolidColorBrush(255, "#EF5350");
+        public static SolidColorBrush Pink => GetSolidColorBrush(255, "#EC407A");
+        public static SolidColorBrush Purple => GetSolidColorBrush(255, "#AB47BC");
+        public static SolidColorBrush Deep_Purple => GetSolidColorBrush(255, "#7E57C2");
+        public static SolidColorBrush Indigo => GetSolidColorBrush(255, "#5C6BC0");
+        public static SolidColorBrush Blue => GetSolidColorBrush(255, "#2196F3");
+        public static SolidColorBrush Light_Blue => GetSolidColorBrush(255, "#03A9F4");
+        public static SolidColorBrush Cyan => GetSolidColorBrush(255, "#00BCD4");
+        public static SolidColorBrush Teal => GetSolidColorBrush(255, "#009688");
+        public static SolidColorBrush Green => GetSolidColorBrush(255, "#4CAF50");
+        public static SolidColorBrush Light_Green => GetSolidColorBrush(255, "#7CB342");
+        public static SolidColorBrush Orange => GetSolidColorBrush(255, "#FF9800");
+        public static SolidColorBrush Deep_Orange => GetSolidColorBrush(255, "#FF5722");
+        public static SolidColorBrush Amber => GetSolidColorBrush(255, "#FFB300");
+        public static SolidColorBrush Blue_Grey => GetSolidColorBrush(255, "#607D8B");
+        public static SolidColorBrush Grey => GetSolidColorBrush(255, "#999999");
+        public static SolidColorBrush Default => GetSolidColorBrush(255, "#2090ea");
+        public static SolidColorBrush BackgroundOutgoing => GetSolidColorBrush(255, "#f3f3f3");
+        public static SolidColorBrush ForegroundIncoming => GetSolidColorBrush(255, "#ffffff");
+        public static SolidColorBrush ForegroundOutgoing => GetSolidColorBrush(255, "#454545");
 
         public static SolidColorBrush GetSolidColorBrush(byte opacity, string hex)
         {

@@ -89,7 +89,6 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                Model.View = this;
                 DisplayName = Model.Name;
                 PhoneNumber = Model.PhoneNumber;
                 ContactPhoto = Model.Photo;

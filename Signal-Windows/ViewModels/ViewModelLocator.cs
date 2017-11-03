@@ -1,6 +1,7 @@
 using GalaSoft.MvvmLight.Ioc;
 using GalaSoft.MvvmLight.Views;
 using Microsoft.Practices.ServiceLocation;
+using System;
 
 namespace Signal_Windows.ViewModels
 {
@@ -10,6 +11,7 @@ namespace Signal_Windows.ViewModels
     /// </summary>
     public class ViewModelLocator
     {
+        private string Key = Guid.NewGuid().ToString();
         /// <summary>
         /// Initializes a new instance of the ViewModelLocator class.
         /// </summary>
@@ -63,7 +65,7 @@ namespace Signal_Windows.ViewModels
         {
             get
             {
-                return ServiceLocator.Current.GetInstance<MainPageViewModel>();
+                return ServiceLocator.Current.GetInstance<MainPageViewModel>(Key.ToString());
             }
         }
 

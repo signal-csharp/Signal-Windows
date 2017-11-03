@@ -75,9 +75,10 @@ namespace Signal_Windows.ViewModels
             if (DisplayName.Trim() != oldDisplayName.Trim())
             {
                 Contact.ThreadDisplayName = DisplayName.Trim();
+                bool isNew;
                 await Task.Run(() =>
                 {
-                    SignalDBContext.InsertOrUpdateContactLocked(Contact, App.ViewModels.MainPageInstance);
+                    //SignalDBContext.InsertOrUpdateContactLocked(Contact, out isNew); TODO
                 });
             }
         }
@@ -98,7 +99,8 @@ namespace Signal_Windows.ViewModels
             Contact.Color = color;
             await Task.Run(() =>
             {
-                SignalDBContext.InsertOrUpdateContactLocked(Contact, App.ViewModels.MainPageInstance);
+                bool isNew;
+                //SignalDBContext.InsertOrUpdateContactLocked(Contact, out isNew); TODO
             });
             FillBrush = Utils.GetBrushFromColor(Contact.Color);
         }

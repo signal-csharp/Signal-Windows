@@ -1,4 +1,5 @@
-using libsignal;
+﻿using libsignal;
+using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
 using libsignalservice.push;
@@ -8,33 +9,38 @@ using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace Signal_Windows.ViewModels
+namespace Signal_Windows.Lib
 {
-    public partial class MainPageViewModel
+    class OutgoingMessages
     {
-        /// <summary>
-        /// Queue for pending outgoing messages.
-        /// </summary>
-        public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<IncomingMessages>();
+        private readonly CancellationToken Token;
+        private readonly SignalServiceMessageSender MessageSender;
+        private readonly SignalLibHandle Handle;
 
-        /// <summary>
-        /// Reads pending messages from the <see cref="OutgoingQueue"/> and attempts to send them
-        /// </summary>
+        public OutgoingMessages(CancellationToken token, SignalServiceMessageSender sender, SignalLibHandle handle)
+        {
+            Token = token;
+            MessageSender = sender;
+            Handle = handle;
+        }
+
         public void HandleOutgoingMessages()
         {
             Logger.LogDebug("HandleOutgoingMessages()");
-            CancellationToken token = CancelSource.Token;
-            while (!token.IsCancellationRequested)
+            while (!Token.IsCancellationRequested)
             {
                 SignalMessage outgoingSignalMessage = null;
                 try
                 {
-                    outgoingSignalMessage = OutgoingQueue.Take(token);
+                    outgoingSignalMessage = Handle.OutgoingQueue.Take(Token);
                     SignalServiceDataMessage message = new SignalServiceDataMessage()
                     {
                         Body = outgoingSignalMessage.Content.Content,
@@ -44,7 +50,7 @@ namespace Signal_Windows.ViewModels
 
                     if (!outgoingSignalMessage.ThreadId.EndsWith("="))
                     {
-                        if (!token.IsCancellationRequested)
+                        if (!Token.IsCancellationRequested)
                         {
                             MessageSender.sendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
@@ -53,10 +59,10 @@ namespace Signal_Windows.ViewModels
                     else
                     {
                         List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                        SignalGroup g = SignalDBContext.GetOrCreateGroupLocked(outgoingSignalMessage.ThreadId, 0, this);
+                        SignalGroup g = SignalDBContext.GetOrCreateGroupLocked(outgoingSignalMessage.ThreadId, 0);
                         foreach (GroupMembership sc in g.GroupMemberships)
                         {
-                            if (sc.Contact.ThreadId != App.Store.Username)
+                            if (sc.Contact.ThreadId != SignalLibHandle.Instance.Store.Username)
                             {
                                 recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
                             }
@@ -66,14 +72,14 @@ namespace Signal_Windows.ViewModels
                             GroupId = Base64.decode(g.ThreadId),
                             Type = SignalServiceGroup.GroupType.DELIVER
                         };
-                        if (!token.IsCancellationRequested)
+                        if (!Token.IsCancellationRequested)
                         {
                             MessageSender.sendMessage(recipients, message);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
                 }
-                catch (OperationCanceledException e)
+                catch (OperationCanceledException)
                 {
                     Logger.LogInformation("HandleOutgoingMessages() finished");
                     return;
@@ -93,11 +99,7 @@ namespace Signal_Windows.ViewModels
                     }
                     foreach (UntrustedIdentityException e in identityExceptions)
                     {
-                        Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-                        {
-                            await MainPage.NotifyNewIdentity(e.getE164Number());
-                        }).AsTask().Wait();
-                        LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(e.getE164Number(), 1), Base64.encodeBytes(e.getIdentityKey().serialize()));
+                        Handle.HandleOutgoingKeyChangeLocked(e.getE164Number(), Base64.encodeBytes(e.getIdentityKey().serialize()));
                     }
                 }
                 catch (RateLimitException)
@@ -109,11 +111,7 @@ namespace Signal_Windows.ViewModels
                 {
                     Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Identity;
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
-                    {
-                        await MainPage.NotifyNewIdentity(e.getE164Number());
-                    }).AsTask().Wait();
-                    LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(e.getE164Number(), 1), Base64.encodeBytes(e.getIdentityKey().serialize()));
+                    Handle.HandleOutgoingKeyChangeLocked(e.getE164Number(), Base64.encodeBytes(e.getIdentityKey().serialize()));
                 }
                 catch (Exception e)
                 {
@@ -121,7 +119,7 @@ namespace Signal_Windows.ViewModels
                     Logger.LogError("HandleOutgoingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Unknown;
                 }
-                SignalDBContext.UpdateMessageStatus(outgoingSignalMessage, this);
+                Handle.HandleMessageSentLocked(outgoingSignalMessage);
             }
             Logger.LogInformation("HandleOutgoingMessages() finished");
         }

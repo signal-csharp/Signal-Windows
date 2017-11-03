@@ -1,4 +1,5 @@
-using Signal_Windows.Controls;
+using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Signal_Windows.Models
@@ -19,6 +20,6 @@ namespace Signal_Windows.Models
         public SignalMessage LastMessage { get; set; }
         public long LastSeenMessageIndex { get; set; }
         public SignalMessage LastSeenMessage { get; set; }
-        [NotMapped] public ConversationListElement View;
+        public Action UpdateUI;
     }
 }
