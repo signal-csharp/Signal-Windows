@@ -186,7 +186,7 @@ namespace Signal_Windows.Lib
             {
                 conversation.UnreadCount += 1;
             }
-            else if (message.Direction == SignalMessageDirection.Synced)
+            else
             {
                 conversation.UnreadCount = 0;
                 conversation.LastSeenMessageIndex = conversation.MessagesCount;
