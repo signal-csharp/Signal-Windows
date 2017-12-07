@@ -48,15 +48,22 @@ namespace Signal_Windows
         public App()
         {
             SignalLogging.SetupLogging(true);
-            Logger.LogInformation("Signal-Windows App launching");
             this.InitializeComponent();
             this.UnhandledException += OnUnhandledException;
             this.Suspending += App_Suspending;
+            this.Resuming += App_Resuming;
         }
 
-        private void App_Suspending(object sender, SuspendingEventArgs e)
+        private void App_Resuming(object sender, object e)
         {
-            Handle.Release();
+            Logger.LogInformation("Resuming");
+        }
+
+        private async void App_Suspending(object sender, SuspendingEventArgs e)
+        {
+            Logger.LogInformation("Suspending");
+            await Task.Run(() => Handle.Release());
+            Logger.LogDebug("Suspended");
         }
 
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs ex)
@@ -68,6 +75,7 @@ namespace Signal_Windows
 
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
+            Logger.LogInformation("Launching ({0})", e.PreviousExecutionState);
             Logger.LogDebug(LocalCacheFolder.Path);
             Frame rootFrame = Window.Current.Content as Frame;
 
