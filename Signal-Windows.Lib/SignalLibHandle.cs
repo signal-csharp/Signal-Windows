@@ -179,7 +179,7 @@ namespace Signal_Windows.Lib
         #endregion
 
         #region backend api
-        public void SaveAndDispatchSignalMessage(SignalMessage message, SignalConversation conversation)
+        internal void SaveAndDispatchSignalMessage(SignalMessage message, SignalConversation conversation)
         {
             conversation.MessagesCount += 1;
             if (message.Direction == SignalMessageDirection.Incoming)
@@ -198,7 +198,7 @@ namespace Signal_Windows.Lib
             DispatchHandleMessage(message); //then pass the message to all windows
         }
 
-        public void DispatchHandleIdentityKeyChange(LinkedList<SignalMessage> messages)
+        internal void DispatchHandleIdentityKeyChange(LinkedList<SignalMessage> messages)
         {
             List<Task> operations = new List<Task>(); ;
             foreach (var dispatcher in Frames.Keys)
@@ -211,7 +211,7 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        public void DispatchAddOrUpdateConversation(SignalConversation conversation)
+        internal void DispatchAddOrUpdateConversation(SignalConversation conversation)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
@@ -224,7 +224,7 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        public void DispatchHandleMessage(SignalMessage message)
+        internal void DispatchHandleMessage(SignalMessage message)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
@@ -237,7 +237,7 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        public void HandleMessageSentLocked(SignalMessage msg)
+        internal void HandleMessageSentLocked(SignalMessage msg)
         {
             Logger.LogTrace("HandleMessageSentLocked() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
@@ -248,7 +248,7 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("HandleMessageSentLocked() released");
         }
 
-        public void DispatchMessageUpdate(SignalMessage msg)
+        internal void DispatchMessageUpdate(SignalMessage msg)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
@@ -261,7 +261,7 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        public void HandleOutgoingKeyChangeLocked(string user, string identity)
+        internal void HandleOutgoingKeyChangeLocked(string user, string identity)
         {
             Logger.LogTrace("HandleOutgoingKeyChange() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
