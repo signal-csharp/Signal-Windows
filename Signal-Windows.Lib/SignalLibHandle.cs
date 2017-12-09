@@ -44,19 +44,8 @@ namespace Signal_Windows.Lib
         #region controller api
         public SignalLibHandle(bool headless)
         {
-            Logger.LogTrace("SignalLibHandle() locking");
-            LibUtils.Lock();
-            SemaphoreSlim.Wait(CancelSource.Token);
-            Logger.LogDebug("SignalLibHandle() locked (global and local)");
-            Instance = this;
             Headless = headless;
-            SignalDBContext.Migrate();
-            LibsignalDBContext.Migrate();
-            SignalDBContext.FailAllPendingMessages();
-            Store = LibsignalDBContext.GetSignalStore();
-            InitNetwork();
-            SemaphoreSlim.Release();
-            Logger.LogTrace("SignalLibHandle() released (local)");
+            Instance = this;
         }
 
         private List<SignalConversation> GetConversations()
@@ -146,14 +135,36 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("PurgeAccountData() released");
         }
 
+        public void Acquire()
+        {
+            //TODO ensure not acquired, dispatch view information
+            Logger.LogTrace("Acquire() locking");
+            CancelSource = new CancellationTokenSource();
+            SemaphoreSlim.Wait(CancelSource.Token);
+            LibUtils.Lock();
+            Logger.LogDebug("Acquire() locked (global and local)");
+            Instance = this;
+            SignalDBContext.Migrate();
+            LibsignalDBContext.Migrate();
+            SignalDBContext.FailAllPendingMessages();
+            Store = LibsignalDBContext.GetSignalStore();
+            InitNetwork();
+            Logger.LogTrace("Acquire() releasing");
+            SemaphoreSlim.Release();
+        }
+
         public void Release()
         {
-            //TODO fancify shutdown (e.g. grab sema first)
+            //TODO invalidate view information
+            Logger.LogTrace("Release() locking");
+            SemaphoreSlim.Wait(CancelSource.Token);
             CancelSource.Cancel();
             IncomingMessagesTask?.Wait();
             OutgoingMessagesTask?.Wait();
             Instance = null;
+            Logger.LogTrace("Release() releasing (global and local)");
             LibUtils.Unlock();
+            SemaphoreSlim.Release();
         }
         #endregion
 

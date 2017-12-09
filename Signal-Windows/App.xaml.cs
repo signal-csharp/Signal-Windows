@@ -37,7 +37,7 @@ namespace Signal_Windows
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
-        public static SignalLibHandle Handle;
+        public static SignalLibHandle Handle = new SignalLibHandle(false);
         Dictionary<int, CoreDispatcher> Views = new Dictionary<int, CoreDispatcher>();
         private int MainViewId;
 
@@ -54,9 +54,13 @@ namespace Signal_Windows
             this.Resuming += App_Resuming;
         }
 
-        private void App_Resuming(object sender, object e)
+        private async void App_Resuming(object sender, object e)
         {
             Logger.LogInformation("Resuming");
+            await Task.Run(() =>
+            {
+                Handle.Acquire();
+            });
         }
 
         private async void App_Suspending(object sender, SuspendingEventArgs e)
@@ -117,7 +121,7 @@ namespace Signal_Windows
                 {
                     await Task.Run(() =>
                     {
-                        Handle = new SignalLibHandle(false);
+                        Handle.Acquire();
                     });
                     rootFrame.Navigate(typeof(MainPage), e.Arguments);
                     Window.Current.Activate();
