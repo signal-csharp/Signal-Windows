@@ -62,7 +62,9 @@ namespace Signal_Windows
         private async void App_Suspending(object sender, SuspendingEventArgs e)
         {
             Logger.LogInformation("Suspending");
+            var def = e.SuspendingOperation.GetDeferral();
             await Task.Run(() => Handle.Release());
+            def.Complete();
             Logger.LogDebug("Suspended");
         }
 
