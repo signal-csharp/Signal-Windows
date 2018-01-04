@@ -224,6 +224,7 @@ namespace Signal_Windows.Lib
             SignalMessageDirection type;
             SignalContact author;
             SignalMessageStatus status;
+            SignalConversation conversation;
             string prefix;
             string conversationId;
             long composedTimestamp;
@@ -248,6 +249,7 @@ namespace Signal_Windows.Lib
                 conversationId = envelope.getSource();
             }
             LibsignalDBContext.DeleteAllSessions(conversationId);
+            conversation = SignalDBContext.GetOrCreateContactLocked(conversationId, 0);
 
             SignalMessage sm = new SignalMessage()
             {
@@ -262,7 +264,7 @@ namespace Signal_Windows.Lib
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
             };
-            SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, author);
+            SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, conversation);
         }
 
         private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
