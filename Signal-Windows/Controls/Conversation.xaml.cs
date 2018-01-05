@@ -219,7 +219,7 @@ namespace Signal_Windows.Controls
                 if (!SendingMessage)
                 {
                     SendingMessage = true;
-                    await GetMainPageVm().TextBox_KeyDown(sender, e);
+                    await GetMainPageVm().SendMessageButton_Click((TextBox)sender);
                     SendingMessage = false;
                 }
             }
@@ -236,7 +236,7 @@ namespace Signal_Windows.Controls
 
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
-            //await GetMainPageVm().SendMessageButton_Click(InputTextBox); TODO
+            await GetMainPageVm().SendMessageButton_Click(InputTextBox);
         }
 
         private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)

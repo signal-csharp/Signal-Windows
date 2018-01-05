@@ -80,15 +80,6 @@ namespace Signal_Windows.ViewModels
             set { _ThreadListAlignRight = value; RaisePropertyChanged(nameof(ThreadListAlignRight)); }
         }
 
-        internal async Task TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.Enter)
-            {
-                TextBox t = (TextBox)sender;
-                await SendMessageButton_Click(t);
-            }
-        }
-
         private async Task<bool> SendMessage(string messageText)
         {
             Debug.WriteLine("starting sendmessage");
