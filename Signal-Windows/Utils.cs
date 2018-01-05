@@ -256,14 +256,6 @@ namespace Signal_Windows
             return CultureInfo.InvariantCulture.CompareInfo.IndexOf(str, value, CompareOptions.IgnoreCase) >= 0;
         }
 
-        public static void TryVibrate(bool quick)
-        {
-            if (ApiInformation.IsTypePresent("Windows.Phone.Devices.Notification.VibrationDevice"))
-            {
-                Windows.Phone.Devices.Notification.VibrationDevice.GetDefault().Vibrate(TimeSpan.FromMilliseconds(quick? 100 : 500));
-            }
-        }
-
         public static string GetCountryCode(string ISO3166) //https://stackoverflow.com/questions/34837436/uwp-get-country-phone-number-prefix
         {
             var dictionary = new Dictionary<string, string>();

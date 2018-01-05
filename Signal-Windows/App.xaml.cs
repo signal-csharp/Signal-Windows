@@ -39,7 +39,7 @@ namespace Signal_Windows
         public static uint PREKEY_BATCH_SIZE = 100;
         public static SignalLibHandle Handle = new SignalLibHandle(false);
         Dictionary<int, CoreDispatcher> Views = new Dictionary<int, CoreDispatcher>();
-        private int MainViewId;
+        public static int MainViewId;
 
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
