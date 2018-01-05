@@ -3,6 +3,7 @@ using libsignalservice;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
 using Microsoft.Extensions.Logging;
+using Microsoft.Toolkit.Uwp.Notifications;
 using Signal_Windows.Controls;
 using Signal_Windows.Lib;
 using Signal_Windows.Models;
@@ -14,8 +15,11 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
 using Windows.System;
 using Windows.UI.Core;
+using Windows.UI.Notifications;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -172,6 +176,15 @@ namespace Signal_Windows.ViewModels
             {
                 var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
                 View.Thread.Append(container, false);
+            }
+            if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
+            {
+                if (message.Author != null)
+                {
+                    SignalNotifications.TryVibrate(true);
+                    SignalNotifications.SendMessageNotification(message);
+                    SignalNotifications.SendTileNotification(message);
+                }
             }
         }
 
