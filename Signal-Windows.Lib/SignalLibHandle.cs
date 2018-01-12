@@ -41,64 +41,11 @@ namespace Signal_Windows.Lib
         private SignalServiceMessageReceiver MessageReceiver;
         public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
 
-        #region controller api
+        #region frontend api
         public SignalLibHandle(bool headless)
         {
             Headless = headless;
             Instance = this;
-        }
-
-        private List<SignalConversation> GetConversations()
-        {
-            List<SignalConversation> conversations = new List<SignalConversation>();
-            List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
-            List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
-            int amountContacts = contacts.Count;
-            int amountGroups = groups.Count;
-            int contactsIdx = 0;
-            int groupsIdx = 0;
-            while (contactsIdx < amountContacts || groupsIdx < amountGroups)
-            {
-                if (contactsIdx < amountContacts)
-                {
-                    SignalConversation contact = contacts[contactsIdx];
-                    if (groupsIdx < amountGroups)
-                    {
-                        SignalConversation group = groups[groupsIdx];
-                        if (contact.LastActiveTimestamp > group.LastActiveTimestamp)
-                        {
-                            contactsIdx++;
-                            conversations.Add(contact);
-                        }
-                        else
-                        {
-                            groupsIdx++;
-                            conversations.Add(group);
-                        }
-                    }
-                    else
-                    {
-                        contactsIdx++;
-                        conversations.Add(contact);
-                    }
-                }
-                else if (groupsIdx < amountGroups)
-                {
-                    SignalConversation group = groups[groupsIdx];
-                    groupsIdx++;
-                    conversations.Add(group);
-                }
-            }
-            return conversations;
-        }
-
-        private void InitNetwork()
-        {
-            MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceUrls, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
-            Pipe = MessageReceiver.createMessagePipe();
-            MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceUrls, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
-            IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, this).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
-            OutgoingMessagesTask = Task.Factory.StartNew(() => new OutgoingMessages(CancelSource.Token, MessageSender, this).HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
         }
 
         public List<SignalConversation> AddWindow(CoreDispatcher d, ISignalWindow w)
@@ -166,9 +113,7 @@ namespace Signal_Windows.Lib
             LibUtils.Unlock();
             SemaphoreSlim.Release();
         }
-        #endregion
 
-        #region view api
         public async Task SendMessage(SignalMessage message, SignalConversation conversation)
         {
             await Task.Run(async () =>
@@ -186,6 +131,17 @@ namespace Signal_Windows.Lib
         public List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count)
         {
             return SignalDBContext.GetMessagesLocked(thread, startIndex, count);
+        }
+
+        public async void UpdateConversation(SignalConversation updatedConversation)
+        {
+            await Task.Run(async () =>
+            {
+                Logger.LogTrace("UpdateConversation() locking");
+                await SemaphoreSlim.WaitAsync(CancelSource.Token);
+                SemaphoreSlim.Release();
+                Logger.LogTrace("UpdateConversation() released");
+            });
         }
         #endregion
 
@@ -282,6 +238,61 @@ namespace Signal_Windows.Lib
             DispatchHandleIdentityKeyChange(messages);
             SemaphoreSlim.Release();
             Logger.LogTrace("HandleOutgoingKeyChange() released");
+        }
+        #endregion
+
+        #region private
+        private List<SignalConversation> GetConversations()
+        {
+            List<SignalConversation> conversations = new List<SignalConversation>();
+            List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
+            List<SignalGroup> groups = SignalDBContext.GetAllGroupsLocked();
+            int amountContacts = contacts.Count;
+            int amountGroups = groups.Count;
+            int contactsIdx = 0;
+            int groupsIdx = 0;
+            while (contactsIdx < amountContacts || groupsIdx < amountGroups)
+            {
+                if (contactsIdx < amountContacts)
+                {
+                    SignalConversation contact = contacts[contactsIdx];
+                    if (groupsIdx < amountGroups)
+                    {
+                        SignalConversation group = groups[groupsIdx];
+                        if (contact.LastActiveTimestamp > group.LastActiveTimestamp)
+                        {
+                            contactsIdx++;
+                            conversations.Add(contact);
+                        }
+                        else
+                        {
+                            groupsIdx++;
+                            conversations.Add(group);
+                        }
+                    }
+                    else
+                    {
+                        contactsIdx++;
+                        conversations.Add(contact);
+                    }
+                }
+                else if (groupsIdx < amountGroups)
+                {
+                    SignalConversation group = groups[groupsIdx];
+                    groupsIdx++;
+                    conversations.Add(group);
+                }
+            }
+            return conversations;
+        }
+
+        private void InitNetwork()
+        {
+            MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceUrls, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
+            Pipe = MessageReceiver.createMessagePipe();
+            MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceUrls, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
+            IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, this).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
+            OutgoingMessagesTask = Task.Factory.StartNew(() => new OutgoingMessages(CancelSource.Token, MessageSender, this).HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
         }
         #endregion
     }

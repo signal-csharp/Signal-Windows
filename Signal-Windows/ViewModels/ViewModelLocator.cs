@@ -2,6 +2,9 @@ using GalaSoft.MvvmLight.Ioc;
 using GalaSoft.MvvmLight.Views;
 using Microsoft.Practices.ServiceLocation;
 using System;
+using System.Collections.Concurrent;
+using Windows.UI.Core;
+using Windows.UI.Xaml;
 
 namespace Signal_Windows.ViewModels
 {
@@ -11,6 +14,16 @@ namespace Signal_Windows.ViewModels
     /// </summary>
     public class ViewModelLocator
     {
+        public static ConcurrentDictionary<CoreDispatcher, ViewModelLocator> Instances = new ConcurrentDictionary<CoreDispatcher, ViewModelLocator>();
+        public static ViewModelLocator CurrentVML
+        {
+            get
+            {
+                ViewModelLocator vml;
+                Instances.TryGetValue(Window.Current.Dispatcher, out vml);
+                return vml;
+            }
+        }
         private string Key = Guid.NewGuid().ToString();
         /// <summary>
         /// Initializes a new instance of the ViewModelLocator class.
@@ -65,7 +78,7 @@ namespace Signal_Windows.ViewModels
         {
             get
             {
-                return ServiceLocator.Current.GetInstance<MainPageViewModel>(Key.ToString());
+                return ServiceLocator.Current.GetInstance<MainPageViewModel>(Key);
             }
         }
 
@@ -100,7 +113,7 @@ namespace Signal_Windows.ViewModels
 
         public ConversationSettingsPageViewModel ConversationSettingsPageInstance
         {
-            get { return ServiceLocator.Current.GetInstance<ConversationSettingsPageViewModel>(); }
+            get { return ServiceLocator.Current.GetInstance<ConversationSettingsPageViewModel>(Key); }
         }
 
         // <summary>

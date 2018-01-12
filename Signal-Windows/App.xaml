@@ -6,6 +6,6 @@
     xmlns:vm="using:Signal_Windows.ViewModels"
     RequestedTheme="Light">
     <Application.Resources>
-        <vm:ViewModelLocator xmlns:vm="using:Signal_Windows.ViewModels" x:Key="Locator" />
+        <vm:ViewModelLocator xmlns:vm="using:Signal_Windows.ViewModels" x:Key="Locator" x:Name="VML"/>
     </Application.Resources>
 </Application>

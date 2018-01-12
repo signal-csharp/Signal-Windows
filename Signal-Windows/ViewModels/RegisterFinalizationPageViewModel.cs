@@ -80,7 +80,7 @@ namespace Signal_Windows.ViewModels
         private SignalServiceAccountManager InitRegistration(bool voice)
         {
             App.Handle.PurgeAccountData();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.ViewModels.RegisterPageInstance.FinalNumber, Password, 1 /*device id isn't actually used*/, App.USER_AGENT);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, ViewModelLocator.CurrentVML.RegisterPageInstance.FinalNumber, Password, 1 /*device id isn't actually used*/, App.USER_AGENT);
             if (voice)
             {
                 accountManager.requestVoiceVerificationCode();

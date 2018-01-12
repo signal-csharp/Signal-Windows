@@ -25,21 +25,21 @@ namespace Signal_Windows.ViewModels
                 await Task.Run(() =>
                 {
                     string SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
-                    App.ViewModels.RegisterFinalizationPageInstance.AccountManager.verifyAccountWithCode(
-                        App.ViewModels.RegisterFinalizationPageInstance.VerificationCode,
-                            SignalingKey, App.ViewModels.RegisterFinalizationPageInstance.SignalRegistrationId,
+                    ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.AccountManager.verifyAccountWithCode(
+                        ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.VerificationCode,
+                            SignalingKey, ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.SignalRegistrationId,
                             false, false, true);
                     SignalStore store = new SignalStore()
                     {
                         DeviceId = 1,
-                        IdentityKeyPair = Base64.encodeBytes(App.ViewModels.RegisterFinalizationPageInstance.IdentityKeyPair.serialize()),
+                        IdentityKeyPair = Base64.encodeBytes(ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.IdentityKeyPair.serialize()),
                         NextSignedPreKeyId = 1,
-                        Password = App.ViewModels.RegisterFinalizationPageInstance.Password,
+                        Password = ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.Password,
                         PreKeyIdOffset = 1,
                         Registered = true,
-                        RegistrationId = App.ViewModels.RegisterFinalizationPageInstance.SignalRegistrationId,
+                        RegistrationId = ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.SignalRegistrationId,
                         SignalingKey = SignalingKey,
-                        Username = App.ViewModels.RegisterPageInstance.FinalNumber,
+                        Username = ViewModelLocator.CurrentVML.RegisterPageInstance.FinalNumber,
                     };
                     LibsignalDBContext.SaveOrUpdateSignalStore(store);
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>

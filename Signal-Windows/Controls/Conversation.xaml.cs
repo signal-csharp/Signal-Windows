@@ -266,8 +266,8 @@ namespace Signal_Windows.Controls
         {
             if (SignalConversation is SignalContact)
             {
-                App.ViewModels.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
-                //GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage)); TODO
+                ViewModelLocator.CurrentVML.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
+                GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
             }
         }
     }
