@@ -32,7 +32,6 @@ namespace Signal_Windows
         public static string URL = "https://textsecure-service.whispersystems.org";
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
         public static StorageFolder LocalCacheFolder = ApplicationData.Current.LocalCacheFolder;
-        public static ViewModelLocator ViewModels = (ViewModelLocator)Current.Resources["Locator"];
         public static SignalStore Store;
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
@@ -76,7 +75,13 @@ namespace Signal_Windows
         {
             Exception e = ex.Exception;
             var frame = new StackTrace(e, true).GetFrames()[0];
-            Logger.LogError("UnhandledException occured in {0}/{1}: {2}\n{3}", frame.GetFileName(), frame.GetFileLineNumber(), e.Message, e.StackTrace);
+            Logger.LogError("UnhandledException {0} occured in {1}/{2}: {3}\n{4}", e, frame.GetFileName(), frame.GetFileLineNumber(), e.Message, e.StackTrace);
+        }
+
+        protected override void OnWindowCreated(WindowCreatedEventArgs args)
+        {
+            var loc = (ViewModelLocator) Resources["Locator"];
+            ViewModelLocator.Instances.AddOrUpdate(Window.Current.Dispatcher, loc, (key, oldValue) => loc);
         }
 
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
