@@ -124,6 +124,8 @@ namespace Signal_Windows
                 // Creating the rootFrame for the first time
                 try
                 {
+                    ApplicationViewSwitcher.DisableShowingMainViewOnActivation();
+                    ApplicationViewSwitcher.DisableSystemViewActivationPolicy();
                     await Task.Run(() =>
                     {
                         Handle.Acquire();
@@ -143,7 +145,7 @@ namespace Signal_Windows
                 // user has requested a new window
                 CoreApplicationView newView = CoreApplication.CreateNewView();
                 int newViewId = 0;
-                await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
                 {
                     Frame frame = new Frame();
                     frame.Navigate(typeof(MainPage), e.Arguments);
@@ -152,12 +154,10 @@ namespace Signal_Windows
                     var currView = ApplicationView.GetForCurrentView();
                     currView.Consolidated += CurrView_Consolidated;
                     newViewId = currView.Id;
+                    await e.ViewSwitcher.ShowAsStandaloneAsync(newViewId);
                 });
                 Views.Add(newViewId, newView.Dispatcher);
-                await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId,
-                        ViewSizePreference.Default,
-                        e.CurrentlyShownApplicationViewId,
-                        ViewSizePreference.Default);
+                Logger.LogInformation("ShowAsStandaloneAsync {0} {1}", e.ViewSwitcher, newViewId);
             }
             TileUpdateManager.CreateTileUpdaterForApplication().Clear();
         }
