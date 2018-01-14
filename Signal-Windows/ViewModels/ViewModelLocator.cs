@@ -78,7 +78,7 @@ namespace Signal_Windows.ViewModels
         {
             get
             {
-                return ServiceLocator.Current.GetInstance<MainPageViewModel>(Key);
+                return ServiceLocator.Current.GetInstance<MainPageViewModel>(Key.ToString());
             }
         }
 
@@ -113,7 +113,7 @@ namespace Signal_Windows.ViewModels
 
         public ConversationSettingsPageViewModel ConversationSettingsPageInstance
         {
-            get { return ServiceLocator.Current.GetInstance<ConversationSettingsPageViewModel>(Key); }
+            get { return ServiceLocator.Current.GetInstance<ConversationSettingsPageViewModel>(Key.ToString()); }
         }
 
         // <summary>
