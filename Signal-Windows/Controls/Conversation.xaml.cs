@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -266,7 +267,7 @@ namespace Signal_Windows.Controls
         {
             if (SignalConversation is SignalContact)
             {
-                ViewModelLocator.CurrentVML.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
+                App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
                 GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
             }
         }

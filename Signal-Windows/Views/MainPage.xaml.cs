@@ -7,6 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI.Popups;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -25,7 +26,6 @@ namespace Signal_Windows
         {
             this.InitializeComponent();
             Vm.View = this;
-            Vm.LoadConversations(SignalLibHandle.Instance.AddWindow(Window.Current.Dispatcher, Vm));
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
         }
@@ -96,6 +96,11 @@ namespace Signal_Windows
             ContactsList.SelectedItem = null;
         }
 
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+        }
+
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             var oldStyle = Utils.GetViewStyle(e.PreviousSize);
@@ -158,10 +163,10 @@ namespace Signal_Windows
 
         private void AddContactButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModelLocator.CurrentVML.AddContactPageInstance.MainPageVM = Vm;
-            //App.ViewModels.AddContactPageInstance.ContactName = "";
-            //App.ViewModels.AddContactPageInstance.ContactNumber = "";
-            //Frame.Navigate(typeof(AddContactPage)); TODO
+            var signalWindowsFrontend = App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id);
+            signalWindowsFrontend.Locator.AddContactPageInstance.ContactName = "";
+            signalWindowsFrontend.Locator.AddContactPageInstance.ContactNumber = "";
+            Frame.Navigate(typeof(AddContactPage));
         }
     }
 }

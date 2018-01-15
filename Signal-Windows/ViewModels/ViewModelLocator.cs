@@ -14,16 +14,6 @@ namespace Signal_Windows.ViewModels
     /// </summary>
     public class ViewModelLocator
     {
-        public static ConcurrentDictionary<CoreDispatcher, ViewModelLocator> Instances = new ConcurrentDictionary<CoreDispatcher, ViewModelLocator>();
-        public static ViewModelLocator CurrentVML
-        {
-            get
-            {
-                ViewModelLocator vml;
-                Instances.TryGetValue(Window.Current.Dispatcher, out vml);
-                return vml;
-            }
-        }
         private string Key = Guid.NewGuid().ToString();
         /// <summary>
         /// Initializes a new instance of the ViewModelLocator class.

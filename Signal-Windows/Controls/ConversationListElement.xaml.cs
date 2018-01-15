@@ -120,8 +120,6 @@ namespace Signal_Windows.Controls
 
         public void UpdateConversationDisplay()
         {
-            Model.ThreadDisplayName = Model.ThreadDisplayName;
-            Model.LastActiveTimestamp = Model.LastActiveTimestamp;
             ConversationDisplayName.Text = Model.ThreadDisplayName;
             UnreadCount = Model.UnreadCount;
             LastMessage = Model.LastMessage?.Content.Content;

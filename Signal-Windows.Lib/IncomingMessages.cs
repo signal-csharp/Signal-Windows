@@ -48,7 +48,7 @@ namespace Signal_Windows.Lib
                 catch (Exception e)
                 {
                     var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
-                    Logger.LogWarning("HandleIncomingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
+                    Logger.LogWarning("HandleIncomingMessages() failed: {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
                 }
             }
             Logger.LogInformation("HandleIncomingMessages() finished");

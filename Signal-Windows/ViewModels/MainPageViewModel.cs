@@ -27,23 +27,13 @@ using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.ViewModels
 {
-    public partial class MainPageViewModel : ViewModelBase, ISignalWindow
+    public partial class MainPageViewModel : ViewModelBase
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<MainPageViewModel>();
         public SignalConversation SelectedThread;
         private Dictionary<string, SignalConversation> ConversationsDictionary = new Dictionary<string, SignalConversation>();
         public MainPage View;
-
-        public void LoadConversations(IList<SignalConversation> conversations)
-        {
-            Conversations = new ObservableCollection<SignalConversation>(conversations);
-            foreach (var c in Conversations)
-            {
-                ConversationsDictionary.Add(c.ThreadId, c);
-            }
-        }
-
-        public ObservableCollection<SignalConversation> Conversations { get; set; }
+        public ObservableCollection<SignalConversation> Conversations { get; set; } = new ObservableCollection<SignalConversation>();
 
         private Visibility _ThreadVisibility = Visibility.Collapsed;
 
@@ -122,7 +112,7 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        #region ISignalWindow
+        #region SignalFrontend API
         public void AddOrUpdateConversation(SignalConversation conversation)
         {
             if (!ConversationsDictionary.ContainsKey(conversation.ThreadId))
@@ -190,11 +180,23 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void UpdateMessageBox(SignalMessage updatedMessage)
+        public void HandleMessageUpdate(SignalMessage updatedMessage)
         {
             if (SelectedThread != null && SelectedThread.ThreadId == updatedMessage.ThreadId)
             {
                 View.Thread.UpdateMessageBox(updatedMessage);
+            }
+        }
+
+        public void ReplaceConversationList(List<SignalConversation> conversations)
+        {
+            ConversationsDictionary.Clear();
+            Conversations.Clear();
+            Conversations.AddRange(conversations);
+
+            foreach (var c in Conversations)
+            {
+                ConversationsDictionary.Add(c.ThreadId, c);
             }
         }
         #endregion
