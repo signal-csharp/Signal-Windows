@@ -51,7 +51,10 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new LibsignalDBContext())
                 {
-                    ctx.Database.Migrate();
+                    if (ctx.Database.GetPendingMigrations().Count() > 0)
+                    {
+                        ctx.Database.Migrate();
+                    }
                 }
             }
         }
@@ -645,7 +648,7 @@ namespace Signal_Windows.Storage
         #endregion PreKeys
     }
 
-    internal class SignalDBContext : DbContext
+    public class SignalDBContext : DbContext
     {
         private static readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalDBContext>();
         private static readonly object DBLock = new object();
@@ -701,7 +704,10 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    ctx.Database.Migrate();
+                    if (ctx.Database.GetPendingMigrations().Count() > 0)
+                    {
+                        ctx.Database.Migrate();
+                    }
                     /*
                     var serviceProvider = ctx.GetInfrastructure<IServiceProvider>();
                     var loggerFactory = serviceProvider.GetService<ILoggerFactory>();

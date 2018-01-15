@@ -20,6 +20,7 @@ using Windows.ApplicationModel.Core;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace Signal_Windows
 {
@@ -28,6 +29,7 @@ namespace Signal_Windows
     /// </summary>
     sealed partial class App : Application
     {
+        private static App Instance;
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<App>();
         public static string URL = "https://textsecure-service.whispersystems.org";
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
@@ -37,15 +39,22 @@ namespace Signal_Windows
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
         public static SignalLibHandle Handle = new SignalLibHandle(false);
-        Dictionary<int, CoreDispatcher> Views = new Dictionary<int, CoreDispatcher>();
+        private Dictionary<int, SignalWindowsFrontend> Views = new Dictionary<int, SignalWindowsFrontend>();
         public static int MainViewId;
 
+        static App()
+        {
+            // TODO enforce these have begun before initializing
+            Task.Run(() => { SignalDBContext.Migrate(); });
+            Task.Run(() => { LibsignalDBContext.Migrate(); });
+        }
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
         /// und daher das logische Äquivalent von main() bzw. WinMain().
         /// </summary>
         public App()
         {
+            Instance = this;
             SignalLogging.SetupLogging(true);
             this.InitializeComponent();
             this.UnhandledException += OnUnhandledException;
@@ -53,13 +62,15 @@ namespace Signal_Windows
             this.Resuming += App_Resuming;
         }
 
+        public static SignalWindowsFrontend CurrentSignalWindowsFrontend(int id)
+        {
+            return Instance.Views[id];
+        }
+
         private async void App_Resuming(object sender, object e)
         {
             Logger.LogInformation("Resuming");
-            await Task.Run(() =>
-            {
-                Handle.Acquire();
-            });
+            await Handle.Reacquire();
         }
 
         private async void App_Suspending(object sender, SuspendingEventArgs e)
@@ -74,14 +85,12 @@ namespace Signal_Windows
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs ex)
         {
             Exception e = ex.Exception;
-            var frame = new StackTrace(e, true).GetFrames()[0];
-            Logger.LogError("UnhandledException {0} occured in {1}/{2}: {3}\n{4}", e, frame.GetFileName(), frame.GetFileLineNumber(), e.Message, e.StackTrace);
+            Logger.LogError("UnhandledException {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
         }
 
-        protected override void OnWindowCreated(WindowCreatedEventArgs args)
+        protected override void OnActivated(IActivatedEventArgs args)
         {
-            var loc = (ViewModelLocator) Resources["Locator"];
-            ViewModelLocator.Instances.AddOrUpdate(Window.Current.Dispatcher, loc, (key, oldValue) => loc);
+            Logger.LogInformation("OnActivated() {0}", args);
         }
 
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
@@ -107,7 +116,8 @@ namespace Signal_Windows
                 // Den Frame im aktuellen Fenster platzieren
                 Window.Current.Content = rootFrame;
                 var currView = ApplicationView.GetForCurrentView();
-                Views.Add(currView.Id, Window.Current.Dispatcher);
+                var frontend = new SignalWindowsFrontend(Window.Current.Dispatcher, (ViewModelLocator)Resources["Locator"], currView.Id);
+                Views.Add(currView.Id, frontend);
                 MainViewId = currView.Id;
             }
 
@@ -126,12 +136,11 @@ namespace Signal_Windows
                 {
                     ApplicationViewSwitcher.DisableShowingMainViewOnActivation();
                     ApplicationViewSwitcher.DisableSystemViewActivationPolicy();
-                    await Task.Run(() =>
-                    {
-                        Handle.Acquire();
-                    });
                     rootFrame.Navigate(typeof(MainPage), e.Arguments);
                     Window.Current.Activate();
+                    var frontend = CurrentSignalWindowsFrontend(MainViewId);
+                    TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+                    var acquisition = Handle.Acquire(frontend.Dispatcher, frontend);
                 }
                 catch (Exception ex)
                 {
@@ -145,7 +154,7 @@ namespace Signal_Windows
                 // user has requested a new window
                 CoreApplicationView newView = CoreApplication.CreateNewView();
                 int newViewId = 0;
-                await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+                SignalWindowsFrontend frontend = await newView.Dispatcher.RunTaskAsync(async () =>
                 {
                     Frame frame = new Frame();
                     frame.Navigate(typeof(MainPage), e.Arguments);
@@ -155,19 +164,24 @@ namespace Signal_Windows
                     currView.Consolidated += CurrView_Consolidated;
                     newViewId = currView.Id;
                     await e.ViewSwitcher.ShowAsStandaloneAsync(newViewId);
+                    ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
+                    return new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);
                 });
-                Views.Add(newViewId, newView.Dispatcher);
-                Logger.LogInformation("ShowAsStandaloneAsync {0} {1}", e.ViewSwitcher, newViewId);
+                Views.Add(newViewId, frontend);
+                await newView.Dispatcher.RunTaskAsync(async () =>
+                {
+                    Handle.AddWindow(frontend.Dispatcher, frontend);
+                });
+                Logger.LogInformation("OnLaunched added view {0}", newViewId);
             }
-            TileUpdateManager.CreateTileUpdaterForApplication().Clear();
         }
 
         private void CurrView_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)
         {
             sender.Consolidated -= CurrView_Consolidated;
-            var dispatcher = Views[sender.Id];
+            var signalWindowsFrontend = Views[sender.Id];
+            Handle.RemoveWindow(signalWindowsFrontend.Dispatcher);
             Views.Remove(sender.Id);
-            Handle.RemoveWindow(dispatcher);
             if (sender.Id != MainViewId)
             {
                 Window.Current.Close();

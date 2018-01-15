@@ -21,5 +21,26 @@ namespace Signal_Windows.Models
         public long LastSeenMessageIndex { get; set; }
         public SignalMessage LastSeenMessage { get; set; }
         public Action UpdateUI;
+
+        public SignalConversation Clone()
+        {
+            return new SignalConversation()
+            {
+                Id = Id,
+                ThreadId = ThreadId,
+                ThreadDisplayName = ThreadDisplayName,
+                LastActiveTimestamp = LastActiveTimestamp,
+                Draft = Draft,
+                AvatarFile = AvatarFile,
+                MessagesCount = MessagesCount,
+                UnreadCount = UnreadCount,
+                CanReceive = CanReceive,
+                ExpiresInSeconds = ExpiresInSeconds,
+                LastMessageId = LastMessageId,
+                LastMessage = LastMessage,
+                LastSeenMessageIndex = LastSeenMessageIndex,
+                LastSeenMessage = LastSeenMessage
+            };
+        }
     }
 }

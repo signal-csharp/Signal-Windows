@@ -25,21 +25,21 @@ namespace Signal_Windows.ViewModels
                 await Task.Run(() =>
                 {
                     string SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
-                    ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.AccountManager.verifyAccountWithCode(
-                        ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.VerificationCode,
-                            SignalingKey, ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.SignalRegistrationId,
+                    App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.verifyAccountWithCode(
+                        App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode,
+                            SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
                             false, false, true);
                     SignalStore store = new SignalStore()
                     {
                         DeviceId = 1,
-                        IdentityKeyPair = Base64.encodeBytes(ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.IdentityKeyPair.serialize()),
+                        IdentityKeyPair = Base64.encodeBytes(App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.IdentityKeyPair.serialize()),
                         NextSignedPreKeyId = 1,
-                        Password = ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.Password,
+                        Password = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.Password,
                         PreKeyIdOffset = 1,
                         Registered = true,
-                        RegistrationId = ViewModelLocator.CurrentVML.RegisterFinalizationPageInstance.SignalRegistrationId,
+                        RegistrationId = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
                         SignalingKey = SignalingKey,
-                        Username = ViewModelLocator.CurrentVML.RegisterPageInstance.FinalNumber,
+                        Username = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber,
                     };
                     LibsignalDBContext.SaveOrUpdateSignalStore(store);
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -62,6 +62,7 @@ namespace Signal_Windows.ViewModels
             }
             catch (Exception e)
             {
+                // TODO log exception
                 var title = "Verification failed";
                 var content = "Please enter the correct verification code.";
                 MessageDialog dialog = new MessageDialog(content, title);
