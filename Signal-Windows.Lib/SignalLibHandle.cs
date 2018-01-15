@@ -51,34 +51,34 @@ namespace Signal_Windows.Lib
             Instance = this;
         }
 
-        public void AddWindow(CoreDispatcher d, ISignalFrontend w)
+        public void AddFrontend(CoreDispatcher d, ISignalFrontend w)
         {
-            Logger.LogTrace("AddWindow() locking");
+            Logger.LogTrace("AddFrontend() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
-            Logger.LogTrace("AddWindow() locked");
+            Logger.LogTrace("AddFrontend() locked");
             if (Running)
             {
-                Logger.LogInformation("Registering window of dispatcher {0}", w.GetHashCode());
+                Logger.LogInformation("Registering frontend of dispatcher {0}", w.GetHashCode());
                 Frames.Add(d, w);
                 w.ReplaceConversationList(GetConversations());
             }
             else
             {
-                Logger.LogInformation("Ignoring AddWindow call, release in progress");
+                Logger.LogInformation("Ignoring AddFrontend call, release in progress");
             }
             SemaphoreSlim.Release();
-            Logger.LogTrace("AddWindow() released");
+            Logger.LogTrace("AddFrontend() released");
         }
 
-        public void RemoveWindow(CoreDispatcher d)
+        public void RemoveFrontend(CoreDispatcher d)
         {
-            Logger.LogTrace("RemoveWindow() locking");
+            Logger.LogTrace("AddFrontend() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
-            Logger.LogTrace("RemoveWindow() locked");
-            Logger.LogInformation("Unregistering window of dispatcher {0}", d.GetHashCode());
+            Logger.LogTrace("AddFrontend() locked");
+            Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());
             Frames.Remove(d);
             SemaphoreSlim.Release();
-            Logger.LogTrace("RemoveWindow() released");
+            Logger.LogTrace("AddFrontend() released");
         }
 
         public void PurgeAccountData()

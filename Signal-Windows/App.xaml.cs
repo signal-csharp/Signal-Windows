@@ -170,7 +170,7 @@ namespace Signal_Windows
                 Views.Add(newViewId, frontend);
                 await newView.Dispatcher.RunTaskAsync(async () =>
                 {
-                    Handle.AddWindow(frontend.Dispatcher, frontend);
+                    Handle.AddFrontend(frontend.Dispatcher, frontend);
                 });
                 Logger.LogInformation("OnLaunched added view {0}", newViewId);
             }
@@ -180,7 +180,7 @@ namespace Signal_Windows
         {
             sender.Consolidated -= CurrView_Consolidated;
             var signalWindowsFrontend = Views[sender.Id];
-            Handle.RemoveWindow(signalWindowsFrontend.Dispatcher);
+            Handle.RemoveFrontend(signalWindowsFrontend.Dispatcher);
             Views.Remove(sender.Id);
             if (sender.Id != MainViewId)
             {
