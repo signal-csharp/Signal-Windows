@@ -85,7 +85,7 @@ namespace Signal_Windows.Controls
                     {
                         MessageAuthor.Visibility = Visibility.Collapsed;
                     }
-                    MessageBoxBorder.Background = Utils.GetBrushFromColor(Model.Message.Author.Color);
+                    MessageBoxBorder.Background = Model.Message.Author.Color != null ? Utils.GetBrushFromColor(Model.Message.Author.Color) : Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.Message.Author.ThreadDisplayName));
                     MessageAuthor.Foreground = Utils.GetSolidColorBrush(204, "#ffffff");
                     MessageContentTextBlock.Foreground = Utils.ForegroundIncoming;
                     FancyTimestampBlock.Foreground = Utils.GetSolidColorBrush(127, "#ffffff");
