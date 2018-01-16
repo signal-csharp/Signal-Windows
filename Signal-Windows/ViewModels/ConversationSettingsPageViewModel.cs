@@ -58,7 +58,6 @@ namespace Signal_Windows.ViewModels
                 Colors.Add(Utils.GetBrushFromColor(color));
             }
             Colors.Add(Utils.Grey);
-
             AccentColor = new SolidColorBrush((Color)App.Current.Resources["SystemAccentColor"]);
         }
 
@@ -72,42 +71,29 @@ namespace Signal_Windows.ViewModels
 
         internal async Task OnNavigatingFrom()
         {
-            if (DisplayName.Trim() != oldDisplayName.Trim())
+            Contact.ThreadDisplayName = DisplayName.Trim();
+            await Task.Run(() =>
             {
-                Contact.ThreadDisplayName = DisplayName.Trim();
-                bool isNew;
-                await Task.Run(() =>
-                {
-                    //SignalDBContext.InsertOrUpdateContactLocked(Contact, out isNew); TODO
-                });
-            }
+                App.Handle.SaveAndDispatchSignalConversation(Contact);
+            });
         }
 
         internal void UpdateDisplayName(string newDisplayName)
         {
-            DisplayName = newDisplayName.Trim();
+            DisplayName = newDisplayName;
             Initials = Utils.GetInitials(DisplayName);
         }
 
-        internal async Task SetContactColor(SolidColorBrush brush)
+        internal void SetContactColor(SolidColorBrush brush)
         {
-            await SetContactColor(Utils.GetColorFromBrush(brush));
-        }
-
-        internal async Task SetContactColor(string color)
-        {
-            Contact.Color = color;
-            await Task.Run(() =>
-            {
-                bool isNew;
-                //SignalDBContext.InsertOrUpdateContactLocked(Contact, out isNew); TODO
-            });
+            Contact.Color = Utils.GetColorFromBrush(brush);
             FillBrush = Utils.GetBrushFromColor(Contact.Color);
         }
 
-        internal async Task ResetContactColor()
+        internal void ResetContactColor()
         {
-            await SetContactColor(Utils.GetDefaultColor(DisplayName));
+            Contact.Color = null;
+            FillBrush = Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Contact.ThreadDisplayName));
         }
 
         internal void BackButton_Click(object sender, BackRequestedEventArgs e)

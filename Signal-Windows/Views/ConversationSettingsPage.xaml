@@ -34,7 +34,7 @@
                 </Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" Margin="0,0,0,8" HorizontalAlignment="Left">
                     <TextBlock Text="Display Name" Margin="0,0,0,4" FontSize="15"/>
-                    <TextBox x:Name="DisplayNameTextBox" Text="{x:Bind Vm.DisplayName, Mode=TwoWay}" Width="300" LostFocus="DisplayNameTextBox_LostFocus" InputScope="PersonalFullName"/>
+                    <TextBox x:Name="DisplayNameTextBox" Text="{x:Bind Vm.DisplayName, Mode=TwoWay}" Width="300" TextChanged="DisplayNameTextBox_TextChanged" InputScope="PersonalFullName"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Margin="0,8" HorizontalAlignment="Left">
                     <TextBlock Text="Mute conversation" FontSize="15" Margin="0,0,0,4"/>
@@ -63,7 +63,6 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Button x:Name="SystemColor" Background="{x:Bind Vm.AccentColor, Mode=OneWay}" Width="50" Height="50" Margin="0,4,4,4" Click="SystemColor_Click"/>
                         <Button x:Name="Color00" Background="{x:Bind Vm.Colors[0]}" Width="50" Height="50" Margin="0,4,4,4" Grid.Row="1" Grid.Column="0" Click="Color00_Click"/>
                         <Button x:Name="Color01" Background="{x:Bind Vm.Colors[1]}" Width="50" Height="50" Margin="4,4" Grid.Row="1" Grid.Column="1" Click="Color01_Click"/>
                         <Button x:Name="Color02" Background="{x:Bind Vm.Colors[2]}" Width="50" Height="50" Margin="4,4" Grid.Row="1" Grid.Column="2" Click="Color02_Click"/>
@@ -79,7 +78,6 @@
                         <Button x:Name="Color12" Background="{x:Bind Vm.Colors[12]}" Width="50" Height="50" Margin="0,4,4,4" Grid.Row="4" Grid.Column="0" Click="Color12_Click"/>
                         <Button x:Name="Color13" Background="{x:Bind Vm.Colors[13]}" Width="50" Height="50" Margin="4,4" Grid.Row="4" Grid.Column="1" Click="Color13_Click"/>
                         <Button x:Name="Color14" Background="{x:Bind Vm.Colors[14]}" Width="50" Height="50" Margin="4,4" Grid.Row="4" Grid.Column="2" Click="Color14_Click"/>
-                        <Button x:Name="Color15" Background="{x:Bind Vm.Colors[15]}" Width="50" Height="50" Margin="4,4" Grid.Row="4" Grid.Column="3" Click="Color15_Click"/>
                     </Grid>
                 </StackPanel>
                 <Button Grid.Row="4" Content="View safety number" IsEnabled="False" Margin="0,16"/>

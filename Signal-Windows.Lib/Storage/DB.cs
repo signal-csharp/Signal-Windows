@@ -1109,28 +1109,48 @@ namespace Signal_Windows.Storage
             return contact;
         }
 
-        public static void InsertOrUpdateContactLocked(SignalContact contact, out bool isNew)
+        public static void InsertOrUpdateConversationLocked(SignalConversation conversation)
         {
-            isNew = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    var c = ctx.Contacts.SingleOrDefault(b => b.ThreadId == contact.ThreadId);
-                    if (c == null)
+                    if (conversation is SignalContact contact)
                     {
-                        isNew = true;
-                        ctx.Contacts.Add(contact);
+                        var c = ctx.Contacts.SingleOrDefault(b => b.ThreadId == conversation.ThreadId);
+                        if (c == null)
+                        {
+
+                            ctx.Contacts.Add(contact);
+                        }
+                        else
+                        {
+                            c.Color = contact.Color;
+                            c.ThreadId = conversation.ThreadId;
+                            c.ThreadDisplayName = conversation.ThreadDisplayName;
+                            c.CanReceive = conversation.CanReceive;
+                            c.AvatarFile = conversation.AvatarFile;
+                            c.Draft = conversation.Draft;
+                            c.UnreadCount = conversation.UnreadCount;
+                        }
                     }
-                    else
+                    else if (conversation is SignalGroup group)
                     {
-                        c.Color = contact.Color;
-                        c.ThreadId = contact.ThreadId;
-                        c.ThreadDisplayName = contact.ThreadDisplayName;
-                        c.CanReceive = contact.CanReceive;
-                        c.AvatarFile = contact.AvatarFile;
-                        c.Draft = contact.Draft;
-                        c.UnreadCount = contact.UnreadCount;
+                        var c = ctx.Groups.SingleOrDefault(b => b.ThreadId == conversation.ThreadId);
+                        if (c == null)
+                        {
+
+                            ctx.Groups.Add(group);
+                        }
+                        else
+                        {
+                            c.ThreadId = conversation.ThreadId;
+                            c.ThreadDisplayName = conversation.ThreadDisplayName;
+                            c.CanReceive = conversation.CanReceive;
+                            c.AvatarFile = conversation.AvatarFile;
+                            c.Draft = conversation.Draft;
+                            c.UnreadCount = conversation.UnreadCount;
+                        }
                     }
                     ctx.SaveChanges();
                 }
