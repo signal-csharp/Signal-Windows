@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Signal_Windows.Models
 {
-    public class SignalConversation
+    public abstract class SignalConversation
     {
         public long Id { get; set; }
         public string ThreadId { get; set; }
@@ -20,27 +20,53 @@ namespace Signal_Windows.Models
         public SignalMessage LastMessage { get; set; }
         public long LastSeenMessageIndex { get; set; }
         public SignalMessage LastSeenMessage { get; set; }
+        [NotMapped] public string DisplayedColor { get; set; }
         public Action UpdateUI;
 
         public SignalConversation Clone()
         {
-            return new SignalConversation()
+            if (this is SignalContact contact)
             {
-                Id = Id,
-                ThreadId = ThreadId,
-                ThreadDisplayName = ThreadDisplayName,
-                LastActiveTimestamp = LastActiveTimestamp,
-                Draft = Draft,
-                AvatarFile = AvatarFile,
-                MessagesCount = MessagesCount,
-                UnreadCount = UnreadCount,
-                CanReceive = CanReceive,
-                ExpiresInSeconds = ExpiresInSeconds,
-                LastMessageId = LastMessageId,
-                LastMessage = LastMessage,
-                LastSeenMessageIndex = LastSeenMessageIndex,
-                LastSeenMessage = LastSeenMessage
-            };
+                return new SignalContact()
+                {
+                    Id = Id,
+                    ThreadId = ThreadId,
+                    ThreadDisplayName = ThreadDisplayName,
+                    LastActiveTimestamp = LastActiveTimestamp,
+                    Draft = Draft,
+                    AvatarFile = AvatarFile,
+                    MessagesCount = MessagesCount,
+                    UnreadCount = UnreadCount,
+                    CanReceive = CanReceive,
+                    ExpiresInSeconds = ExpiresInSeconds,
+                    LastMessageId = LastMessageId,
+                    LastMessage = LastMessage,
+                    LastSeenMessageIndex = LastSeenMessageIndex,
+                    LastSeenMessage = LastSeenMessage,
+                    Color = contact.Color
+                };
+            }
+            else
+            {
+                return new SignalGroup()
+                {
+                    Id = Id,
+                    ThreadId = ThreadId,
+                    ThreadDisplayName = ThreadDisplayName,
+                    LastActiveTimestamp = LastActiveTimestamp,
+                    Draft = Draft,
+                    AvatarFile = AvatarFile,
+                    MessagesCount = MessagesCount,
+                    UnreadCount = UnreadCount,
+                    CanReceive = CanReceive,
+                    ExpiresInSeconds = ExpiresInSeconds,
+                    LastMessageId = LastMessageId,
+                    LastMessage = LastMessage,
+                    LastSeenMessageIndex = LastSeenMessageIndex,
+                    LastSeenMessage = LastSeenMessage
+                };
+            }
+
         }
     }
 }

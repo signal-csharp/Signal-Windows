@@ -48,129 +48,117 @@ namespace Signal_Windows.Views
             await Vm.OnNavigatingFrom();
         }
 
-        private async void SystemColor_Click(object sender, RoutedEventArgs e)
-        {
-            await Vm.SetContactColor("system");
-        }
-
-        private async void Color00_Click(object sender, RoutedEventArgs e)
+        private void Color00_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color01_Click(object sender, RoutedEventArgs e)
+        private void Color01_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color02_Click(object sender, RoutedEventArgs e)
+        private void Color02_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color03_Click(object sender, RoutedEventArgs e)
+        private void Color03_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color04_Click(object sender, RoutedEventArgs e)
+        private void Color04_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color05_Click(object sender, RoutedEventArgs e)
+        private void Color05_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color06_Click(object sender, RoutedEventArgs e)
+        private void Color06_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color07_Click(object sender, RoutedEventArgs e)
+        private void Color07_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color08_Click(object sender, RoutedEventArgs e)
+        private void Color08_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color09_Click(object sender, RoutedEventArgs e)
+        private void Color09_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color10_Click(object sender, RoutedEventArgs e)
+        private void Color10_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color11_Click(object sender, RoutedEventArgs e)
+        private void Color11_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color12_Click(object sender, RoutedEventArgs e)
+        private void Color12_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color13_Click(object sender, RoutedEventArgs e)
+        private void Color13_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color14_Click(object sender, RoutedEventArgs e)
+        private void Color14_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.SetContactColor(brush);
         }
 
-        private async void Color15_Click(object sender, RoutedEventArgs e)
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            Button button = sender as Button;
-            SolidColorBrush brush = button.Background as SolidColorBrush;
-            await Vm.SetContactColor(brush);
+            Vm.ResetContactColor();
         }
 
-        private async void ResetButton_Click(object sender, RoutedEventArgs e)
-        {
-            await Vm.ResetContactColor();
-        }
-
-        private void DisplayNameTextBox_LostFocus(object sender, RoutedEventArgs e)
+        private void DisplayNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             Vm.UpdateDisplayName(((TextBox)sender).Text);
         }

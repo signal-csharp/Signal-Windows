@@ -183,15 +183,22 @@ namespace Signal_Windows.Lib
             return SignalDBContext.GetMessagesLocked(thread, startIndex, count);
         }
 
-        public async void UpdateConversation(SignalConversation updatedConversation)
+        public void SaveAndDispatchSignalConversation(SignalConversation updatedConversation)
         {
-            await Task.Run(async () =>
+            Logger.LogTrace("SaveAndDispatchSignalConversation() locking");
+            SemaphoreSlim.Wait(CancelSource.Token);
+            SignalDBContext.InsertOrUpdateConversationLocked(updatedConversation);
+            List<Task> operations = new List<Task>(); ;
+            foreach (var dispatcher in Frames.Keys)
             {
-                Logger.LogTrace("UpdateConversation() locking");
-                await SemaphoreSlim.WaitAsync(CancelSource.Token);
-                SemaphoreSlim.Release();
-                Logger.LogTrace("UpdateConversation() released");
-            });
+                operations.Add(dispatcher.RunTaskAsync(() =>
+                {
+                    Frames[dispatcher].AddOrUpdateConversation(updatedConversation.Clone());
+                }));
+            }
+            Task.WaitAll(operations.ToArray());
+            SemaphoreSlim.Release();
+            Logger.LogTrace("SaveAndDispatchSignalConversation() released");
         }
         #endregion
 
