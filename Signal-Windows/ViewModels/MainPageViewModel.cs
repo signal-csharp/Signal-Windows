@@ -135,6 +135,10 @@ namespace Signal_Windows.ViewModels
                 {
                     ourContact.Color = newContact.Color;
                 }
+                else if (c is SignalGroup ourGroup && conversation is SignalGroup newGroup)
+                {
+                    ourGroup.GroupMemberships = newGroup.GroupMemberships;
+                }
                 c.UpdateUI?.Invoke();
             }
             SignalConversation uiConversation = ConversationsDictionary[conversation.ThreadId];
