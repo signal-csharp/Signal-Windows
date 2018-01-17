@@ -131,6 +131,10 @@ namespace Signal_Windows.ViewModels
                 c.MessagesCount = conversation.MessagesCount;
                 c.ThreadDisplayName = conversation.ThreadDisplayName;
                 c.UnreadCount = conversation.UnreadCount;
+                if (c is SignalContact ourContact && conversation is SignalContact newContact)
+                {
+                    ourContact.Color = newContact.Color;
+                }
                 c.UpdateUI?.Invoke();
             }
             SignalConversation uiConversation = ConversationsDictionary[conversation.ThreadId];
