@@ -29,9 +29,9 @@ namespace Signal_Windows
             Locator.MainPageInstance.HandleIdentitykeyChange(messages);
         }
 
-        public void HandleMessage(SignalMessage message)
+        public void HandleMessage(SignalMessage message, SignalConversation conversation)
         {
-            Locator.MainPageInstance.HandleMessage(message);
+            Locator.MainPageInstance.HandleMessage(message, conversation);
         }
 
         public void HandleMessageUpdate(SignalMessage updatedMessage)

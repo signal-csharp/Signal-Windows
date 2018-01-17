@@ -103,6 +103,25 @@ namespace Signal_Windows.ViewModels
             }
         }
 
+        internal void RepositionConversation(SignalConversation uiConversation)
+        {
+            for (int i = 0; i < Conversations.Count; i++)
+            {
+                var c = Conversations[i];
+                if (c == uiConversation)
+                {
+                    break;
+                }
+                if (uiConversation.LastActiveTimestamp > c.LastActiveTimestamp)
+                {
+                    int index = Conversations.IndexOf(uiConversation);
+                    Logger.LogDebug("RepositionConversation() moving conversation from {0} to {1}", index, i);
+                    Conversations.Move(index, i);
+                    break;
+                }
+            }
+        }
+
         internal async Task SendMessageButton_Click(TextBox messageTextBox)
         {
             bool sendMessageResult = await SendMessage(messageTextBox.Text);
@@ -142,21 +161,7 @@ namespace Signal_Windows.ViewModels
                 c.UpdateUI?.Invoke();
             }
             SignalConversation uiConversation = ConversationsDictionary[conversation.ThreadId];
-            for (int i = 0;i < Conversations.Count;i++)
-            {
-                var c = Conversations[i];
-                if (c == uiConversation)
-                {
-                    break;
-                }
-                if (uiConversation.LastActiveTimestamp > c.LastActiveTimestamp)
-                {
-                    int index = Conversations.IndexOf(uiConversation);
-                    Logger.LogDebug("AddOrUpdateConversation moving conversation from {0} to {1}", index, i);
-                    Conversations.Move(index, i);
-                    break;
-                }
-            }
+            RepositionConversation(uiConversation);
             if (SelectedThread != null) // the conversation we have open may have been edited
             {
                 if (SelectedThread == uiConversation)
@@ -173,13 +178,21 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void HandleMessage(SignalMessage message)
+        public void HandleMessage(SignalMessage message, SignalConversation conversation)
         {
-            if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+            var localConversation = ConversationsDictionary[conversation.ThreadId];
+            localConversation.LastMessage = message;
+            localConversation.MessagesCount = conversation.MessagesCount;
+            localConversation.LastActiveTimestamp = conversation.LastActiveTimestamp;
+            localConversation.UnreadCount = conversation.UnreadCount;
+            localConversation.LastSeenMessageIndex = conversation.LastSeenMessageIndex;
+            localConversation.UpdateUI();
+            if (SelectedThread != null && SelectedThread == localConversation)
             {
                 var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
-                View.Thread.Append(container, false);
+                View.Thread.Append(container);
             }
+            RepositionConversation(localConversation);
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
             {
                 if (message.Author != null)
@@ -198,7 +211,7 @@ namespace Signal_Windows.ViewModels
                 var conversation = ConversationsDictionary[message.ThreadId];
                 conversation.MessagesCount += 1;
                 conversation.UnreadCount += 1;
-                HandleMessage(message);
+                HandleMessage(message, conversation);
             }
         }
 

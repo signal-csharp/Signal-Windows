@@ -328,8 +328,6 @@ namespace Signal_Windows.Lib
                     ReceivedTimestamp = timestamp,
                 };
                 SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, dbgroup);
-                Handle.DispatchAddOrUpdateConversation(dbgroup); //first update the conversation (including MessagesCount)...
-                Handle.DispatchHandleMessage(sm); //then pass the message
             }
             else
             {
@@ -429,18 +427,6 @@ namespace Signal_Windows.Lib
                     attachments.Add(sa);
                 }
             }
-            /*
-            if (type == SignalMessageDirection.Incoming) //TODO move this do the corewindow's handler
-            {
-                if (App.WindowActive)
-                    Utils.TryVibrate(true);
-                else
-                {
-                    SendTileNotification(message);
-                    SendMessageNotification(message);
-                }
-            }
-            */
             SignalLibHandle.Instance.SaveAndDispatchSignalMessage(message, conversation);
         }
     }
