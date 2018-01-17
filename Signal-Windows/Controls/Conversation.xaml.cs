@@ -195,12 +195,12 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public void Append(SignalMessageContainer sm, bool forceScroll)
+        public void Append(SignalMessageContainer sm)
         {
             var sourcePanel = (ItemsStackPanel)ConversationItemsControl.ItemsPanelRoot;
-            bool bottom = sourcePanel.LastVisibleIndex == Collection.Count - 2; /* -2 because we already incremented Count */
-            Collection.Add(sm, true);
-            if (forceScroll || bottom)
+            bool bottom = sourcePanel.LastVisibleIndex == Collection.Count - 2; // -2 because we already incremented Count
+            Collection.Add(sm, sm.Message.Author == null);
+            if (bottom)
             {
                 UpdateLayout();
                 ScrollToBottom();

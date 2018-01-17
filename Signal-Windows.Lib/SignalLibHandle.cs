@@ -20,7 +20,7 @@ namespace Signal_Windows.Lib
     public interface ISignalFrontend
     {
         void AddOrUpdateConversation(SignalConversation conversation);
-        void HandleMessage(SignalMessage message);
+        void HandleMessage(SignalMessage message, SignalConversation conversation);
         void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
@@ -218,8 +218,11 @@ namespace Signal_Windows.Lib
             SignalDBContext.SaveMessageLocked(message);
             conversation.LastMessage = message;
             conversation.LastActiveTimestamp = message.ComposedTimestamp;
-            DispatchAddOrUpdateConversation(conversation); //first update the conversation (including MessagesCount)...
-            DispatchHandleMessage(message); //then pass the message to all windows
+            if (message.Type == SignalMessageType.GroupUpdate)
+            {
+                DispatchAddOrUpdateConversation(conversation);
+            }
+            DispatchHandleMessage(message, conversation);
         }
 
         internal void DispatchHandleIdentityKeyChange(LinkedList<SignalMessage> messages)
@@ -248,14 +251,14 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        internal void DispatchHandleMessage(SignalMessage message)
+        internal void DispatchHandleMessage(SignalMessage message, SignalConversation conversation)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
                 operations.Add(dispatcher.RunTaskAsync(() =>
                 {
-                    Frames[dispatcher].HandleMessage(message);
+                    Frames[dispatcher].HandleMessage(message, conversation);
                 }));
             }
             Task.WaitAll(operations.ToArray());

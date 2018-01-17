@@ -130,9 +130,9 @@ namespace Signal_Windows.Controls
         /// Count is mapped to the SignalConversation's MessagesCount, so callers must update appropriately before calling this method, and no async method must be called in between.</remarks>
         /// <param name="value">The object to add to the VirtualizedMessagesCollection.</param>
         /// <returns>The position into which the new element was inserted, or -1 to indicate that the item was not inserted into the collection.</returns>
-        public int Add(object value, bool forcedScroll)
+        public int Add(object value, bool hideUnreadMarker)
         {
-            if (forcedScroll && UnreadMarkerIndex > 0)
+            if (hideUnreadMarker && UnreadMarkerIndex > 0)
             {
                 var old = UnreadMarkerIndex;
                 UnreadMarkerIndex = -1;
