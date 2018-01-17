@@ -233,6 +233,11 @@ namespace Signal_Windows.ViewModels
             {
                 ConversationsDictionary.Add(c.ThreadId, c);
             }
+            if (SelectedThread != null)
+            {
+                SelectedThread = ConversationsDictionary[SelectedThread.ThreadId];
+                View.Thread.Collection.Conversation = SelectedThread;
+            }
         }
         #endregion
     }

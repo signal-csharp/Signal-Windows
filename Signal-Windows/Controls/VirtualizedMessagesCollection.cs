@@ -26,7 +26,7 @@ namespace Signal_Windows.Controls
         private const int PAGE_SIZE = 50;
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         private Dictionary<int, IList<SignalMessageContainer>> Cache = new Dictionary<int, IList<SignalMessageContainer>>();
-        private SignalConversation Conversation;
+        public SignalConversation Conversation;
         Conversation ConversationView;
         private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
         public int UnreadMarkerIndex = -1;

@@ -26,7 +26,7 @@ namespace Signal_Windows.Controls
         private bool SendingMessage = false;
         private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
         private SignalConversation SignalConversation;
-        private VirtualizedCollection Collection;
+        public VirtualizedCollection Collection;
 
         private string _ThreadDisplayName;
 
