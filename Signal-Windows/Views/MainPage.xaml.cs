@@ -90,15 +90,12 @@ namespace Signal_Windows
             return Utils.GetViewStyle(new Size(ActualWidth, ActualHeight));
         }
 
-        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
-        {
-            base.OnNavigatingFrom(e);
-            ContactsList.SelectedItem = null;
-        }
-
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            base.OnNavigatedTo(e);
+            if (Vm.SelectedThread != null)
+            {
+                ConversationControl.Load(Vm.SelectedThread);
+            }
         }
 
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)
