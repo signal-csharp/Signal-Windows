@@ -153,9 +153,19 @@ namespace Signal_Windows.ViewModels
                     break;
                 }
             }
-            if (SelectedThread == uiConversation) // the conversation we have open was edited, so reload it
+            if (SelectedThread != null) // the conversation we have open may have been edited
             {
-                View.Reload();
+                if (SelectedThread == uiConversation)
+                {
+                    View.Reload();
+                }
+                else if (SelectedThread is SignalGroup selectedGroup)
+                {
+                    if (selectedGroup.GroupMemberships.FindAll((gm) => gm.Contact.ThreadId == conversation.ThreadId).Count > 0)
+                    {
+                        View.Reload();
+                    }
+                }
             }
         }
 
