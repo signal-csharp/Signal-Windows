@@ -68,15 +68,20 @@ namespace Signal_Windows.Controls
             set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
         }
 
-        private bool _SendEnabled;
-        public bool SendEnabled
+        private bool _SendButtonEnabled;
+        public bool SendButtonEnabled
         {
-            get { return _SendEnabled; }
+            get { return _SendButtonEnabled; }
             set
             {
-                _SendEnabled = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendEnabled)));
+                _SendButtonEnabled = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendButtonEnabled)));
             }
+        }
+
+        public Brush SendButtonBackground
+        {
+            get { return Utils.Blue; }
         }
 
         public Conversation()
@@ -85,18 +90,12 @@ namespace Signal_Windows.Controls
             Displayname.Foreground = Utils.ForegroundIncoming;
             Separator.Foreground = Utils.ForegroundIncoming;
             Username.Foreground = Utils.ForegroundIncoming;
-            SendEnabled = false;
+            SendButtonEnabled = false;
         }
 
         public MainPageViewModel GetMainPageVm()
         {
             return DataContext as MainPageViewModel;
-        }
-
-        public void Update(SignalConversation thread)
-        {
-            InputTextBox.IsEnabled = thread.CanReceive;
-            UpdateHeader(thread);
         }
 
         private void UpdateHeader(SignalConversation thread)
@@ -105,7 +104,8 @@ namespace Signal_Windows.Controls
             ThreadUsername = thread.ThreadId;
             if (thread is SignalContact contact)
             {
-                HeaderBackground = Utils.GetBrushFromColor(contact.Color);
+                HeaderBackground = contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
+                    Utils.GetBrushFromColor(Utils.CalculateDefaultColor(contact.ThreadDisplayName));
                 if (ThreadUsername != ThreadDisplayName)
                 {
                     ThreadUsernameVisibility = Visibility.Visible;
@@ -243,7 +243,7 @@ namespace Signal_Windows.Controls
         private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             TextBox t = sender as TextBox;
-            SendEnabled = t.Text != string.Empty;
+            SendButtonEnabled = t.Text != string.Empty;
         }
 
         private void ScrollToUnread()
