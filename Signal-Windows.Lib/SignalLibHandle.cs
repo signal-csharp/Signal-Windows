@@ -136,10 +136,10 @@ namespace Signal_Windows.Lib
                 foreach (var f in Frames)
                 {
                     var conversations = GetConversations();
-                    tasks.Add(f.Key.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    tasks.Add(f.Key.RunTaskAsync(() =>
                     {
                         f.Value.ReplaceConversationList(conversations);
-                    }).AsTask());
+                    }));
                 }
                 Task.WaitAll(tasks.ToArray());
                 InitNetwork();
@@ -227,10 +227,10 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>(); ;
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                operations.Add(dispatcher.RunTaskAsync(() =>
                 {
                     Frames[dispatcher].HandleIdentitykeyChange(messages);
-                }).AsTask());
+                }));
             }
             Task.WaitAll(operations.ToArray());
         }
@@ -240,10 +240,10 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                operations.Add(dispatcher.RunTaskAsync(() =>
                 {
                     Frames[dispatcher].AddOrUpdateConversation(conversation.Clone());
-                }).AsTask());
+                }));
             }
             Task.WaitAll(operations.ToArray());
         }
@@ -253,10 +253,10 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                operations.Add(dispatcher.RunTaskAsync(() =>
                 {
                     Frames[dispatcher].HandleMessage(message);
-                }).AsTask());
+                }));
             }
             Task.WaitAll(operations.ToArray());
         }
@@ -277,10 +277,10 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                operations.Add(dispatcher.RunTaskAsync(() =>
                 {
                     Frames[dispatcher].HandleMessageUpdate(msg);
-                }).AsTask());
+                }));
             }
             Task.WaitAll(operations.ToArray());
         }
