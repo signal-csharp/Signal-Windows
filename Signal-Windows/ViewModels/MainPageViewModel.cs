@@ -153,6 +153,10 @@ namespace Signal_Windows.ViewModels
                     break;
                 }
             }
+            if (SelectedThread == uiConversation) // the conversation we have open was edited, so reload it
+            {
+                View.Reload();
+            }
         }
 
         public void HandleMessage(SignalMessage message)

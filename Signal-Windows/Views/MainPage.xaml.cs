@@ -165,5 +165,10 @@ namespace Signal_Windows
             signalWindowsFrontend.Locator.AddContactPageInstance.ContactNumber = "";
             Frame.Navigate(typeof(AddContactPage));
         }
+
+        internal void Reload()
+        {
+            ConversationControl.Load(Vm.SelectedThread);
+        }
     }
 }
