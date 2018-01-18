@@ -295,6 +295,13 @@ namespace Signal_Windows.Storage
         #endregion Account
 
         #region Sessions
+        public static void ClearSessionCache()
+        {
+            lock(DBLock)
+            {
+                SessionsCache.Clear();
+            }
+        }
 
         private static string GetSessionCacheIndex(string username, uint deviceid)
         {
@@ -305,10 +312,10 @@ namespace Signal_Windows.Storage
 
         public static SessionRecord LoadSession(SignalProtocolAddress address)
         {
-            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
-            SessionRecord record;
             lock (DBLock)
             {
+                string index = GetSessionCacheIndex(address.Name, address.DeviceId);
+                SessionRecord record;
                 if (SessionsCache.TryGetValue(index, out record))
                 {
                     return record;
@@ -358,9 +365,9 @@ namespace Signal_Windows.Storage
 
         public static void StoreSession(SignalProtocolAddress address, SessionRecord record)
         {
-            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
             lock (DBLock)
             {
+                string index = GetSessionCacheIndex(address.Name, address.DeviceId);
                 using (var ctx = new LibsignalDBContext())
                 {
                     var session = ctx.Sessions
@@ -401,9 +408,9 @@ namespace Signal_Windows.Storage
 
         public static void DeleteSession(SignalProtocolAddress address)
         {
-            string index = GetSessionCacheIndex(address.Name, address.DeviceId);
             lock (DBLock)
             {
+                string index = GetSessionCacheIndex(address.Name, address.DeviceId);
                 SessionsCache.Remove(index);
                 using (var ctx = new LibsignalDBContext())
                 {
