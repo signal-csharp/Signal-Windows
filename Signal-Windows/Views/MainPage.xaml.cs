@@ -26,20 +26,6 @@ namespace Signal_Windows
         {
             this.InitializeComponent();
             Vm.View = this;
-            Loaded += MainPage_Loaded;
-            Unloaded += MainPage_Unloaded;
-        }
-
-        private void MainPage_Unloaded(object sender, RoutedEventArgs e)
-        {
-            Frame.SizeChanged -= Frame_SizeChanged;
-        }
-
-        private void MainPage_Loaded(object sender, RoutedEventArgs e)
-        {
-            Frame.SizeChanged += Frame_SizeChanged;
-            SwitchToStyle(GetCurrentViewStyle());
-            MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
         }
 
         public void SwitchToStyle(PageStyle newStyle)
@@ -92,9 +78,22 @@ namespace Signal_Windows
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            UpdateLayout();
+            SwitchToStyle(GetCurrentViewStyle());
+            MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
             if (Vm.SelectedThread != null)
             {
                 ConversationControl.Load(Vm.SelectedThread);
+            }
+            Frame.SizeChanged += Frame_SizeChanged;
+        }
+
+        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        {
+            Frame.SizeChanged -= Frame_SizeChanged;
+            if (GetCurrentViewStyle() == PageStyle.Narrow)
+            {
+                Utils.DisableBackButton(Vm.BackButton_Click);
             }
         }
 
