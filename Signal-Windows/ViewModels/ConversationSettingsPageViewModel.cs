@@ -74,7 +74,7 @@ namespace Signal_Windows.ViewModels
             Contact.ThreadDisplayName = DisplayName.Trim();
             await Task.Run(() =>
             {
-                App.Handle.SaveAndDispatchSignalConversation(Contact);
+                App.Handle.SaveAndDispatchSignalConversation(Contact, null);
             });
         }
 

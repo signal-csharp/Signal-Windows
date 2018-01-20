@@ -19,7 +19,7 @@ namespace Signal_Windows.Lib
 {
     public interface ISignalFrontend
     {
-        void AddOrUpdateConversation(SignalConversation conversation);
+        void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage);
         void HandleMessage(SignalMessage message, SignalConversation conversation);
         void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
@@ -183,20 +183,12 @@ namespace Signal_Windows.Lib
             return SignalDBContext.GetMessagesLocked(thread, startIndex, count);
         }
 
-        public void SaveAndDispatchSignalConversation(SignalConversation updatedConversation)
+        public void SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage)
         {
             Logger.LogTrace("SaveAndDispatchSignalConversation() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
             SignalDBContext.InsertOrUpdateConversationLocked(updatedConversation);
-            List<Task> operations = new List<Task>(); ;
-            foreach (var dispatcher in Frames.Keys)
-            {
-                operations.Add(dispatcher.RunTaskAsync(() =>
-                {
-                    Frames[dispatcher].AddOrUpdateConversation(updatedConversation.Clone());
-                }));
-            }
-            Task.WaitAll(operations.ToArray());
+            DispatchAddOrUpdateConversation(updatedConversation, updateMessage);
             SemaphoreSlim.Release();
             Logger.LogTrace("SaveAndDispatchSignalConversation() released");
         }
@@ -218,10 +210,6 @@ namespace Signal_Windows.Lib
             SignalDBContext.SaveMessageLocked(message);
             conversation.LastMessage = message;
             conversation.LastActiveTimestamp = message.ComposedTimestamp;
-            if (message.Type == SignalMessageType.GroupUpdate)
-            {
-                DispatchAddOrUpdateConversation(conversation);
-            }
             DispatchHandleMessage(message, conversation);
         }
 
@@ -238,14 +226,14 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        internal void DispatchAddOrUpdateConversation(SignalConversation conversation)
+        internal void DispatchAddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
                 operations.Add(dispatcher.RunTaskAsync(() =>
                 {
-                    Frames[dispatcher].AddOrUpdateConversation(conversation.Clone());
+                    Frames[dispatcher].AddOrUpdateConversation(conversation, updateMessage);
                 }));
             }
             Task.WaitAll(operations.ToArray());

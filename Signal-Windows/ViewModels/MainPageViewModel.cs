@@ -132,50 +132,57 @@ namespace Signal_Windows.ViewModels
         }
 
         #region SignalFrontend API
-        public void AddOrUpdateConversation(SignalConversation conversation)
+        public void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
         {
+            SignalConversation uiConversation;
             if (!ConversationsDictionary.ContainsKey(conversation.ThreadId))
             {
-                Conversations.Add(conversation);
-                ConversationsDictionary.Add(conversation.ThreadId, conversation);
+                uiConversation = conversation.Clone();
+                Conversations.Add(uiConversation);
+                ConversationsDictionary.Add(uiConversation.ThreadId, uiConversation);
             }
             else
             {
-                SignalConversation c = ConversationsDictionary[conversation.ThreadId];
-                c.LastActiveTimestamp = conversation.LastActiveTimestamp;
-                c.CanReceive = conversation.CanReceive;
-                c.LastMessage = conversation.LastMessage;
-                c.LastSeenMessage = conversation.LastSeenMessage;
-                c.LastSeenMessageIndex = conversation.LastSeenMessageIndex;
-                c.MessagesCount = conversation.MessagesCount;
-                c.ThreadDisplayName = conversation.ThreadDisplayName;
-                c.UnreadCount = conversation.UnreadCount;
-                if (c is SignalContact ourContact && conversation is SignalContact newContact)
+                uiConversation = ConversationsDictionary[conversation.ThreadId];
+                uiConversation.LastActiveTimestamp = conversation.LastActiveTimestamp;
+                uiConversation.CanReceive = conversation.CanReceive;
+                uiConversation.LastMessage = conversation.LastMessage;
+                uiConversation.LastSeenMessage = conversation.LastSeenMessage;
+                uiConversation.LastSeenMessageIndex = conversation.LastSeenMessageIndex;
+                uiConversation.MessagesCount = conversation.MessagesCount;
+                Debug.WriteLine("############## new messagescount = {0}", uiConversation.MessagesCount);
+                uiConversation.ThreadDisplayName = conversation.ThreadDisplayName;
+                uiConversation.UnreadCount = conversation.UnreadCount;
+                if (uiConversation is SignalContact ourContact && conversation is SignalContact newContact)
                 {
                     ourContact.Color = newContact.Color;
                 }
-                else if (c is SignalGroup ourGroup && conversation is SignalGroup newGroup)
+                else if (uiConversation is SignalGroup ourGroup && conversation is SignalGroup newGroup)
                 {
                     ourGroup.GroupMemberships = newGroup.GroupMemberships;
                 }
-                c.UpdateUI?.Invoke();
-            }
-            SignalConversation uiConversation = ConversationsDictionary[conversation.ThreadId];
-            RepositionConversation(uiConversation);
-            if (SelectedThread != null) // the conversation we have open may have been edited
-            {
-                if (SelectedThread == uiConversation)
+                if (SelectedThread != null) // the conversation we have open may have been edited
                 {
-                    View.Reload();
-                }
-                else if (SelectedThread is SignalGroup selectedGroup)
-                {
-                    if (selectedGroup.GroupMemberships.FindAll((gm) => gm.Contact.ThreadId == conversation.ThreadId).Count > 0)
+                    if (SelectedThread == uiConversation)
                     {
-                        View.Reload();
+                        if (updateMessage != null)
+                        {
+                            var container = new SignalMessageContainer(updateMessage, (int)SelectedThread.MessagesCount - 1);
+                            View.Thread.Append(container);
+                            View.Reload();
+                        }
+                    }
+                    else if (SelectedThread is SignalGroup selectedGroup)
+                    {
+                        if (selectedGroup.GroupMemberships.FindAll((gm) => gm.Contact.ThreadId == conversation.ThreadId).Count > 0) // A group member was edited
+                        {
+                            View.Reload();
+                        }
                     }
                 }
+                uiConversation.UpdateUI?.Invoke();
             }
+            RepositionConversation(uiConversation);
         }
 
         public void HandleMessage(SignalMessage message, SignalConversation conversation)

@@ -327,7 +327,19 @@ namespace Signal_Windows.Lib
                     ComposedTimestamp = composedTimestamp,
                     ReceivedTimestamp = timestamp,
                 };
-                SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, dbgroup);
+                SignalDBContext.SaveMessageLocked(sm);
+                dbgroup.MessagesCount += 1;
+                if (sm.Direction == SignalMessageDirection.Incoming)
+                {
+                    dbgroup.UnreadCount += 1;
+                }
+                else
+                {
+                    dbgroup.UnreadCount = 0;
+                    dbgroup.LastSeenMessageIndex = dbgroup.MessagesCount;
+                }
+                dbgroup.LastMessage = sm;
+                SignalLibHandle.Instance.DispatchAddOrUpdateConversation(dbgroup, sm);
             }
             else
             {

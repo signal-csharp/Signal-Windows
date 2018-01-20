@@ -19,9 +19,9 @@ namespace Signal_Windows
             Dispatcher = dispatcher;
             Locator = locator;
         }
-        public void AddOrUpdateConversation(SignalConversation conversation)
+        public void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
         {
-            Locator.MainPageInstance.AddOrUpdateConversation(conversation);
+            Locator.MainPageInstance.AddOrUpdateConversation(conversation, updateMessage);
         }
 
         public void HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
