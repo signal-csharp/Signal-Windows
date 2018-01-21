@@ -21,6 +21,7 @@ using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using Windows.ApplicationModel.Background;
 
 namespace Signal_Windows
 {
@@ -41,6 +42,7 @@ namespace Signal_Windows
         public static SignalLibHandle Handle = new SignalLibHandle(false);
         private Dictionary<int, SignalWindowsFrontend> Views = new Dictionary<int, SignalWindowsFrontend>();
         public static int MainViewId;
+        private IBackgroundTaskRegistration backgroundTaskRegistration;
 
         static App()
         {
@@ -128,6 +130,39 @@ namespace Signal_Windows
 
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
+            string taskName = "SignalMessageBackgroundTask";
+            bool foundTask = false;
+            BackgroundExecutionManager.RemoveAccess();
+            foreach (var task in BackgroundTaskRegistration.AllTasks)
+            {
+                if (task.Value.Name == taskName)
+                {
+                    backgroundTaskRegistration = task.Value;
+                    foundTask = true;
+                }
+            }
+
+            if (!foundTask)
+            {
+                var builder = new BackgroundTaskBuilder();
+                builder.Name = taskName;
+                builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
+                builder.IsNetworkRequested = true;
+                builder.SetTrigger(new TimeTrigger(15, false));
+                builder.SetTrigger(new SystemTrigger(SystemTriggerType.ServicingComplete, false));
+                builder.SetTrigger(new SystemTrigger(SystemTriggerType.TimeZoneChange, false));
+                builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
+                var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
+                if (requestStatus != BackgroundAccessStatus.DeniedBySystemPolicy ||
+                    requestStatus != BackgroundAccessStatus.DeniedByUser ||
+                    requestStatus != BackgroundAccessStatus.Unspecified)
+                {
+                    backgroundTaskRegistration = builder.Register();
+                }
+            }
+
+            backgroundTaskRegistration.Completed += BackgroundTaskRegistration_Completed;
+
             Logger.LogInformation("Launching ({0})", e.PreviousExecutionState);
             Logger.LogDebug(LocalCacheFolder.Path);
 
@@ -213,6 +248,11 @@ namespace Signal_Windows
                 return true;
             }
             return false;
+        }
+
+        private void BackgroundTaskRegistration_Completed(BackgroundTaskRegistration sender, BackgroundTaskCompletedEventArgs args)
+        {
+            Debug.WriteLine("Background task completed");
         }
 
         private void CurrView_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)

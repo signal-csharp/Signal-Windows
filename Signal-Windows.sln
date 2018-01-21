@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+VisualStudioVersion = 15.0.27130.2020
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Signal-Windows", "Signal-Windows\Signal-Windows.csproj", "{41736A64-5B66-44AF-879A-501192A46920}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Signal-Windows", "Signal-Wi
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Signal-Windows.Lib", "Signal-Windows.Lib\Signal-Windows.Lib.csproj", "{1934FD82-A5EA-4B71-B915-A1826593CB6E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Signal-Windows.RC", "Signal-Windows.RC\Signal-Windows.RC.csproj", "{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,22 @@ Global
 		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|x64.Build.0 = Release|x64
 		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|x86.ActiveCfg = Release|x86
 		{1934FD82-A5EA-4B71-B915-A1826593CB6E}.Release|x86.Build.0 = Release|x86
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|ARM.ActiveCfg = Debug|ARM
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|ARM.Build.0 = Debug|ARM
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|x64.ActiveCfg = Debug|x64
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|x64.Build.0 = Debug|x64
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|x86.ActiveCfg = Debug|x86
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Debug|x86.Build.0 = Debug|x86
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|ARM.ActiveCfg = Release|ARM
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|ARM.Build.0 = Release|ARM
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|x64.ActiveCfg = Release|x64
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|x64.Build.0 = Release|x64
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|x86.ActiveCfg = Release|x86
+		{F8AF07FF-395F-4BF7-84F7-D16EDE7B00DF}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
