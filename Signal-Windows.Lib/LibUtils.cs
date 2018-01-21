@@ -56,7 +56,7 @@ namespace Signal_Windows.Lib
         }
     }
 
-    class LibUtils
+    public class LibUtils
     {
         public const string GlobalSemaphoreName = "SignalWindowsPrivateMessenger_Mutex";
         public static string URL = "https://textsecure-service.whispersystems.org";
