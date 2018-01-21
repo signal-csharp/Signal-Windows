@@ -288,7 +288,7 @@
       <Version>6.0.4</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
-      <Version>1.5.1</Version>
+      <Version>2.1.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.UI.Controls">
       <Version>2.0.0</Version>
@@ -313,6 +313,10 @@
     <ProjectReference Include="..\Signal-Windows.Lib\Signal-Windows.Lib.csproj">
       <Project>{1934fd82-a5ea-4b71-b915-a1826593cb6e}</Project>
       <Name>Signal-Windows.Lib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Signal-Windows.RC\Signal-Windows.RC.csproj">
+      <Project>{f8af07ff-395f-4bf7-84f7-d16ede7b00df}</Project>
+      <Name>Signal-Windows.RC</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

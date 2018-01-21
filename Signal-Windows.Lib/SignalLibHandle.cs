@@ -14,6 +14,7 @@ using libsignalservice.util;
 using System.Collections.Concurrent;
 using libsignal;
 using System.Diagnostics;
+using Signal_Windows.Lib.Events;
 
 namespace Signal_Windows.Lib
 {
@@ -43,6 +44,8 @@ namespace Signal_Windows.Lib
         private SignalServiceMessageSender MessageSender;
         private SignalServiceMessageReceiver MessageReceiver;
         public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
+
+        public event EventHandler<SignalMessageEventArgs> SignalMessageEvent;
 
         #region frontend api
         public SignalLibHandle(bool headless)
@@ -123,6 +126,16 @@ namespace Signal_Windows.Lib
             SemaphoreSlim.Release();
         }
 
+        public void BackgroundAcquire()
+        {
+            CancelSource = new CancellationTokenSource();
+            Instance = this;
+            SignalDBContext.FailAllPendingMessages();
+            Store = LibsignalDBContext.GetSignalStore();
+            InitNetwork();
+            Running = true;
+        }
+
         public async Task Reacquire()
         {
             Logger.LogTrace("Reacquire() locking");
@@ -162,6 +175,15 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("Release() releasing (global and local)");
             LibUtils.Unlock();
             SemaphoreSlim.Release();
+        }
+
+        public void BackgroundRelease()
+        {
+            Running = false;
+            CancelSource.Cancel();
+            IncomingMessagesTask?.Wait();
+            OutgoingMessagesTask?.Wait();
+            Instance = null;
         }
 
         public async Task SendMessage(SignalMessage message, SignalConversation conversation)
@@ -249,6 +271,7 @@ namespace Signal_Windows.Lib
                     Frames[dispatcher].HandleMessage(message, conversation);
                 }));
             }
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message));
             Task.WaitAll(operations.ToArray());
         }
 
