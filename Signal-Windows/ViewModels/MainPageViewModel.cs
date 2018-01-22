@@ -30,13 +30,13 @@ namespace Signal_Windows.ViewModels
     public partial class MainPageViewModel : ViewModelBase
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<MainPageViewModel>();
+        public string RequestedConversationId;
         public SignalConversation SelectedThread;
         private Dictionary<string, SignalConversation> ConversationsDictionary = new Dictionary<string, SignalConversation>();
         public MainPage View;
         public ObservableCollection<SignalConversation> Conversations { get; set; } = new ObservableCollection<SignalConversation>();
 
         private Visibility _ThreadVisibility = Visibility.Collapsed;
-
         public Visibility ThreadVisibility
         {
             get { return _ThreadVisibility; }
@@ -44,11 +44,24 @@ namespace Signal_Windows.ViewModels
         }
 
         private Visibility _WelcomeVisibility;
-
         public Visibility WelcomeVisibility
         {
             get { return _WelcomeVisibility; }
             set { _WelcomeVisibility = value; RaisePropertyChanged(nameof(WelcomeVisibility)); }
+        }
+
+        private SignalConversation _SelectedConversation = null;
+        public SignalConversation SelectedConversation
+        {
+            get { return _SelectedConversation; }
+            set
+            {
+                if (_SelectedConversation != value)
+                {
+                    _SelectedConversation = value;
+                    RaisePropertyChanged(nameof(SelectedConversation));
+                }
+            }
         }
 
         internal void BackButton_Click(object sender, BackRequestedEventArgs e)
@@ -131,6 +144,24 @@ namespace Signal_Windows.ViewModels
             }
         }
 
+        public void SelectConversation(string conversationId)
+        {
+            SelectedConversation = ConversationsDictionary[conversationId];
+        }
+
+        public void ConversationsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count == 1)
+            {
+                Logger.LogDebug("ContactsList_SelectionChanged()");
+                WelcomeVisibility = Visibility.Collapsed;
+                ThreadVisibility = Visibility.Visible;
+                SelectedThread = SelectedConversation;
+                View.Thread.Load(SelectedThread);
+                View.SwitchToStyle(View.GetCurrentViewStyle());
+            }
+        }
+
         #region SignalFrontend API
         public void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
         {
@@ -150,7 +181,6 @@ namespace Signal_Windows.ViewModels
                 uiConversation.LastSeenMessage = conversation.LastSeenMessage;
                 uiConversation.LastSeenMessageIndex = conversation.LastSeenMessageIndex;
                 uiConversation.MessagesCount = conversation.MessagesCount;
-                Debug.WriteLine("############## new messagescount = {0}", uiConversation.MessagesCount);
                 uiConversation.ThreadDisplayName = conversation.ThreadDisplayName;
                 uiConversation.UnreadCount = conversation.UnreadCount;
                 if (uiConversation is SignalContact ourContact && conversation is SignalContact newContact)
@@ -244,6 +274,11 @@ namespace Signal_Windows.ViewModels
             {
                 SelectedThread = ConversationsDictionary[SelectedThread.ThreadId];
                 View.Thread.Collection.Conversation = SelectedThread;
+            }
+
+            if (RequestedConversationId != null && RequestedConversationId != "")
+            {
+                SelectConversation(RequestedConversationId);
             }
         }
         #endregion
