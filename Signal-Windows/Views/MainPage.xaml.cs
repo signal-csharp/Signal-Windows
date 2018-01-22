@@ -1,3 +1,5 @@
+using libsignalservice;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Controls;
 using Signal_Windows.Lib;
 using Signal_Windows.Models;
@@ -22,6 +24,7 @@ namespace Signal_Windows
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<MainPage>();
         public MainPage()
         {
             this.InitializeComponent();
@@ -78,6 +81,7 @@ namespace Signal_Windows
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            Vm.RequestedConversationId = e.Parameter as string;
             UpdateLayout();
             SwitchToStyle(GetCurrentViewStyle());
             MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
@@ -121,18 +125,6 @@ namespace Signal_Windows
             get
             {
                 return ConversationControl;
-            }
-        }
-
-        private void ContactsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (e.AddedItems.Count == 1 && Vm.SelectedThread != e.AddedItems[0])
-            {
-                Vm.WelcomeVisibility = Visibility.Collapsed;
-                Vm.ThreadVisibility = Visibility.Visible;
-                Vm.SelectedThread = (SignalConversation)e.AddedItems[0];
-                ConversationControl.Load(Vm.SelectedThread);
-                SwitchToStyle(GetCurrentViewStyle());
             }
         }
 

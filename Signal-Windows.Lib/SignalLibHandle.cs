@@ -72,13 +72,13 @@ namespace Signal_Windows.Lib
 
         public void RemoveFrontend(CoreDispatcher d)
         {
-            Logger.LogTrace("AddFrontend() locking");
+            Logger.LogTrace("RemoveFrontend() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
-            Logger.LogTrace("AddFrontend() locked");
+            Logger.LogTrace("RemoveFrontend() locked");
             Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());
             Frames.Remove(d);
             SemaphoreSlim.Release();
-            Logger.LogTrace("AddFrontend() released");
+            Logger.LogTrace("RemoveFrontend() released");
         }
 
         public void PurgeAccountData()

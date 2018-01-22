@@ -88,57 +88,116 @@ namespace Signal_Windows
             Logger.LogError("UnhandledException {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
         }
 
-        protected override void OnActivated(IActivatedEventArgs args)
+        protected override async void OnActivated(IActivatedEventArgs args)
         {
-            Logger.LogInformation("OnActivated() {0}", args);
+            Logger.LogInformation("OnActivated() {0}", args.GetType());
+            if (args is ToastNotificationActivatedEventArgs toastArgs)
+            {
+                if (!CreateMainWindow(toastArgs.Argument))
+                {
+                    if (args is IViewSwitcherProvider viewSwitcherProvider && viewSwitcherProvider.ViewSwitcher != null)
+                    {
+                        ActivationViewSwitcher switcher = viewSwitcherProvider.ViewSwitcher;
+                        int currentId = toastArgs.CurrentlyShownApplicationViewId;
+                        if (viewSwitcherProvider.ViewSwitcher.IsViewPresentedOnActivationVirtualDesktop(toastArgs.CurrentlyShownApplicationViewId))
+                        {
+                            await Views[currentId].Dispatcher.RunTaskAsync(() =>
+                            {
+                                Logger.LogInformation("OnActivated() selecting conversation");
+                                Views[currentId].Locator.MainPageInstance.SelectConversation(toastArgs.Argument);
+                            });
+                            await ApplicationViewSwitcher.TryShowAsStandaloneAsync(currentId);
+                        }
+                        else
+                        {
+                            await CreateSecondaryWindow(switcher, toastArgs.Argument);
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogError("OnActivated() has no ViewSwitcher");
+                    }
+                }
+            }
+            else
+            {
+                Logger.LogError("unknown IActivatedEventArgs {0}", args);
+            }
         }
 
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
             Logger.LogInformation("Launching ({0})", e.PreviousExecutionState);
             Logger.LogDebug(LocalCacheFolder.Path);
-            Frame rootFrame = Window.Current.Content as Frame;
 
-            // App-Initialisierung nicht wiederholen, wenn das Fenster bereits Inhalte enthält.
-            // Nur sicherstellen, dass das Fenster aktiv ist.
+            if (!CreateMainWindow(null))
+            {
+                ActivationViewSwitcher switcher = e.ViewSwitcher;
+                int currentId = e.CurrentlyShownApplicationViewId;
+                if (!switcher.IsViewPresentedOnActivationVirtualDesktop(currentId))
+                {
+                    await CreateSecondaryWindow(e.ViewSwitcher, e.Arguments);
+                }
+                else
+                {
+                    await ApplicationViewSwitcher.TryShowAsStandaloneAsync(currentId);
+                }
+            }
+        }
+
+        private async Task CreateSecondaryWindow(ActivationViewSwitcher switcher, string conversationId)
+        {
+            Logger.LogInformation("CreateSecondaryWindow()");
+            CoreApplicationView newView = CoreApplication.CreateNewView();
+            int newViewId = 0;
+            SignalWindowsFrontend frontend = await newView.Dispatcher.RunTaskAsync(async () =>
+            {
+                Frame frame = new Frame();
+                frame.Navigate(typeof(MainPage), conversationId);
+                Window.Current.Content = frame;
+                Window.Current.Activate();
+                var currView = ApplicationView.GetForCurrentView();
+                currView.Consolidated += CurrView_Consolidated;
+                newViewId = currView.Id;
+                await switcher.ShowAsStandaloneAsync(newViewId);
+                ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
+                return new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);
+            });
+            Views.Add(newViewId, frontend);
+            await newView.Dispatcher.RunTaskAsync(() =>
+            {
+                Handle.AddFrontend(frontend.Dispatcher, frontend);
+            });
+            Logger.LogInformation("OnLaunched added view {0}", newViewId);
+        }
+
+        private bool CreateMainWindow(string conversationId)
+        {
+            Frame rootFrame = Window.Current.Content as Frame;
             if (rootFrame == null)
             {
-                // Frame erstellen, der als Navigationskontext fungiert und zum Parameter der ersten Seite navigieren
                 rootFrame = new Frame();
-
                 rootFrame.NavigationFailed += OnNavigationFailed;
-
-                if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
-                {
-                    //TODO: Zustand von zuvor angehaltener Anwendung laden
-                }
-
-                // Den Frame im aktuellen Fenster platzieren
                 Window.Current.Content = rootFrame;
                 var currView = ApplicationView.GetForCurrentView();
                 var frontend = new SignalWindowsFrontend(Window.Current.Dispatcher, (ViewModelLocator)Resources["Locator"], currView.Id);
                 Views.Add(currView.Id, frontend);
                 MainViewId = currView.Id;
-            }
 
-            if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
-            {
-                var sb = Windows.UI.ViewManagement.StatusBar.GetForCurrentView();
-                sb.BackgroundColor = Windows.UI.Color.FromArgb(1, 0x20, 0x90, 0xEA);
-                sb.BackgroundOpacity = 1;
-                sb.ForegroundColor = Windows.UI.Colors.White;
-            }
+                if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
+                {
+                    var sb = Windows.UI.ViewManagement.StatusBar.GetForCurrentView();
+                    sb.BackgroundColor = Windows.UI.Color.FromArgb(1, 0x20, 0x90, 0xEA);
+                    sb.BackgroundOpacity = 1;
+                    sb.ForegroundColor = Windows.UI.Colors.White;
+                }
 
-            if (rootFrame.Content == null)
-            {
-                // Creating the rootFrame for the first time
                 try
                 {
                     ApplicationViewSwitcher.DisableShowingMainViewOnActivation();
                     ApplicationViewSwitcher.DisableSystemViewActivationPolicy();
-                    rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    rootFrame.Navigate(typeof(MainPage), conversationId);
                     Window.Current.Activate();
-                    var frontend = CurrentSignalWindowsFrontend(MainViewId);
                     TileUpdateManager.CreateTileUpdaterForApplication().Clear();
                     var acquisition = Handle.Acquire(frontend.Dispatcher, frontend);
                 }
@@ -146,34 +205,11 @@ namespace Signal_Windows
                 {
                     var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
                     Logger.LogError("OnLaunchedOrActivated() could not load signal handle: {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
-                    rootFrame.Navigate(typeof(StartPage), e.Arguments);
+                    rootFrame.Navigate(typeof(StartPage));
                 }
+                return true;
             }
-            else
-            {
-                // user has requested a new window
-                CoreApplicationView newView = CoreApplication.CreateNewView();
-                int newViewId = 0;
-                SignalWindowsFrontend frontend = await newView.Dispatcher.RunTaskAsync(async () =>
-                {
-                    Frame frame = new Frame();
-                    frame.Navigate(typeof(MainPage), e.Arguments);
-                    Window.Current.Content = frame;
-                    Window.Current.Activate();
-                    var currView = ApplicationView.GetForCurrentView();
-                    currView.Consolidated += CurrView_Consolidated;
-                    newViewId = currView.Id;
-                    await e.ViewSwitcher.ShowAsStandaloneAsync(newViewId);
-                    ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
-                    return new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);
-                });
-                Views.Add(newViewId, frontend);
-                await newView.Dispatcher.RunTaskAsync(async () =>
-                {
-                    Handle.AddFrontend(frontend.Dispatcher, frontend);
-                });
-                Logger.LogInformation("OnLaunched added view {0}", newViewId);
-            }
+            return false;
         }
 
         private void CurrView_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)
