@@ -114,6 +114,7 @@ namespace Signal_Windows.ViewModels
                     {
                         UIEnabled = false;
                         App.Store = store;
+                        SignalLibHandle.Instance.Store = store;
                     }).AsTask().Wait();
 
                     /* create prekeys */
