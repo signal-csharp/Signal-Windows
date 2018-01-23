@@ -95,7 +95,7 @@ namespace Signal_Windows
             Logger.LogInformation("OnActivated() {0}", args.GetType());
             if (args is ToastNotificationActivatedEventArgs toastArgs)
             {
-                if (!CreateMainWindow(toastArgs.Argument))
+                if (!(await CreateMainWindow(toastArgs.Argument)))
                 {
                     if (args is IViewSwitcherProvider viewSwitcherProvider && viewSwitcherProvider.ViewSwitcher != null)
                     {
@@ -131,15 +131,15 @@ namespace Signal_Windows
         {
             string taskName = "SignalMessageBackgroundTask";
             bool foundTask = false;
-            BackgroundExecutionManager.RemoveAccess();
-            foreach (var task in BackgroundTaskRegistration.AllTasks)
-            {
-                if (task.Value.Name == taskName)
-                {
-                    backgroundTaskRegistration = task.Value;
-                    foundTask = true;
-                }
-            }
+            BackgroundExecutionManager.RemoveAccess("2383BenediktRadtke.SignalPrivateMessenger");
+            //foreach (var task in BackgroundTaskRegistration.AllTasks)
+            //{
+            //    if (task.Value.Name == taskName)
+            //    {
+            //        backgroundTaskRegistration = task.Value;
+            //        foundTask = true;
+            //    }
+            //}
 
             if (!foundTask)
             {
@@ -148,8 +148,8 @@ namespace Signal_Windows
                 builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
                 builder.IsNetworkRequested = true;
                 builder.SetTrigger(new TimeTrigger(15, false));
-                builder.SetTrigger(new SystemTrigger(SystemTriggerType.ServicingComplete, false));
-                builder.SetTrigger(new SystemTrigger(SystemTriggerType.TimeZoneChange, false));
+                //builder.SetTrigger(new SystemTrigger(SystemTriggerType.ServicingComplete, false));
+                //builder.SetTrigger(new SystemTrigger(SystemTriggerType.TimeZoneChange, false));
                 builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
                 var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
                 if (requestStatus != BackgroundAccessStatus.DeniedBySystemPolicy ||
@@ -165,7 +165,7 @@ namespace Signal_Windows
             Logger.LogInformation("Launching ({0})", e.PreviousExecutionState);
             Logger.LogDebug(LocalCacheFolder.Path);
 
-            if (!CreateMainWindow(null))
+            if (!(await CreateMainWindow(null)))
             {
                 ActivationViewSwitcher switcher = e.ViewSwitcher;
                 int currentId = e.CurrentlyShownApplicationViewId;
@@ -206,7 +206,7 @@ namespace Signal_Windows
             Logger.LogInformation("OnLaunched added view {0}", newViewId);
         }
 
-        private bool CreateMainWindow(string conversationId)
+        private async Task<bool> CreateMainWindow(string conversationId)
         {
             Frame rootFrame = Window.Current.Content as Frame;
             if (rootFrame == null)
@@ -235,6 +235,7 @@ namespace Signal_Windows
                     Window.Current.Activate();
                     TileUpdateManager.CreateTileUpdaterForApplication().Clear();
                     var acquisition = Handle.Acquire(frontend.Dispatcher, frontend);
+                    await acquisition;
                 }
                 catch (Exception ex)
                 {
