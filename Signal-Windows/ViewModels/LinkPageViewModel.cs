@@ -4,6 +4,7 @@ using libsignal.util;
 using libsignalservice;
 using libsignalservice.util;
 using Microsoft.Extensions.Logging;
+using Signal_Windows.Lib;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
@@ -123,6 +124,7 @@ namespace Signal_Windows.ViewModels
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         App.Store = store;
+                        SignalLibHandle.Instance.Store = store;
                         View.Finish(true);
                     }).AsTask().Wait();
                 });

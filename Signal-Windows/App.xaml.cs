@@ -93,7 +93,8 @@ namespace Signal_Windows
             Logger.LogInformation("OnActivated() {0}", args.GetType());
             if (args is ToastNotificationActivatedEventArgs toastArgs)
             {
-                if (!CreateMainWindow(toastArgs.Argument))
+                bool createdMainWindow = await CreateMainWindow(toastArgs.Argument);
+                if (!createdMainWindow)
                 {
                     if (args is IViewSwitcherProvider viewSwitcherProvider && viewSwitcherProvider.ViewSwitcher != null)
                     {
@@ -130,7 +131,8 @@ namespace Signal_Windows
             Logger.LogInformation("Launching ({0})", e.PreviousExecutionState);
             Logger.LogDebug(LocalCacheFolder.Path);
 
-            if (!CreateMainWindow(null))
+            bool createdMainWindow = await CreateMainWindow(null);
+            if (!createdMainWindow)
             {
                 ActivationViewSwitcher switcher = e.ViewSwitcher;
                 int currentId = e.CurrentlyShownApplicationViewId;
@@ -171,7 +173,7 @@ namespace Signal_Windows
             Logger.LogInformation("OnLaunched added view {0}", newViewId);
         }
 
-        private bool CreateMainWindow(string conversationId)
+        private async Task<bool> CreateMainWindow(string conversationId)
         {
             Frame rootFrame = Window.Current.Content as Frame;
             if (rootFrame == null)
@@ -199,7 +201,8 @@ namespace Signal_Windows
                     rootFrame.Navigate(typeof(MainPage), conversationId);
                     Window.Current.Activate();
                     TileUpdateManager.CreateTileUpdaterForApplication().Clear();
-                    var acquisition = Handle.Acquire(frontend.Dispatcher, frontend);
+                    // We need to await here so that any exception that Acquire throws actually gets caught
+                    await Handle.Acquire(frontend.Dispatcher, frontend);
                 }
                 catch (Exception ex)
                 {

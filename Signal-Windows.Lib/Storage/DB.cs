@@ -594,9 +594,8 @@ namespace Signal_Windows.Storage
         public static void RefreshPreKeys(SignalServiceAccountManager accountManager) //TODO wrap in extra lock? enforce reload?
         {
             List<PreKeyRecord> oneTimePreKeys = GeneratePreKeys();
-            PreKeyRecord lastResortKey = getOrGenerateLastResortPreKey();
             SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(GetIdentityKeyPair());
-            accountManager.setPreKeys(GetIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
+            accountManager.setPreKeys(GetIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
         }
 
         private static List<PreKeyRecord> GeneratePreKeys()

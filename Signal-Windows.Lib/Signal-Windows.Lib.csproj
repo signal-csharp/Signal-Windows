@@ -150,7 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="libsignal-service-dotnet">
-      <Version>2.5.10.9</Version>
+      <Version>2.5.15.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore">
       <Version>1.1.4</Version>

@@ -113,6 +113,11 @@ namespace Signal_Windows.Lib
             {
                 return LibsignalDBContext.GetSignalStore();
             });
+            if (Store == null)
+            {
+                SemaphoreSlim.Release();
+                throw new Exception("Signal Store has not been setup yet.");
+            }
             await Task.Run(() =>
             {
                 InitNetwork();
