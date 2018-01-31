@@ -131,34 +131,24 @@ namespace Signal_Windows
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
             string taskName = "SignalMessageBackgroundTask";
-            bool foundTask = false;
-            BackgroundExecutionManager.RemoveAccess("2383BenediktRadtke.SignalPrivateMessenger");
-            //foreach (var task in BackgroundTaskRegistration.AllTasks)
-            //{
-            //    if (task.Value.Name == taskName)
-            //    {
-            //        backgroundTaskRegistration = task.Value;
-            //        foundTask = true;
-            //    }
-            //}
+            BackgroundExecutionManager.RemoveAccess();
 
-            if (!foundTask)
+            var builder = new BackgroundTaskBuilder();
+            builder.Name = taskName;
+            builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
+            builder.IsNetworkRequested = true;
+            builder.SetTrigger(new TimeTrigger(15, false));
+            builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
+            var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
+            if (requestStatus != BackgroundAccessStatus.DeniedBySystemPolicy ||
+                requestStatus != BackgroundAccessStatus.DeniedByUser ||
+                requestStatus != BackgroundAccessStatus.Unspecified)
             {
-                var builder = new BackgroundTaskBuilder();
-                builder.Name = taskName;
-                builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
-                builder.IsNetworkRequested = true;
-                builder.SetTrigger(new TimeTrigger(15, false));
-                //builder.SetTrigger(new SystemTrigger(SystemTriggerType.ServicingComplete, false));
-                //builder.SetTrigger(new SystemTrigger(SystemTriggerType.TimeZoneChange, false));
-                builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
-                var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
-                if (requestStatus != BackgroundAccessStatus.DeniedBySystemPolicy ||
-                    requestStatus != BackgroundAccessStatus.DeniedByUser ||
-                    requestStatus != BackgroundAccessStatus.Unspecified)
-                {
-                    backgroundTaskRegistration = builder.Register();
-                }
+                backgroundTaskRegistration = builder.Register();
+            }
+            else
+            {
+                Logger.LogWarning($"Unable to register background task: {requestStatus}");
             }
 
             backgroundTaskRegistration.Completed += BackgroundTaskRegistration_Completed;
