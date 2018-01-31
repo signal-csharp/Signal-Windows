@@ -49,7 +49,7 @@ namespace Signal_Windows.Storage
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            Debug.WriteLine(string.Format("[{0}] [{1}] ", logLevel, ClassName) + formatter(state, exception));
+            Debug.WriteLine(string.Format("{0:s} [{1}] [{2}] ", DateTime.UtcNow, logLevel, ClassName) + formatter(state, exception));
         }
     }
 
@@ -118,7 +118,7 @@ namespace Signal_Windows.Storage
             {
                 try
                 {
-                    Writer.WriteLine($"[{Prefix}] {line}");
+                    Writer.WriteLine($"{DateTime.UtcNow.ToString("s")} [{Prefix}] {line}");
                     Writer.Flush();
                 }
                 catch(Exception e)
