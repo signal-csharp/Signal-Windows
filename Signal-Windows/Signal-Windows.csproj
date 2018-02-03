@@ -291,7 +291,7 @@
       <Version>2.1.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.UI.Controls">
-      <Version>2.0.0</Version>
+      <Version>2.1.1</Version>
     </PackageReference>
     <PackageReference Include="MvvmLight">
       <Version>5.3.0</Version>
@@ -310,6 +310,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <ProjectReference Include="..\..\libsignal-service-dotnet\libsignal-service-dotnet\libsignal-service-dotnet.csproj">
+      <Project>{3f0cf02e-f260-48dc-a4ce-f8d72d6a079d}</Project>
+      <Name>libsignal-service-dotnet</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Signal-Windows.Lib\Signal-Windows.Lib.csproj">
       <Project>{1934fd82-a5ea-4b71-b915-a1826593cb6e}</Project>
       <Name>Signal-Windows.Lib</Name>

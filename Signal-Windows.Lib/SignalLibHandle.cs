@@ -15,14 +15,18 @@ using System.Collections.Concurrent;
 using libsignal;
 using System.Diagnostics;
 using Signal_Windows.Lib.Events;
+using libsignalservice.messages;
+using System.IO;
+using Windows.Networking.BackgroundTransfer;
+using Windows.Storage;
 
 namespace Signal_Windows.Lib
 {
     public interface ISignalFrontend
     {
         void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage);
-        void HandleMessage(SignalMessage message, SignalConversation conversation);
-        void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
+        Task HandleMessage(SignalMessage message, SignalConversation conversation);
+        Task HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
         void HandleAuthFailure();
@@ -259,6 +263,41 @@ namespace Signal_Windows.Lib
             SemaphoreSlim.Release();
             Logger.LogTrace("SaveAndDispatchSignalConversation() released");
         }
+
+        public void RetrieveAttachment(SignalServiceAttachmentPointer pointer, Stream downloadStream, Stream tempStream)
+        {
+            MessageReceiver.retrieveAttachment(pointer, downloadStream, tempStream, 0);
+        }
+
+        public string RetrieveAttachmentUrl(SignalServiceAttachmentPointer pointer)
+        {
+            return MessageReceiver.RetrieveAttachmentUrl(pointer);
+        }
+
+        public void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream tempStream, Stream downloadStream)
+        {
+            MessageReceiver.DecryptAttachment(pointer, tempStream, downloadStream);
+        }
+
+        public async Task HandleDownload(DownloadOperation download, bool start, SignalAttachment attachment)
+        {
+            if (start)
+            {
+                await download.StartAsync();
+            }
+            else
+            {
+                await download.AttachAsync();
+            }
+            IStorageFile tempFile = download.ResultFile;
+            StorageFile downloadedFile = await DownloadsFolder.CreateFileAsync(attachment.SentFileName, CreationCollisionOption.GenerateUniqueName);
+            using (var tempFileStream = (await tempFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
+            using (var downloadedFileStream = (await downloadedFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
+            {
+                DecryptAttachment(attachment.ToAttachmentPointer(), tempFileStream, downloadedFileStream);
+            }
+            await tempFile.DeleteAsync();
+        }
         #endregion
 
         #region attachment api
@@ -292,9 +331,9 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>(); ;
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                operations.Add(dispatcher.RunTaskAsync(async () =>
                 {
-                    Frames[dispatcher].HandleIdentitykeyChange(messages);
+                    await Frames[dispatcher].HandleIdentitykeyChange(messages);
                 }));
             }
             Task.WaitAll(operations.ToArray());
@@ -318,9 +357,9 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                operations.Add(dispatcher.RunTaskAsync(async () =>
                 {
-                    Frames[dispatcher].HandleMessage(message, conversation);
+                    await Frames[dispatcher].HandleMessage(message, conversation);
                 }));
             }
             SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message));
