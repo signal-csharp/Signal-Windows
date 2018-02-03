@@ -22,6 +22,7 @@ using Windows.UI.ViewManagement;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Windows.ApplicationModel.Background;
+using Windows.Networking.BackgroundTransfer;
 
 namespace Signal_Windows
 {
@@ -177,6 +178,20 @@ namespace Signal_Windows
                 {
                     await ApplicationViewSwitcher.TryShowAsStandaloneAsync(currentId);
                 }
+            }
+            else
+            {
+                await DiscoverDownloads();
+            }
+        }
+
+        private async Task DiscoverDownloads()
+        {
+            var downloads = await BackgroundDownloader.GetCurrentDownloadsAsync();
+            foreach (var download in downloads)
+            {
+                SignalAttachment attachment = SignalDBContext.GetAttachmentByFileNameLocked(download.Guid.ToString());
+                Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, false, attachment);
             }
         }
 
