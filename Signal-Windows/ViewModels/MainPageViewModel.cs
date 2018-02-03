@@ -1,5 +1,6 @@
 using GalaSoft.MvvmLight;
 using libsignalservice;
+using libsignalservice.messages;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
 using Microsoft.Extensions.Logging;
@@ -13,9 +14,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
+using Windows.Networking.BackgroundTransfer;
+using Windows.Storage;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Notifications;
@@ -216,7 +220,7 @@ namespace Signal_Windows.ViewModels
             RepositionConversation(uiConversation);
         }
 
-        public void HandleMessage(SignalMessage message, SignalConversation conversation)
+        public async Task HandleMessage(SignalMessage message, SignalConversation conversation)
         {
             var localConversation = ConversationsDictionary[conversation.ThreadId];
             localConversation.LastMessage = message;
@@ -231,6 +235,27 @@ namespace Signal_Windows.ViewModels
                 View.Thread.Append(container);
             }
             RepositionConversation(localConversation);
+
+            foreach (var attachment in message.Attachments)
+            {
+                SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
+                StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+                StorageFile tempFile = await localFolder.CreateFileAsync(attachment.StorageId.ToString());
+                BackgroundDownloader downloader = new BackgroundDownloader();
+                downloader.SetRequestHeader("Content-Type", "application/octet-stream");
+                downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has finished downloading.");
+                downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has failed to download.");
+                // this is the recommended way to call CreateDownload
+                // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
+                DownloadOperation download = await Task.Run(() =>
+                {
+                    return downloader.CreateDownload(new Uri(SignalLibHandle.Instance.RetrieveAttachmentUrl(attachmentPointer)), tempFile);
+                });
+                attachment.FileName = download.Guid.ToString();
+                SignalDBContext.UpdateAttachmentLocked(attachment);
+                Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, true, attachment);
+            }
+
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
             {
                 if (message.Author != null)
@@ -242,14 +267,14 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
+        public async Task HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
         {
             foreach(var message in messages)
             {
                 var conversation = ConversationsDictionary[message.ThreadId];
                 conversation.MessagesCount += 1;
                 conversation.UnreadCount += 1;
-                HandleMessage(message, conversation);
+                await HandleMessage(message, conversation);
             }
         }
 
