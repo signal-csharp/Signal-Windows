@@ -1,11 +1,15 @@
 ﻿using libsignalservice.push;
+using Microsoft.Toolkit.Uwp.Notifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Networking.BackgroundTransfer;
+using Windows.Storage;
 using Windows.UI.Core;
+using Windows.UI.Notifications;
 
 namespace Signal_Windows.Lib
 {
@@ -76,6 +80,28 @@ namespace Signal_Windows.Lib
         internal static void Unlock()
         {
             GlobalSemaphore.Release();
+        }
+
+        public static ToastNotification CreateToastNotification(string text)
+        {
+            ToastContent toastContent = new ToastContent()
+            {
+                Visual = new ToastVisual()
+                {
+                    BindingGeneric = new ToastBindingGeneric()
+                    {
+                        Children =
+                        {
+                            new AdaptiveText()
+                            {
+                                Text = text,
+                                HintWrap = true
+                            }
+                        }
+                    }
+                }
+            };
+            return new ToastNotification(toastContent.GetXml());
         }
     }
 }

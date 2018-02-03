@@ -919,6 +919,19 @@ namespace Signal_Windows.Storage
             }
         }
 
+        public static SignalAttachment GetAttachmentByFileNameLocked(string fileName)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    return ctx.Attachments
+                        .Where(a => a.FileName == fileName)
+                        .FirstOrDefault();
+                }
+            }
+        }
+
         #endregion Attachments
 
         #region Threads

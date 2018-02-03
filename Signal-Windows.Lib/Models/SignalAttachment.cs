@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using libsignalservice.messages;
+using libsignalservice.util;
 using Windows.UI.Xaml.Controls;
 
 namespace Signal_Windows.Models
@@ -15,9 +17,24 @@ namespace Signal_Windows.Models
         public byte[] Key { get; set; }
         public string Relay { get; set; }
         public ulong StorageId { get; set; }
+        public byte[] Digest { get; set; }
+        public long Size { get; set; }
 
         [NotMapped]
         public Image AttachmentImage { get; set; }
+
+        public SignalServiceAttachmentPointer ToAttachmentPointer()
+        {
+            return new SignalServiceAttachmentPointer(StorageId,
+                ContentType,
+                Key,
+                Relay,
+                (uint)Util.toIntExact(Size),
+                null,
+                Digest,
+                FileName,
+                false);
+        }
     }
 
     public enum SignalAttachmentStatus

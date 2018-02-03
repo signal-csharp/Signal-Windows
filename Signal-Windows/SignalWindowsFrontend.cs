@@ -24,12 +24,12 @@ namespace Signal_Windows
             Locator.MainPageInstance.AddOrUpdateConversation(conversation, updateMessage);
         }
 
-        public void HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
+        public async Task HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
         {
-            Locator.MainPageInstance.HandleIdentitykeyChange(messages);
+            await Locator.MainPageInstance.HandleIdentitykeyChange(messages);
         }
 
-        public void HandleMessage(SignalMessage message, SignalConversation conversation)
+        public async Task HandleMessage(SignalMessage message, SignalConversation conversation)
         {
             Locator.MainPageInstance.HandleMessage(message, conversation);
         }
