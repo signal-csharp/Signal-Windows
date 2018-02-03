@@ -147,6 +147,7 @@ namespace Signal_Windows.Lib
             CancelSource = new CancellationTokenSource();
             SemaphoreSlim.Wait(CancelSource.Token);
             LibUtils.Lock();
+            LibsignalDBContext.ClearSessionCache();
             Instance = this;
             await Task.Run(() =>
             {
