@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.IO;
 using libsignalservice.messages;
 using libsignalservice.util;
 using Windows.UI.Xaml.Controls;
@@ -22,6 +23,9 @@ namespace Signal_Windows.Models
 
         [NotMapped]
         public Image AttachmentImage { get; set; }
+
+        [NotMapped]
+        public Stream Stream { get; set; }
 
         public SignalServiceAttachmentPointer ToAttachmentPointer()
         {

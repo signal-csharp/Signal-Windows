@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Notifications;
@@ -92,20 +93,28 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("starting sendmessage");
             try
             {
-                if (messageText != string.Empty)
+                if (string.IsNullOrEmpty(messageText))
                 {
-                    var now = Util.CurrentTimeMillis();
-                    SignalMessage message = new SignalMessage()
+                    var filePicker = new FileOpenPicker();
+                    // Without this the file picker throws an exception, this is not documented
+                    filePicker.FileTypeFilter.Add("*");
+                    StorageFile file = await filePicker.PickSingleFileAsync();
+                    var stream = await file.OpenStreamForReadAsync();
+                    SignalAttachment attachment = new SignalAttachment()
                     {
-                        Author = null,
-                        ComposedTimestamp = now,
-                        Content = new SignalMessageContent() { Content = messageText },
-                        ThreadId = SelectedThread.ThreadId,
-                        ReceivedTimestamp = now,
-                        Direction = SignalMessageDirection.Outgoing,
-                        Read = true,
-                        Type = SignalMessageType.Normal
+                        Stream = stream,
+                        ContentType = file.ContentType,
+                        Size = stream.Length,
+                        FileName = file.Name
                     };
+                    List<SignalAttachment> attachments = new List<SignalAttachment>();
+                    attachments.Add(attachment);
+                    SignalMessage message = CreateMessage(string.Empty, attachments);
+                    await SignalLibHandle.Instance.SendMessage(message, SelectedThread);
+                }
+                else if (!string.IsNullOrWhiteSpace(messageText))
+                {
+                    SignalMessage message = CreateMessage(messageText);
                     await SignalLibHandle.Instance.SendMessage(message, SelectedThread);
                     Debug.WriteLine("keydown lock released");
                 }
@@ -118,6 +127,28 @@ namespace Signal_Windows.ViewModels
                 Debug.WriteLine(ex.StackTrace);
                 return false;
             }
+        }
+
+        private SignalMessage CreateMessage(string messageText, List<SignalAttachment> attachments = null)
+        {
+            if (attachments == null)
+            {
+                attachments = new List<SignalAttachment>();
+            }
+            var now = Util.CurrentTimeMillis();
+            return new SignalMessage()
+            {
+                Author = null,
+                ComposedTimestamp = now,
+                Content = new SignalMessageContent() { Content = messageText },
+                ThreadId = SelectedThread.ThreadId,
+                ReceivedTimestamp = now,
+                Direction = SignalMessageDirection.Outgoing,
+                Read = true,
+                Type = SignalMessageType.Normal,
+                Attachments = attachments,
+                AttachmentsCount = (uint)attachments.Count
+            };
         }
 
         internal void RepositionConversation(SignalConversation uiConversation)

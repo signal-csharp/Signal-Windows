@@ -41,11 +41,23 @@ namespace Signal_Windows.Lib
                 try
                 {
                     outgoingSignalMessage = Handle.OutgoingQueue.Take(Token);
+                    List<SignalServiceAttachment> attachments = new List<SignalServiceAttachment>();
+                    foreach (var attachment in outgoingSignalMessage.Attachments)
+                    {
+                        attachments.Add(SignalServiceAttachment.newStreamBuilder()
+                            .withStream(attachment.Stream)
+                            .withContentType(attachment.ContentType)
+                            .withLength(attachment.Size)
+                            .WithFileName(attachment.FileName)
+                            .withVoiceNote(false)
+                            .build());
+                    }
                     SignalServiceDataMessage message = new SignalServiceDataMessage()
                     {
                         Body = outgoingSignalMessage.Content.Content,
                         Timestamp = outgoingSignalMessage.ComposedTimestamp,
-                        ExpiresInSeconds = (int)outgoingSignalMessage.ExpiresAt
+                        ExpiresInSeconds = (int)outgoingSignalMessage.ExpiresAt,
+                        Attachments = attachments
                     };
 
                     if (!outgoingSignalMessage.ThreadId.EndsWith("="))

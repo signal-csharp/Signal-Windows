@@ -10,6 +10,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -90,7 +92,7 @@ namespace Signal_Windows.Controls
             Displayname.Foreground = Utils.ForegroundIncoming;
             Separator.Foreground = Utils.ForegroundIncoming;
             Username.Foreground = Utils.ForegroundIncoming;
-            SendButtonEnabled = false;
+            SendButtonEnabled = true;
         }
 
         public MainPageViewModel GetMainPageVm()
@@ -243,7 +245,8 @@ namespace Signal_Windows.Controls
         private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             TextBox t = sender as TextBox;
-            SendButtonEnabled = t.Text != string.Empty;
+            //SendButtonEnabled = t.Text != string.Empty;
+            SendButtonEnabled = true;
         }
 
         private void ScrollToUnread()
