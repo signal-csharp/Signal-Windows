@@ -229,9 +229,29 @@ namespace Signal_Windows.Lib
             MessageReceiver.retrieveAttachment(pointer, downloadStream, tempStream, 0);
         }
 
-        public string RetrieveAttachmentUrl(SignalServiceAttachmentPointer pointer)
+        public string RetrieveAttachmentDownloadUrl(SignalServiceAttachmentPointer pointer)
         {
-            return MessageReceiver.RetrieveAttachmentUrl(pointer);
+            return MessageReceiver.RetrieveAttachmentDownloadUrl(pointer);
+        }
+
+        /// <summary>
+        /// Gets a URL that can be used to upload an attachment
+        /// </summary>
+        /// <returns>The attachment ID and the URL</returns>
+        public (ulong id, string location) RetrieveAttachmentUploadUrl()
+        {
+            return MessageSender.RetrieveAttachmentUploadUrl();
+        }
+
+        /// <summary>
+        /// Encrypts an attachment to be uploaded
+        /// </summary>
+        /// <param name="data">The data stream of the attachment</param>
+        /// <param name="key">64 random bytes</param>
+        /// <returns>The digest and the encrypted data</returns>
+        public (byte[] digest, Stream encryptedData) EncryptAttachment(Stream data, byte[] key)
+        {
+            return MessageSender.EncryptAttachment(data, key);
         }
 
         public void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream tempStream, Stream downloadStream)
@@ -257,6 +277,26 @@ namespace Signal_Windows.Lib
                 DecryptAttachment(attachment.ToAttachmentPointer(), tempFileStream, downloadedFileStream);
             }
             await tempFile.DeleteAsync();
+        }
+
+        public async Task HandleUpload(UploadOperation upload, bool start, SignalMessage message)
+        {
+            if (start)
+            {
+                await upload.StartAsync();
+            }
+            else
+            {
+                await upload.AttachAsync();
+            }
+            IStorageFile tempFile = upload.SourceFile;
+            await tempFile.DeleteAsync();
+            foreach (var attachment in message.Attachments)
+            {
+                attachment.Status = SignalAttachmentStatus.Finished;
+                SignalDBContext.UpdateAttachmentLocked(attachment);
+            }
+            OutgoingQueue.Add(message);
         }
         #endregion
 

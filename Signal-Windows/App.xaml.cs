@@ -187,6 +187,16 @@ namespace Signal_Windows
             }
         }
 
+        private async Task DiscoverUploads()
+        {
+            var uploads = await BackgroundUploader.GetCurrentUploadsAsync();
+            foreach (var upload in uploads)
+            {
+                SignalAttachment attachment = SignalDBContext.GetAttachmentBySentFileNameLocked(upload.Guid.ToString());
+                Task uploadTask = SignalLibHandle.Instance.HandleUpload(upload, false, attachment.Message);
+            }
+        }
+
         private async Task CreateSecondaryWindow(ActivationViewSwitcher switcher, string conversationId)
         {
             Logger.LogInformation("CreateSecondaryWindow()");

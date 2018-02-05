@@ -44,13 +44,20 @@ namespace Signal_Windows.Lib
                     List<SignalServiceAttachment> attachments = new List<SignalServiceAttachment>();
                     foreach (var attachment in outgoingSignalMessage.Attachments)
                     {
-                        attachments.Add(SignalServiceAttachment.newStreamBuilder()
-                            .withStream(attachment.Stream)
-                            .withContentType(attachment.ContentType)
-                            .withLength(attachment.Size)
-                            .WithFileName(attachment.FileName)
-                            .withVoiceNote(false)
-                            .build());
+                        if (attachment.Status == SignalAttachmentStatus.Finished)
+                        {
+                            attachments.Add(attachment.ToAttachmentPointer());
+                        }
+                        else
+                        {
+                            attachments.Add(SignalServiceAttachment.newStreamBuilder()
+                                .withStream(attachment.Stream)
+                                .withContentType(attachment.ContentType)
+                                .withLength(attachment.Size)
+                                .WithFileName(attachment.FileName)
+                                .withVoiceNote(false)
+                                .build());
+                        }
                     }
                     SignalServiceDataMessage message = new SignalServiceDataMessage()
                     {

@@ -902,7 +902,6 @@ namespace Signal_Windows.Storage
             }
             return set_mark? m : null;
         }
-
         #endregion Messages
 
         #region Attachments
@@ -927,6 +926,19 @@ namespace Signal_Windows.Storage
                 {
                     return ctx.Attachments
                         .Where(a => a.FileName == fileName)
+                        .FirstOrDefault();
+                }
+            }
+        }
+
+        public static SignalAttachment GetAttachmentBySentFileNameLocked(string sentFileName)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    return ctx.Attachments
+                        .Where(a => a.SentFileName == sentFileName)
                         .FirstOrDefault();
                 }
             }

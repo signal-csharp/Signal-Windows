@@ -99,18 +99,70 @@ namespace Signal_Windows.ViewModels
                     // Without this the file picker throws an exception, this is not documented
                     filePicker.FileTypeFilter.Add("*");
                     StorageFile file = await filePicker.PickSingleFileAsync();
-                    var stream = await file.OpenStreamForReadAsync();
-                    SignalAttachment attachment = new SignalAttachment()
+                    if (file != null)
                     {
-                        Stream = stream,
-                        ContentType = file.ContentType,
-                        Size = stream.Length,
-                        FileName = file.Name
-                    };
-                    List<SignalAttachment> attachments = new List<SignalAttachment>();
-                    attachments.Add(attachment);
-                    SignalMessage message = CreateMessage(string.Empty, attachments);
-                    await SignalLibHandle.Instance.SendMessage(message, SelectedThread);
+                        // Setup the uploader
+                        BackgroundUploader uploader = new BackgroundUploader();
+                        uploader.Method = "PUT";
+                        uploader.SetRequestHeader("Content-Type", "application/octet-stream");
+                        uploader.SetRequestHeader("Connection", "close");
+                        uploader.SuccessToastNotification = LibUtils.CreateToastNotification($"{file.Name} has finished uploading.");
+                        uploader.FailureToastNotification = LibUtils.CreateToastNotification($"{file.Name} has failed to upload.");
+
+                        // Then encrypt the attachment
+                        byte[] attachmentKey = Util.getSecretBytes(64);
+                        (byte[] digest, Stream encryptedData) encryptedAttachment;
+                        long fileSize;
+                        using (var stream = await file.OpenStreamForReadAsync())
+                        {
+                            fileSize = stream.Length;
+                            encryptedAttachment = SignalLibHandle.Instance.EncryptAttachment(stream, attachmentKey);
+                        }
+
+                        // Save the enrypted data somewhere
+                        StorageFile tempFile = await ApplicationData.Current.LocalFolder.CreateFileAsync($"{file.Name}.encrypted",
+                            CreationCollisionOption.ReplaceExisting);
+                        using (var stream = await tempFile.OpenStreamForWriteAsync())
+                        {
+                            encryptedAttachment.encryptedData.CopyTo(stream);
+                        }
+                        encryptedAttachment.encryptedData.Dispose();
+
+                        // Get the upload URL, we need it here so we can get the foreign ID
+                        var uploadUrl = SignalLibHandle.Instance.RetrieveAttachmentUploadUrl();
+
+                        // Create the message
+                        SignalAttachment attachment = new SignalAttachment()
+                        {
+                            ContentType = file.ContentType,
+                            Size = fileSize,
+                            FileName = file.Name,
+                            Status = SignalAttachmentStatus.InProgress,
+                            Key = attachmentKey,
+                            Digest = encryptedAttachment.digest,
+                            StorageId = uploadUrl.id
+                        };
+
+                        // Create the upload
+                        UploadOperation upload = await Task.Run(() =>
+                        {
+                            return uploader.CreateUpload(new Uri(uploadUrl.location), tempFile);
+                        });
+
+                        // Set the sent file name as the upload GUID so we can refer to it later
+                        attachment.SentFileName = upload.Guid.ToString();
+
+                        // Finish creating the message
+                        List<SignalAttachment> attachments = new List<SignalAttachment>();
+                        attachments.Add(attachment);
+                        SignalMessage message = CreateMessage(string.Empty, attachments);
+
+                        // Save the message to the DB
+                        SignalDBContext.SaveMessageLocked(message);
+
+                        // Start the attachment upload
+                        await SignalLibHandle.Instance.HandleUpload(upload, true, message);
+                    }
                 }
                 else if (!string.IsNullOrWhiteSpace(messageText))
                 {
@@ -266,24 +318,27 @@ namespace Signal_Windows.ViewModels
             }
             RepositionConversation(localConversation);
 
-            foreach (var attachment in message.Attachments)
+            if (message.Direction == SignalMessageDirection.Incoming)
             {
-                SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
-                StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-                StorageFile tempFile = await localFolder.CreateFileAsync(attachment.StorageId.ToString());
-                BackgroundDownloader downloader = new BackgroundDownloader();
-                downloader.SetRequestHeader("Content-Type", "application/octet-stream");
-                downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has finished downloading.");
-                downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has failed to download.");
-                // this is the recommended way to call CreateDownload
-                // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
-                DownloadOperation download = await Task.Run(() =>
+                foreach (var attachment in message.Attachments)
                 {
-                    return downloader.CreateDownload(new Uri(SignalLibHandle.Instance.RetrieveAttachmentUrl(attachmentPointer)), tempFile);
-                });
-                attachment.FileName = download.Guid.ToString();
-                SignalDBContext.UpdateAttachmentLocked(attachment);
-                Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, true, attachment);
+                    SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
+                    StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+                    StorageFile tempFile = await localFolder.CreateFileAsync(attachment.StorageId.ToString());
+                    BackgroundDownloader downloader = new BackgroundDownloader();
+                    downloader.SetRequestHeader("Content-Type", "application/octet-stream");
+                    downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has finished downloading.");
+                    downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has failed to download.");
+                    // this is the recommended way to call CreateDownload
+                    // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
+                    DownloadOperation download = await Task.Run(() =>
+                    {
+                        return downloader.CreateDownload(new Uri(SignalLibHandle.Instance.RetrieveAttachmentDownloadUrl(attachmentPointer)), tempFile);
+                    });
+                    attachment.FileName = download.Guid.ToString();
+                    SignalDBContext.UpdateAttachmentLocked(attachment);
+                    Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, true, attachment);
+                }
             }
 
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
