@@ -13,8 +13,10 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class Message : UserControl
+    public sealed partial class Message : UserControl, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public SignalMessageContainer Model
         {
             get
@@ -25,6 +27,20 @@ namespace Signal_Windows.Controls
             {
                 this.DataContext = value;
             }
+        }
+
+        private bool hasAttachment;
+        public bool HasAttachment
+        {
+            get { return hasAttachment; }
+            set { hasAttachment = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasAttachment))); }
+        }
+
+        private SignalAttachment attachment;
+        public SignalAttachment Attachment
+        {
+            get { return attachment; }
+            set { attachment = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Attachment))); }
         }
 
         public Message()
@@ -93,6 +109,13 @@ namespace Signal_Windows.Controls
                     FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;
                 }
                 FancyTimestampBlock.Text = Utils.GetTimestamp(Model.Message.ComposedTimestamp);
+
+                HasAttachment = false;
+                if (Model.Message.Attachments?.Count > 0)
+                {
+                    HasAttachment = true;
+                    Attachment = Model.Message.Attachments[0];
+                }
             }
         }
 

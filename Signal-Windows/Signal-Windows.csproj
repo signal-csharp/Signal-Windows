@@ -145,6 +145,9 @@
     <Compile Include="Controls\AddContactListElement.xaml.cs">
       <DependentUpon>AddContactListElement.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\Attachment.xaml.cs">
+      <DependentUpon>Attachment.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\IdentityKeyChangeMessage.xaml.cs">
       <DependentUpon>IdentityKeyChangeMessage.xaml</DependentUpon>
     </Compile>
@@ -223,6 +226,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="Controls\AddContactListElement.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\Attachment.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
