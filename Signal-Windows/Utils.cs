@@ -252,6 +252,17 @@ namespace Signal_Windows
             return CultureInfo.InvariantCulture.CompareInfo.IndexOf(str, value, CompareOptions.IgnoreCase) >= 0;
         }
 
+        public static String BytesToString(long byteCount) //https://stackoverflow.com/a/4975942/1569755
+        {
+            string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "EB" }; //Longs run out around EB
+            if (byteCount == 0)
+                return "0" + suf[0];
+            long bytes = Math.Abs(byteCount);
+            int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
+            double num = Math.Round(bytes / Math.Pow(1024, place), 1);
+            return (Math.Sign(byteCount) * num).ToString() + suf[place];
+        }
+
         public static string GetCountryCode(string ISO3166) //https://stackoverflow.com/questions/34837436/uwp-get-country-phone-number-prefix
         {
             var dictionary = new Dictionary<string, string>();
