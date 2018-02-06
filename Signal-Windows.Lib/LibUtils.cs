@@ -2,6 +2,7 @@
 using Microsoft.Toolkit.Uwp.Notifications;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -102,6 +103,21 @@ namespace Signal_Windows.Lib
                 }
             };
             return new ToastNotification(toastContent.GetXml());
+        }
+
+        /// <summary>
+        /// Replaces any unsafe file name characters with _
+        /// </summary>
+        /// <param name="fileName">A filename</param>
+        /// <returns></returns>
+        public static string EnsureSafeFilename(string fileName)
+        {
+            StringBuilder stringBuilder = new StringBuilder(fileName);
+            foreach (var invalid in Path.GetInvalidFileNameChars())
+            {
+                stringBuilder.Replace(invalid, '_');
+            }
+            return stringBuilder.ToString();
         }
     }
 }
