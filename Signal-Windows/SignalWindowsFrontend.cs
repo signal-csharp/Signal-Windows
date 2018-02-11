@@ -31,7 +31,7 @@ namespace Signal_Windows
 
         public async Task HandleMessage(SignalMessage message, SignalConversation conversation)
         {
-            Locator.MainPageInstance.HandleMessage(message, conversation);
+            await Locator.MainPageInstance.HandleMessage(message, conversation);
         }
 
         public void HandleMessageUpdate(SignalMessage updatedMessage)

@@ -45,24 +45,23 @@ namespace Signal_Windows.ViewModels
                     LibsignalDBContext.SaveOrUpdateSignalStore(store);
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
                         SignalLibHandle.Instance.Store = store;
                     }).AsTask().Wait();
 
                     /* create prekeys */
                     LibsignalDBContext.RefreshPreKeys(
-                        new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                        new SignalServiceAccountManager(LibUtils.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, LibUtils.USER_AGENT));
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
+                        SignalLibHandle.Instance.Store = store;
                     }).AsTask().Wait();
                 });
                 View.Frame.Navigate(typeof(MainPage));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // TODO log exception
                 var title = "Verification failed";

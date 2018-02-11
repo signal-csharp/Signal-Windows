@@ -22,6 +22,7 @@ using Windows.UI.Xaml.Controls;
 using System.Globalization;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Signal_Windows.Lib;
 
 namespace Signal_Windows.ViewModels
 {
@@ -116,7 +117,7 @@ namespace Signal_Windows.ViewModels
             RefreshingContacts = true;
             Contacts.Clear();
             signalContacts.Clear();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, App.Store.Username, App.Store.Password, (int)App.Store.DeviceId, App.USER_AGENT);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceUrls, SignalLibHandle.Instance.Store.Username, SignalLibHandle.Instance.Store.Password, (int)SignalLibHandle.Instance.Store.DeviceId, LibUtils.USER_AGENT);
             ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
             List<PhoneContact> intermediateContacts = new List<PhoneContact>();
             if (contactStore != null)
@@ -323,9 +324,10 @@ namespace Signal_Windows.ViewModels
                 Color = Utils.CalculateDefaultColor(name),
                 UnreadCount = 0
             };
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 //TODO inform UI
+                await SignalLibHandle.Instance.AddContact(number);
             });
         }
 

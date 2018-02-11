@@ -81,7 +81,7 @@ namespace Signal_Windows.ViewModels
                     /* prepare qrcode */
                     string password = Base64.encodeBytes(Util.getSecretBytes(18));
                     IdentityKeyPair tmpIdentity = KeyHelper.generateIdentityKeyPair();
-                    SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, CancelSource.Token, "Signal-Windows");
+                    SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceUrls, CancelSource.Token, "Signal-Windows");
                     string uuid = accountManager.GetNewDeviceUuid(CancelSource.Token);
                     string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.encodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -113,18 +113,16 @@ namespace Signal_Windows.ViewModels
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         UIEnabled = false;
-                        App.Store = store;
                         SignalLibHandle.Instance.Store = store;
                     }).AsTask().Wait();
 
                     /* create prekeys */
-                    LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                    LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(LibUtils.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, LibUtils.USER_AGENT));
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
                         SignalLibHandle.Instance.Store = store;
                         View.Finish(true);
                     }).AsTask().Wait();
