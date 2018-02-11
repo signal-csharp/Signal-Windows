@@ -195,6 +195,30 @@ namespace Signal_Windows.Lib
             Instance = null;
         }
 
+        public async Task AddContact(string username)
+        {
+            // this is very brute force atm
+            SignalDBContext.GetOrCreateContactLocked(username, Util.CurrentTimeMillis());
+            await RefreshConversationList();
+        }
+
+        public async Task RefreshConversationList()
+        {
+            await Task.Run(() =>
+            {
+                List<Task> tasks = new List<Task>();
+                foreach (var dispatcher in Frames.Keys)
+                {
+                    var conversations = GetConversations();
+                    tasks.Add(dispatcher.RunTaskAsync(() =>
+                    {
+                        Frames[dispatcher].ReplaceConversationList(conversations);
+                    }));
+                }
+                Task.WaitAll(tasks.ToArray());
+            });
+        }
+
         public async Task SendMessage(SignalMessage message, SignalConversation conversation)
         {
             await Task.Run(async () =>

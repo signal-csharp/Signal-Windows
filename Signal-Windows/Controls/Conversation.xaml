@@ -49,6 +49,7 @@
                             <MenuFlyoutItem Text="All media" IsEnabled="False"/>
                             <ToggleMenuFlyoutItem Text="Mute conversation" IsEnabled="False"/>
                             <MenuFlyoutItem Text="Reset secure session" IsEnabled="False"/>
+                            <MenuFlyoutItem x:Name="DeleteContactButton" Text="Delete contact" IsEnabled="True" Click="DeleteContactButton_Click"/>
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>

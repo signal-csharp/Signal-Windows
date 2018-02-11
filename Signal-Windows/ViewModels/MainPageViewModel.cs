@@ -71,13 +71,18 @@ namespace Signal_Windows.ViewModels
 
         internal void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
+            UnselectConversation();
+            e.Handled = true;
+        }
+
+        internal void UnselectConversation()
+        {
             SelectedThread = null;
             View.Thread.DisposeCurrentThread();
             ThreadVisibility = Visibility.Collapsed;
             WelcomeVisibility = Visibility.Visible;
             View.SwitchToStyle(View.GetCurrentViewStyle());
             Utils.DisableBackButton(BackButton_Click);
-            e.Handled = true;
         }
 
         private bool _ThreadListAlignRight;

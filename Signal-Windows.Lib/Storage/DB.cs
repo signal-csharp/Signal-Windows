@@ -1140,6 +1140,18 @@ namespace Signal_Windows.Storage
             return contact;
         }
 
+        public static void DeleteContact(SignalContact contact)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    ctx.Contacts.Remove(contact);
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
         public static void InsertOrUpdateConversationLocked(SignalConversation conversation)
         {
             lock (DBLock)

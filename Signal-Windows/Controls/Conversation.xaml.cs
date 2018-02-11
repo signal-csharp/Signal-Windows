@@ -274,6 +274,16 @@ namespace Signal_Windows.Controls
                 GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
             }
         }
+
+        private async void DeleteContactButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SignalConversation is SignalContact)
+            {
+                GetMainPageVm().UnselectConversation();
+                SignalDBContext.DeleteContact((SignalContact)SignalConversation);
+                await SignalLibHandle.Instance.RefreshConversationList();
+            }
+        }
     }
 
     public class MessageTemplateSelector : DataTemplateSelector
