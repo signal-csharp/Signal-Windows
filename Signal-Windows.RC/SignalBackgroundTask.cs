@@ -1,4 +1,5 @@
-﻿using System;
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace Signal_Windows.RC
         private const string TaskName = "SignalMessageBackgroundTask";
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalBackgroundTask>();
         private BackgroundTaskDeferral Deferral;
-        private SignalLibHandle Handle;
+        private ISignalLibHandle Handle;
         private ToastNotifier ToastNotifier;
         private AutoResetEvent ResetEvent = new AutoResetEvent(false);
         private EventWaitHandle GlobalResetEvent;
@@ -52,7 +53,7 @@ namespace Signal_Windows.RC
             });
             try
             {
-                Handle = new SignalLibHandle(true);
+                Handle = SignalHelper.CreateSignalLibHandle(true);
                 Handle.SignalMessageEvent += Handle_SignalMessageEvent;
                 Handle.BackgroundAcquire();
                 ResetEvent.WaitOne();

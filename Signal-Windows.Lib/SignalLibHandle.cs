@@ -26,12 +26,46 @@ namespace Signal_Windows.Lib
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
         void HandleAuthFailure();
+        void HandleAttachmentStatusChanged(SignalAttachment sa, SignalAttachmentStatus newStatus);
     }
 
-    public class SignalLibHandle
+    public interface ISignalLibHandle
     {
-        public static SignalLibHandle Instance;
-        public SignalStore Store;
+        //Frontend API
+        SignalStore Store { get; set; }
+        Task SendMessage(SignalMessage message, SignalConversation conversation);
+        void ResendMessage(SignalMessage message);
+        List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count);
+        void SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
+        void PurgeAccountData();
+        Task Acquire(CoreDispatcher d, ISignalFrontend w);
+        Task Reacquire();
+        void Release();
+        void AddFrontend(CoreDispatcher d, ISignalFrontend w);
+        void RemoveFrontend(CoreDispatcher d);
+
+        // Background API
+        event EventHandler<SignalMessageEventArgs> SignalMessageEvent;
+        void BackgroundAcquire();
+        void BackgroundRelease();
+
+        // Attachment API
+        void StartAttachmentDownload(SignalAttachment sa);
+        //void AbortAttachmentDownload(SignalAttachment sa); TODO
+    }
+
+    public static class SignalHelper
+    {
+        public static ISignalLibHandle CreateSignalLibHandle(bool headless)
+        {
+            return new SignalLibHandle(headless);
+        }
+    }
+
+    internal class SignalLibHandle : ISignalLibHandle
+    {
+        internal static SignalLibHandle Instance;
+        public SignalStore Store { get; set; }
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalLibHandle>();
         public SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
         private bool Headless;
@@ -214,6 +248,11 @@ namespace Signal_Windows.Lib
             });
         }
 
+        public void ResendMessage(SignalMessage message)
+        {
+            OutgoingQueue.Add(message);
+        }
+
         public List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count)
         {
             return SignalDBContext.GetMessagesLocked(thread, startIndex, count);
@@ -230,7 +269,14 @@ namespace Signal_Windows.Lib
         }
         #endregion
 
-        #region backend api
+        #region attachment api
+        public void StartAttachmentDownload(SignalAttachment sa)
+        {
+            //TODO lock, check if already downloading, start a new download if not exists
+        }
+        #endregion
+
+        #region internal api
         internal void SaveAndDispatchSignalMessage(SignalMessage message, SignalConversation conversation)
         {
             conversation.MessagesCount += 1;
