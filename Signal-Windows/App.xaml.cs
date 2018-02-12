@@ -39,7 +39,7 @@ namespace Signal_Windows
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
-        public static SignalLibHandle Handle = new SignalLibHandle(false);
+        public static ISignalLibHandle Handle = SignalHelper.CreateSignalLibHandle(false);
         private Dictionary<int, SignalWindowsFrontend> Views = new Dictionary<int, SignalWindowsFrontend>();
         public static int MainViewId;
         private IBackgroundTaskRegistration backgroundTaskRegistration;

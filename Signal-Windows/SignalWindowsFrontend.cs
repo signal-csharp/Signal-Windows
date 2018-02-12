@@ -48,5 +48,10 @@ namespace Signal_Windows
         {
             // TODO
         }
+
+        public void HandleAttachmentStatusChanged(SignalAttachment sa, SignalAttachmentStatus status)
+        {
+            //TODO
+        }
     }
 }

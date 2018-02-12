@@ -102,7 +102,7 @@ namespace Signal_Windows.ViewModels
                         Read = true,
                         Type = SignalMessageType.Normal
                     };
-                    await SignalLibHandle.Instance.SendMessage(message, SelectedThread);
+                    await App.Handle.SendMessage(message, SelectedThread);
                     Debug.WriteLine("keydown lock released");
                 }
                 return true;
