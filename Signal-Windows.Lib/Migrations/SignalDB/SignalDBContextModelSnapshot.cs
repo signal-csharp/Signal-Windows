@@ -45,6 +45,8 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("FileName");
 
+                    b.Property<string>("Guid");
+
                     b.Property<byte[]>("Key");
 
                     b.Property<long>("MessageId");
