@@ -126,7 +126,13 @@ namespace Signal_Windows
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
             string taskName = "SignalMessageBackgroundTask";
-            BackgroundExecutionManager.RemoveAccess();
+            foreach (var task in BackgroundTaskRegistration.AllTasks)
+            {
+                if (task.Value.Name == taskName)
+                {
+                    task.Value.Unregister(false);
+                }
+            }
 
             var builder = new BackgroundTaskBuilder();
             builder.Name = taskName;
@@ -176,7 +182,7 @@ namespace Signal_Windows
             var downloads = await BackgroundDownloader.GetCurrentDownloadsAsync();
             foreach (var download in downloads)
             {
-                SignalAttachment attachment = SignalDBContext.GetAttachmentByFileNameLocked(download.Guid.ToString());
+                SignalAttachment attachment = SignalDBContext.GetAttachmentByGuidLocked(download.Guid.ToString());
                 Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, false, attachment);
             }
         }
@@ -186,7 +192,7 @@ namespace Signal_Windows
             var uploads = await BackgroundUploader.GetCurrentUploadsAsync();
             foreach (var upload in uploads)
             {
-                SignalAttachment attachment = SignalDBContext.GetAttachmentBySentFileNameLocked(upload.Guid.ToString());
+                SignalAttachment attachment = SignalDBContext.GetAttachmentByGuidLocked(upload.Guid.ToString());
                 Task uploadTask = SignalLibHandle.Instance.HandleUpload(upload, false, attachment.Message);
             }
         }

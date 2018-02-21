@@ -19,6 +19,7 @@ using libsignalservice.messages;
 using System.IO;
 using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
+using Windows.Web;
 
 namespace Signal_Windows.Lib
 {
@@ -285,13 +286,31 @@ namespace Signal_Windows.Lib
 
         public async Task HandleDownload(DownloadOperation download, bool start, SignalAttachment attachment)
         {
-            if (start)
+            try
             {
-                await download.StartAsync();
+                if (start)
+                {
+                    await download.StartAsync();
+                }
+                else
+                {
+                    await download.AttachAsync();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await download.AttachAsync();
+                WebErrorStatus errorStatus = BackgroundTransferError.GetStatus(ex.HResult);
+                if (errorStatus == WebErrorStatus.NotFound)
+                {
+                    attachment.Status = SignalAttachmentStatus.Failed_Permanently;
+                }
+                else
+                {
+                    attachment.Status = SignalAttachmentStatus.Failed;
+                }
+                await download.ResultFile.DeleteAsync();
+                SignalDBContext.UpdateAttachmentLocked(attachment);
+                return;
             }
             IStorageFile tempFile = download.ResultFile;
             StorageFile downloadedFile = await DownloadsFolder.CreateFileAsync(LibUtils.EnsureSafeFilename(attachment.SentFileName), CreationCollisionOption.GenerateUniqueName);
@@ -300,18 +319,29 @@ namespace Signal_Windows.Lib
             {
                 DecryptAttachment(attachment.ToAttachmentPointer(), tempFileStream, downloadedFileStream);
             }
+            attachment.Status = SignalAttachmentStatus.Finished;
+            SignalDBContext.UpdateAttachmentLocked(attachment);
             await tempFile.DeleteAsync();
         }
 
         public async Task HandleUpload(UploadOperation upload, bool start, SignalMessage message)
         {
-            if (start)
+            try
             {
-                await upload.StartAsync();
+                if (start)
+                {
+                    await upload.StartAsync();
+                }
+                else
+                {
+                    await upload.AttachAsync();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await upload.AttachAsync();
+                WebErrorStatus errorStatus = BackgroundTransferError.GetStatus(ex.HResult);
+                await upload.SourceFile.DeleteAsync();
+                return;
             }
             IStorageFile tempFile = upload.SourceFile;
             await tempFile.DeleteAsync();

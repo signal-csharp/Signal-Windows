@@ -431,7 +431,7 @@ namespace Signal_Windows.Lib
                         Message = message,
                         Status = (uint)SignalAttachmentStatus.Default,
                         SentFileName = pointer.FileName,
-                        ContentType = "",
+                        ContentType = pointer.getContentType(),
                         Key = pointer.Key,
                         Relay = pointer.Relay,
                         StorageId = pointer.Id,

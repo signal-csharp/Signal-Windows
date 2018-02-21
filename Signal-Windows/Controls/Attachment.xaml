@@ -14,8 +14,9 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Ellipse Fill="#FF9B9B9B" Width="50" Height="50"/>
-        <SymbolIcon Symbol="Page2"/>
+        <Button x:Name="AttachmentDownloadButton" Background="#FF9B9B9B" Width="50" Height="50" HorizontalAlignment="Center" IsEnabled="{x:Bind CanDownload, Mode=OneWay}" Click="AttachmentDownloadButton_Click">
+            <SymbolIcon Symbol="{x:Bind AttachmentIcon, Mode=OneWay}"/>
+        </Button>
         <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8,0,0,0">
             <TextBlock Text="{x:Bind FileName, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"/>
             <TextBlock Text="{x:Bind FileSize, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"/>

@@ -918,27 +918,14 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static SignalAttachment GetAttachmentByFileNameLocked(string fileName)
+        public static SignalAttachment GetAttachmentByGuidLocked(string guid)
         {
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
                     return ctx.Attachments
-                        .Where(a => a.FileName == fileName)
-                        .FirstOrDefault();
-                }
-            }
-        }
-
-        public static SignalAttachment GetAttachmentBySentFileNameLocked(string sentFileName)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    return ctx.Attachments
-                        .Where(a => a.SentFileName == sentFileName)
+                        .Where(a => a.Guid == guid)
                         .FirstOrDefault();
                 }
             }

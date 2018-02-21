@@ -154,8 +154,8 @@ namespace Signal_Windows.ViewModels
                             return uploader.CreateUpload(new Uri(uploadUrl.location), tempFile);
                         });
 
-                        // Set the sent file name as the upload GUID so we can refer to it later
-                        attachment.SentFileName = upload.Guid.ToString();
+                        // Set the upload GUID so we can refer to it later
+                        attachment.Guid = upload.Guid.ToString();
 
                         // Finish creating the message
                         List<SignalAttachment> attachments = new List<SignalAttachment>();
@@ -322,29 +322,6 @@ namespace Signal_Windows.ViewModels
                 View.Thread.Append(container);
             }
             RepositionConversation(localConversation);
-
-            if (message.Direction == SignalMessageDirection.Incoming)
-            {
-                foreach (var attachment in message.Attachments)
-                {
-                    SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
-                    StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-                    StorageFile tempFile = await localFolder.CreateFileAsync(attachment.StorageId.ToString());
-                    BackgroundDownloader downloader = new BackgroundDownloader();
-                    downloader.SetRequestHeader("Content-Type", "application/octet-stream");
-                    downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has finished downloading.");
-                    downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has failed to download.");
-                    // this is the recommended way to call CreateDownload
-                    // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
-                    DownloadOperation download = await Task.Run(() =>
-                    {
-                        return downloader.CreateDownload(new Uri(SignalLibHandle.Instance.RetrieveAttachmentDownloadUrl(attachmentPointer)), tempFile);
-                    });
-                    attachment.FileName = download.Guid.ToString();
-                    SignalDBContext.UpdateAttachmentLocked(attachment);
-                    Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, true, attachment);
-                }
-            }
 
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
             {
