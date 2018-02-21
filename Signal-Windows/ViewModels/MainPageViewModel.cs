@@ -92,7 +92,7 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("starting sendmessage");
             try
             {
-                if (messageText != string.Empty)
+                if (!string.IsNullOrEmpty(messageText))
                 {
                     var now = Util.CurrentTimeMillis();
                     SignalMessage message = new SignalMessage()

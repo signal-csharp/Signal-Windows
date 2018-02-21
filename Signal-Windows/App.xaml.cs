@@ -132,7 +132,13 @@ namespace Signal_Windows
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
             string taskName = "SignalMessageBackgroundTask";
-            BackgroundExecutionManager.RemoveAccess();
+            foreach (var task in BackgroundTaskRegistration.AllTasks)
+            {
+                if (task.Value.Name == taskName)
+                {
+                    task.Value.Unregister(false);
+                }
+            }
 
             var builder = new BackgroundTaskBuilder();
             builder.Name = taskName;

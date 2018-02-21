@@ -130,6 +130,10 @@
     <Compile Include="Migrations\SignalDB\20180203062229_m4.designer.cs">
       <DependentUpon>20180203062229_m4.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\SignalDB\20180211071131_m5.cs" />
+    <Compile Include="Migrations\SignalDB\20180211071131_m5.designer.cs">
+      <DependentUpon>20180211071131_m5.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\PhoneContact.cs" />
     <Compile Include="Models\SignalAttachment.cs" />
