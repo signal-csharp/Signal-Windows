@@ -4,10 +4,14 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using libsignalservice;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
+using Signal_Windows.Storage;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
+
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -22,27 +26,21 @@ namespace Signal_Windows.Controls
 {
     public sealed partial class Attachment : UserControl, INotifyPropertyChanged
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<Attachment>();
         public event PropertyChangedEventHandler PropertyChanged;
-
-        private string fileName;
-        public string FileName
-        {
-            get { return fileName; }
-            set { fileName = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FileName))); }
-        }
-
-        private string fileSize;
-        public string FileSize
-        {
-            get { return fileSize; }
-            set { fileSize = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FileSize))); }
-        }
 
         private Uri imagePath;
         public Uri ImagePath
         {
             get { return imagePath; }
             set { imagePath = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ImagePath))); }
+        }
+
+        private Symbol attachmentIcon;
+        public Symbol AttachmentIcon
+        {
+            get { return attachmentIcon; }
+            set { attachmentIcon = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AttachmentIcon))); }
         }
 
         public SignalAttachment Model
@@ -60,17 +58,27 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                FileName = Model.FileName;
-                FileSize = Utils.BytesToString(Model.Size);
                 if (Model.Status == SignalAttachmentStatus.Finished)
                 {
+                    AttachmentImage.Visibility = Visibility.Visible;
+                    AttachmentDownloadIcon.Visibility = Visibility.Collapsed;
                     if (IMAGE_TYPES.Contains(Model.ContentType))
                     {
                         var path = ApplicationData.Current.LocalCacheFolder.Path + @"\Attachments\" + Model.Id + ".plain";
                         ImagePath = new Uri(path);
                     }
                 }
+                else if (Model.Status == SignalAttachmentStatus.Default || Model.Status == SignalAttachmentStatus.Finished || Model.Status == SignalAttachmentStatus.Failed)
+                {
+                    AttachmentImage.Visibility = Visibility.Collapsed;
+                    AttachmentDownloadIcon.Visibility = Visibility.Visible;
+                }
             }
+        }
+
+        private void AttachmentDownloadIcon_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            App.Handle.StartAttachmentDownload(Model);
         }
 
         private static HashSet<string> IMAGE_TYPES = new HashSet<string>()

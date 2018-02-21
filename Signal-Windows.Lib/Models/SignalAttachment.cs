@@ -19,6 +19,7 @@ namespace Signal_Windows.Models
         public ulong StorageId { get; set; }
         public byte[] Digest { get; set; }
         public long Size { get; set; }
+        public string Guid { get; set; }
 
         [NotMapped]
         public Image AttachmentImage { get; set; }

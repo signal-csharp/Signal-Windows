@@ -9,25 +9,14 @@
     d:DesignHeight="200"
     d:DesignWidth="200">
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Ellipse Fill="#FF9B9B9B" Width="50" Height="50"/>
-        <SymbolIcon Symbol="Page2"/>
-        <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8,0,0,0">
-            <StackPanel Name="ImageStackPanel" Visibility="Visible">
-                <Image>
-                    <Image.Source>
-                        <BitmapImage UriSource="{x:Bind ImagePath, Mode=TwoWay}"/>
-                    </Image.Source>
-                </Image>
-            </StackPanel>
-            <StackPanel Name="DefaultStackPanel" Visibility="Visible">
-                <TextBlock Text="{x:Bind FileName, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"/>
-                <TextBlock Text="{x:Bind FileSize, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"/>
-            </StackPanel>
-        </StackPanel>
-    </Grid>
+    <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8,0,0,0">
+        <Grid Width="100" Height="100">
+            <Image Name="AttachmentImage" Stretch="UniformToFill">
+                <Image.Source>
+                    <BitmapImage UriSource="{x:Bind ImagePath, Mode=TwoWay}"/>
+                </Image.Source>
+            </Image>
+            <SymbolIcon Name="AttachmentDownloadIcon" Symbol="Download" Tapped="AttachmentDownloadIcon_Tapped" />
+        </Grid>
+    </StackPanel>
 </UserControl>
