@@ -81,9 +81,18 @@ namespace Signal_Windows.Controls
             }
         }
 
+        private Brush _SendButtonBackground;
         public Brush SendButtonBackground
         {
-            get { return Utils.Blue; }
+            get { return _SendButtonBackground; }
+            set { _SendButtonBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendButtonBackground))); }
+        }
+
+        private Symbol _SendButtonIcon;
+        public Symbol SendButtonIcon
+        {
+            get { return _SendButtonIcon; }
+            set { _SendButtonIcon = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendButtonIcon))); }
         }
 
         public Conversation()
@@ -93,6 +102,7 @@ namespace Signal_Windows.Controls
             Separator.Foreground = Utils.ForegroundIncoming;
             Username.Foreground = Utils.ForegroundIncoming;
             SendButtonEnabled = true;
+            SendButtonIcon = Symbol.Attach;
         }
 
         public MainPageViewModel GetMainPageVm()
@@ -108,6 +118,7 @@ namespace Signal_Windows.Controls
             {
                 HeaderBackground = contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
                     Utils.GetBrushFromColor(Utils.CalculateDefaultColor(contact.ThreadDisplayName));
+                SendButtonBackground = HeaderBackground;
                 if (ThreadUsername != ThreadDisplayName)
                 {
                     ThreadUsernameVisibility = Visibility.Visible;
@@ -122,6 +133,7 @@ namespace Signal_Windows.Controls
             else
             {
                 HeaderBackground = Utils.Blue;
+                SendButtonBackground = HeaderBackground;
                 ThreadUsernameVisibility = Visibility.Collapsed;
                 SeparatorVisibility = Visibility.Collapsed;
             }
@@ -245,7 +257,14 @@ namespace Signal_Windows.Controls
         private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             TextBox t = sender as TextBox;
-            //SendButtonEnabled = t.Text != string.Empty;
+            if (string.IsNullOrEmpty(t.Text))
+            {
+                SendButtonIcon = Symbol.Attach;
+            }
+            else
+            {
+                SendButtonIcon = Symbol.Send;
+            }
             SendButtonEnabled = true;
         }
 

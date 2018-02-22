@@ -68,8 +68,8 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" TextChanged="InputTextBox_TextChanged" InputScope="Chat" />
-            <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" Background="{x:Bind SendButtonBackground}" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50">
-                <SymbolIcon Symbol="Send"/>
+            <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" Background="{x:Bind SendButtonBackground, Mode=OneWay}" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50">
+                <SymbolIcon Symbol="{x:Bind SendButtonIcon, Mode=OneWay}"/>
             </Button>
         </Grid>
     </Grid>
