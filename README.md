@@ -14,10 +14,13 @@ This is an unofficial Signal client for the Universal Windows Platform. It is (c
 - add/edit contacts
 - send and receive text messages
 
-## What can i expect next?
+## What can I expect next?
 - proper attachment handling
 - syncing groups and contacts on linking
 - a prettier interface
+
+## I want to try it out but I'm not a developer
+- Send an email to signal.windows (at) gmail.com with your GitHub account name. We'll send over a beta key for the Windows Store app.
 
 ## Bug reports
 Found a bug? Great! Open a pull request or an issue.
