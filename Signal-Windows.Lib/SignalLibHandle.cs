@@ -313,7 +313,12 @@ namespace Signal_Windows.Lib
                 return;
             }
             IStorageFile tempFile = download.ResultFile;
-            StorageFile downloadedFile = await DownloadsFolder.CreateFileAsync(LibUtils.EnsureSafeFilename(attachment.SentFileName), CreationCollisionOption.GenerateUniqueName);
+            string fileName = attachment.SentFileName;
+            if (string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(attachment.FileName))
+            {
+                fileName = attachment.FileName;
+            }
+            StorageFile downloadedFile = await DownloadsFolder.CreateFileAsync(LibUtils.EnsureSafeFilename(fileName), CreationCollisionOption.GenerateUniqueName);
             using (var tempFileStream = (await tempFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
             using (var downloadedFileStream = (await downloadedFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
             {

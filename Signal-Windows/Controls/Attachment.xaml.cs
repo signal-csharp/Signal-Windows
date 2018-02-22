@@ -115,10 +115,15 @@ namespace Signal_Windows.Controls
                 SignalServiceAttachmentPointer attachmentPointer = Model.ToAttachmentPointer();
                 StorageFolder localFolder = ApplicationData.Current.LocalFolder;
                 StorageFile tempFile = await localFolder.CreateFileAsync(Model.StorageId.ToString(), CreationCollisionOption.GenerateUniqueName);
+                string displayName = Model.SentFileName;
+                if (string.IsNullOrEmpty(displayName) && !string.IsNullOrEmpty(Model.FileName))
+                {
+                    displayName = Model.FileName;
+                }
                 BackgroundDownloader downloader = new BackgroundDownloader();
                 downloader.SetRequestHeader("Content-Type", "application/octet-stream");
-                downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{Model.SentFileName} has finished downloading.");
-                downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{Model.SentFileName} has failed to download.");
+                downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{displayName} has finished downloading.");
+                downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{displayName} has failed to download.");
                 // this is the recommended way to call CreateDownload
                 // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
                 DownloadOperation download = await Task.Run(() =>
