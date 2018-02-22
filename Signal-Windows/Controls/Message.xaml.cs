@@ -103,7 +103,7 @@ namespace Signal_Windows.Controls
 
         private void ResendTextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            App.Handle.OutgoingQueue.Add(Model.Message);
+            App.Handle.ResendMessage(Model.Message);
         }
 
         internal bool HandleUpdate(SignalMessage updatedMessage)

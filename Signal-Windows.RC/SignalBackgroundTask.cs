@@ -29,7 +29,7 @@ namespace Signal_Windows.RC
         private Semaphore semaphore;
         private DateTime taskStartTime;
         private DateTime taskEndTime;
-        private SignalLibHandle handle;
+        private ISignalLibHandle handle;
         private ToastNotifier toastNotifier;
 
         public async void Run(IBackgroundTaskInstance taskInstance)
@@ -48,7 +48,7 @@ namespace Signal_Windows.RC
                 deferral.Complete();
                 return;
             }
-            handle = new SignalLibHandle(true);
+            handle = SignalHelper.CreateSignalLibHandle(true);
             handle.SignalMessageEvent += Handle_SignalMessageEvent;
             handle.BackgroundAcquire();
             await CheckTimer();

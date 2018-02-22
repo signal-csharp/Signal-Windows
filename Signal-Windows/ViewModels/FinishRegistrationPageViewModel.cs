@@ -46,7 +46,7 @@ namespace Signal_Windows.ViewModels
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         App.Store = store;
-                        SignalLibHandle.Instance.Store = store;
+                        App.Handle.Store = store;
                     }).AsTask().Wait();
 
                     /* create prekeys */
