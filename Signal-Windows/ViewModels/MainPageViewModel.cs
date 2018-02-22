@@ -107,7 +107,6 @@ namespace Signal_Windows.ViewModels
                         Type = SignalMessageType.Normal
                     };
                     await App.Handle.SendMessage(message, SelectedThread);
-                    Debug.WriteLine("keydown lock released");
                 }
                 return true;
             }
@@ -220,7 +219,7 @@ namespace Signal_Windows.ViewModels
             RepositionConversation(uiConversation);
         }
 
-        public async Task HandleMessage(SignalMessage message, SignalConversation conversation)
+        public void HandleMessage(SignalMessage message, SignalConversation conversation)
         {
             var localConversation = ConversationsDictionary[conversation.ThreadId];
             localConversation.LastMessage = message;
@@ -235,27 +234,6 @@ namespace Signal_Windows.ViewModels
                 View.Thread.Append(container);
             }
             RepositionConversation(localConversation);
-
-            foreach (var attachment in message.Attachments)
-            {
-                SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
-                StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-                StorageFile tempFile = await localFolder.CreateFileAsync(attachment.StorageId.ToString());
-                BackgroundDownloader downloader = new BackgroundDownloader();
-                downloader.SetRequestHeader("Content-Type", "application/octet-stream");
-                downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has finished downloading.");
-                downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has failed to download.");
-                // this is the recommended way to call CreateDownload
-                // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
-                DownloadOperation download = await Task.Run(() =>
-                {
-                    return downloader.CreateDownload(new Uri(SignalLibHandle.Instance.RetrieveAttachmentUrl(attachmentPointer)), tempFile);
-                });
-                attachment.FileName = download.Guid.ToString();
-                SignalDBContext.UpdateAttachmentLocked(attachment);
-                Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, true, attachment);
-            }
-
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
             {
                 if (message.Author != null)
@@ -267,14 +245,14 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public async Task HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
+        public void HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
         {
             foreach(var message in messages)
             {
                 var conversation = ConversationsDictionary[message.ThreadId];
                 conversation.MessagesCount += 1;
                 conversation.UnreadCount += 1;
-                await HandleMessage(message, conversation);
+                HandleMessage(message, conversation);
             }
         }
 
@@ -308,6 +286,11 @@ namespace Signal_Windows.ViewModels
                 Logger.LogDebug("RequestedConversationId is != null, refreshing");
                 SelectConversation(RequestedConversationId);
             }
+        }
+
+        public void HandleAttachmentStatusChanged(SignalAttachment sa)
+        {
+            Logger.LogInformation("MPVM received attachment status update! {0}", sa.Status);
         }
         #endregion
     }
