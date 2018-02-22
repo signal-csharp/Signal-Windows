@@ -912,7 +912,16 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    ctx.Attachments.Update(sa);
+                    var entity = ctx.Attachments.Attach(sa);
+                    foreach (var property in entity.Properties)
+                    {
+                        if (!property.Metadata.IsForeignKey() &&
+                            !property.Metadata.IsPrimaryKey() &&
+                            !property.Metadata.IsShadowProperty)
+                        {
+                            property.IsModified = true;
+                        }
+                    }
                     ctx.SaveChanges();
                 }
             }
