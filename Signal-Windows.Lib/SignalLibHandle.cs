@@ -25,12 +25,12 @@ namespace Signal_Windows.Lib
     public interface ISignalFrontend
     {
         void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage);
-        Task HandleMessage(SignalMessage message, SignalConversation conversation);
-        Task HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
+        void HandleMessage(SignalMessage message, SignalConversation conversation);
+        void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
         void HandleAuthFailure();
-        void HandleAttachmentStatusChanged(SignalAttachment sa, SignalAttachmentStatus newStatus);
+        void HandleAttachmentStatusChanged(SignalAttachment sa);
     }
 
     public interface ISignalLibHandle
@@ -84,6 +84,7 @@ namespace Signal_Windows.Lib
         private SignalServiceMessageReceiver MessageReceiver;
         public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
         private EventWaitHandle GlobalResetEvent;
+        private ISet<DownloadOperation> Downloads = new HashSet<DownloadOperation>();
 
         public event EventHandler<SignalMessageEventArgs> SignalMessageEvent;
 
@@ -166,6 +167,7 @@ namespace Signal_Windows.Lib
             await Task.Run(() =>
             {
                 InitNetwork();
+                RecoverDownloads().Wait();
             });
             await failTask; // has to complete before messages are loaded
             Running = true;
@@ -180,6 +182,7 @@ namespace Signal_Windows.Lib
             SignalDBContext.FailAllPendingMessages();
             Store = LibsignalDBContext.GetSignalStore();
             InitNetwork();
+            RecoverDownloads().Wait();
             Running = true;
         }
 
@@ -206,6 +209,8 @@ namespace Signal_Windows.Lib
                 }
                 Task.WaitAll(tasks.ToArray());
                 InitNetwork();
+                Downloads.Clear();
+                RecoverDownloads().Wait();
             });
             Running = true;
             Logger.LogTrace("Reacquire() releasing");
@@ -240,15 +245,22 @@ namespace Signal_Windows.Lib
 
         public async Task SendMessage(SignalMessage message, SignalConversation conversation)
         {
-            await Task.Run(async () =>
+            await Task.Run(() =>
             {
                 Logger.LogTrace("SendMessage() locking");
-                await SemaphoreSlim.WaitAsync(CancelSource.Token);
-                Logger.LogDebug("SendMessage saving message " + message.ComposedTimestamp);
-                SaveAndDispatchSignalMessage(message, conversation);
-                OutgoingQueue.Add(message);
-                SemaphoreSlim.Release();
-                Logger.LogTrace("SendMessage() released");
+                SemaphoreSlim.Wait(CancelSource.Token);
+                Logger.LogTrace("SendMessage() locked");
+                try
+                {
+                    Logger.LogDebug("SendMessage saving message " + message.ComposedTimestamp);
+                    SaveAndDispatchSignalMessage(message, conversation);
+                    OutgoingQueue.Add(message);
+                }
+                finally
+                {
+                    SemaphoreSlim.Release();
+                    Logger.LogTrace("SendMessage() released");
+                }
             });
         }
 
@@ -286,26 +298,6 @@ namespace Signal_Windows.Lib
         {
             MessageReceiver.DecryptAttachment(pointer, tempStream, downloadStream);
         }
-
-        public async Task HandleDownload(DownloadOperation download, bool start, SignalAttachment attachment)
-        {
-            if (start)
-            {
-                await download.StartAsync();
-            }
-            else
-            {
-                await download.AttachAsync();
-            }
-            IStorageFile tempFile = download.ResultFile;
-            StorageFile downloadedFile = await DownloadsFolder.CreateFileAsync(attachment.SentFileName, CreationCollisionOption.GenerateUniqueName);
-            using (var tempFileStream = (await tempFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
-            using (var downloadedFileStream = (await downloadedFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
-            {
-                DecryptAttachment(attachment.ToAttachmentPointer(), tempFileStream, downloadedFileStream);
-            }
-            await tempFile.DeleteAsync();
-        }
         #endregion
 
         #region attachment api
@@ -327,21 +319,23 @@ namespace Signal_Windows.Lib
             {
                 conversation.UnreadCount = 0;
                 conversation.LastSeenMessageIndex = conversation.MessagesCount;
+
             }
             SignalDBContext.SaveMessageLocked(message);
             conversation.LastMessage = message;
             conversation.LastActiveTimestamp = message.ComposedTimestamp;
+            StartAttachmentDownloads(message);
             DispatchHandleMessage(message, conversation);
         }
 
         internal void DispatchHandleIdentityKeyChange(LinkedList<SignalMessage> messages)
         {
-            List<Task> operations = new List<Task>(); ;
+            List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(async () =>
+                operations.Add(dispatcher.RunTaskAsync(() =>
                 {
-                    await Frames[dispatcher].HandleIdentitykeyChange(messages);
+                    Frames[dispatcher].HandleIdentitykeyChange(messages);
                 }));
             }
             Task.WaitAll(operations.ToArray());
@@ -365,9 +359,9 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(async () =>
+                operations.Add(dispatcher.RunTaskAsync(() =>
                 {
-                    await Frames[dispatcher].HandleMessage(message, conversation);
+                    Frames[dispatcher].HandleMessage(message, conversation);
                 }));
             }
             SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalMessageType.NormalMessage));
@@ -469,6 +463,108 @@ namespace Signal_Windows.Lib
             IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, this).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
             OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
             OutgoingMessagesTask = Task.Factory.StartNew(() => OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
+        }
+
+        private void StartAttachmentDownloads(SignalMessage message)
+        {
+            if (message.Attachments != null)
+            {
+                foreach (var attachment in message.Attachments)
+                {
+                    if (Downloads.Count < 100)
+                    {
+                        SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
+                        IStorageFolder localFolder = ApplicationData.Current.LocalFolder;
+                        IStorageFile tmpDownload = Task.Run(async () =>
+                        {
+                            return await ApplicationData.Current.LocalCacheFolder.CreateFileAsync(@"Attachments\" + attachment.Id + ".cipher");
+                        }).Result;
+                        BackgroundDownloader downloader = new BackgroundDownloader();
+                        downloader.SetRequestHeader("Content-Type", "application/octet-stream");
+                        downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has finished downloading.");
+                        downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has failed to download.");
+                        // this is the recommended way to call CreateDownload
+                        // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
+                        DownloadOperation download = downloader.CreateDownload(new Uri(RetrieveAttachmentUrl(attachmentPointer)), tmpDownload);
+                        SignalDBContext.UpdateAttachmentFileName(attachment);
+                        Downloads.Add(download);
+                        Task.Run(async () =>
+                        {
+                            Logger.LogInformation("Waiting for download {0}({1})", attachment.SentFileName, attachment.Id);
+                            await download.StartAsync();
+                            await HandleSuccessfullDownload(attachment, tmpDownload, download);
+                        });
+                    }
+                }
+            }
+        }
+
+        private async Task HandleSuccessfullDownload(SignalAttachment attachment, IStorageFile tmpDownload, DownloadOperation download)
+        {
+            StorageFile plaintextFile = await ApplicationData.Current.LocalCacheFolder.CreateFileAsync(@"Attachments\" + attachment.Id + ".plain", CreationCollisionOption.ReplaceExisting);
+            using (var tmpFileStream = (await tmpDownload.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
+            using (var plaintextFileStream = (await plaintextFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
+            {
+                Logger.LogInformation("Decrypting to {0}\\{1}", plaintextFile.Path, plaintextFile.Name);
+                DecryptAttachment(attachment.ToAttachmentPointer(), tmpFileStream, plaintextFileStream);
+            }
+            Logger.LogInformation("Deleting tmpFile {0}", tmpDownload.Name);
+            await tmpDownload.DeleteAsync();
+            attachment.Status = SignalAttachmentStatus.Finished;
+            DispatchAttachmentStatusChanged(download, attachment);
+        }
+
+        private async Task RecoverDownloads()
+        {
+            var downloads = await BackgroundDownloader.GetCurrentDownloadsAsync();
+            foreach (DownloadOperation download in downloads)
+            {
+                try
+                {
+                    SignalAttachment attachment = SignalDBContext.GetAttachmentByFileNameLocked(download.Guid.ToString());
+                    if (attachment != null)
+                    {
+                        Downloads.Add(download);
+                        var t = Task.Run(async () =>
+                        {
+                            Logger.LogInformation("Attaching to download {0} ({1})", attachment.Id, download.Guid);
+                            await download.AttachAsync();
+                            await HandleSuccessfullDownload(attachment, download.ResultFile, download);
+                        });
+                    }
+                    else
+                    {
+                        Logger.LogInformation("Aborting unrecognized download {0}", download.Guid);
+                        download.AttachAsync().Cancel();
+                    }
+                }
+                catch(Exception e)
+                {
+                    Logger.LogError("TriageDownloads encountered an error: {0}\n{1}", e.Message, e.StackTrace);
+                }
+            }
+        }
+
+        private void DispatchAttachmentStatusChanged(DownloadOperation op, SignalAttachment attachment)
+        {
+            try
+            {
+                SemaphoreSlim.Wait(CancelSource.Token);
+                Downloads.Remove(op);
+                List<Task> operations = new List<Task>();
+                foreach (var dispatcher in Frames.Keys)
+                {
+                    operations.Add(dispatcher.RunTaskAsync(() =>
+                    {
+                        Frames[dispatcher].HandleAttachmentStatusChanged(attachment);
+                    }));
+                }
+                Task.WaitAll(operations.ToArray());
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+            }
         }
         #endregion
     }

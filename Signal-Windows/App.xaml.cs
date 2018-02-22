@@ -178,20 +178,6 @@ namespace Signal_Windows
                     await ApplicationViewSwitcher.TryShowAsStandaloneAsync(currentId);
                 }
             }
-            else
-            {
-                await DiscoverDownloads();
-            }
-        }
-
-        private async Task DiscoverDownloads()
-        {
-            var downloads = await BackgroundDownloader.GetCurrentDownloadsAsync();
-            foreach (var download in downloads)
-            {
-                SignalAttachment attachment = SignalDBContext.GetAttachmentByFileNameLocked(download.Guid.ToString());
-                Task downloadTask = SignalLibHandle.Instance.HandleDownload(download, false, attachment);
-            }
         }
 
         private async Task CreateSecondaryWindow(ActivationViewSwitcher switcher, string conversationId)
