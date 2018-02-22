@@ -126,7 +126,7 @@ namespace Signal_Windows.ViewModels
 
                         // Save the enrypted data somewhere
                         StorageFile tempFile = await ApplicationData.Current.LocalFolder.CreateFileAsync($"{file.Name}.encrypted",
-                            CreationCollisionOption.ReplaceExisting);
+                            CreationCollisionOption.GenerateUniqueName);
                         using (var stream = await tempFile.OpenStreamForWriteAsync())
                         {
                             encryptedAttachment.encryptedData.CopyTo(stream);
