@@ -24,12 +24,12 @@ namespace Signal_Windows
             Locator.MainPageInstance.AddOrUpdateConversation(conversation, updateMessage);
         }
 
-        public async Task HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
+        public void HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
         {
-            await Locator.MainPageInstance.HandleIdentitykeyChange(messages);
+            Locator.MainPageInstance.HandleIdentitykeyChange(messages);
         }
 
-        public async Task HandleMessage(SignalMessage message, SignalConversation conversation)
+        public void HandleMessage(SignalMessage message, SignalConversation conversation)
         {
             Locator.MainPageInstance.HandleMessage(message, conversation);
         }
@@ -49,9 +49,9 @@ namespace Signal_Windows
             // TODO
         }
 
-        public void HandleAttachmentStatusChanged(SignalAttachment sa, SignalAttachmentStatus status)
+        public void HandleAttachmentStatusChanged(SignalAttachment sa)
         {
-            //TODO
+            Locator.MainPageInstance.HandleAttachmentStatusChanged(sa);
         }
     }
 }
