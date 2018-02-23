@@ -935,6 +935,21 @@ namespace Signal_Windows.Storage
             }
         }
 
+        internal static void UpdateAttachmentStatus(SignalAttachment attachment)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var savedAttachment = ctx.Attachments
+                        .Where(a => a.Id == attachment.Id)
+                        .First();
+                    savedAttachment.Status = attachment.Status;
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
         #endregion Attachments
 
         #region Threads

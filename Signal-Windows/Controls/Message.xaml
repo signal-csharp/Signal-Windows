@@ -18,7 +18,7 @@
         <ItemsControl>
             <local:Attachment DataContext="{x:Bind Attachment, Mode=OneWay}" Visibility="{x:Bind HasAttachment, Mode=OneWay}"/>
             <TextBlock Name="MessageAuthor" FontWeight="Bold" />
-            <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="Black" />
+            <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="Black" HorizontalAlignment="Left" />
             <Grid Name="FooterPanel" MaxWidth="300">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
