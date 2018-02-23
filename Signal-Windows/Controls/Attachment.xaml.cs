@@ -7,6 +7,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Signal_Windows.Models;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -37,10 +38,16 @@ namespace Signal_Windows.Controls
             set { fileSize = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FileSize))); }
         }
 
+        private Uri imagePath;
+        public Uri ImagePath
+        {
+            get { return imagePath; }
+            set { imagePath = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ImagePath))); }
+        }
+
         public SignalAttachment Model
         {
             get { return DataContext as SignalAttachment; }
-            set { DataContext = value; }
         }
 
         public Attachment()
@@ -55,7 +62,22 @@ namespace Signal_Windows.Controls
             {
                 FileName = Model.FileName;
                 FileSize = Utils.BytesToString(Model.Size);
+                if (Model.Status == SignalAttachmentStatus.Finished)
+                {
+                    if (IMAGE_TYPES.Contains(Model.ContentType))
+                    {
+                        var path = ApplicationData.Current.LocalCacheFolder.Path + @"\Attachments\" + Model.Id + ".plain";
+                        ImagePath = new Uri(path);
+                    }
+                }
             }
         }
+
+        private static HashSet<string> IMAGE_TYPES = new HashSet<string>()
+        {
+            "image/jpeg",
+            "image/png",
+            "image/gif"
+        };
     }
 }
