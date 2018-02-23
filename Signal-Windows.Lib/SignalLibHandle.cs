@@ -480,6 +480,7 @@ namespace Signal_Windows.Lib
                         // this is the recommended way to call CreateDownload
                         // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
                         DownloadOperation download = downloader.CreateDownload(new Uri(RetrieveAttachmentUrl(attachmentPointer)), tmpDownload);
+                        attachment.FileName = "" + download.Guid;
                         SignalDBContext.UpdateAttachmentFileName(attachment);
                         Downloads.Add(download);
                         Task.Run(async () =>
@@ -505,6 +506,7 @@ namespace Signal_Windows.Lib
             Logger.LogInformation("Deleting tmpFile {0}", tmpDownload.Name);
             await tmpDownload.DeleteAsync();
             attachment.Status = SignalAttachmentStatus.Finished;
+            SignalDBContext.UpdateAttachmentStatus(attachment);
             DispatchAttachmentStatusChanged(download, attachment);
         }
 

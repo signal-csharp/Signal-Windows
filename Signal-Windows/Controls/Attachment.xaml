@@ -17,8 +17,17 @@
         <Ellipse Fill="#FF9B9B9B" Width="50" Height="50"/>
         <SymbolIcon Symbol="Page2"/>
         <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8,0,0,0">
-            <TextBlock Text="{x:Bind FileName, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"/>
-            <TextBlock Text="{x:Bind FileSize, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"/>
+            <StackPanel Name="ImageStackPanel" Visibility="Visible">
+                <Image>
+                    <Image.Source>
+                        <BitmapImage UriSource="{x:Bind ImagePath, Mode=TwoWay}"/>
+                    </Image.Source>
+                </Image>
+            </StackPanel>
+            <StackPanel Name="DefaultStackPanel" Visibility="Visible">
+                <TextBlock Text="{x:Bind FileName, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"/>
+                <TextBlock Text="{x:Bind FileSize, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </UserControl>
