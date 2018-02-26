@@ -355,7 +355,20 @@ namespace Signal_Windows.Lib
                 attachment.Status = SignalAttachmentStatus.Finished;
                 SignalDBContext.UpdateAttachmentLocked(attachment);
             }
-            OutgoingQueue.Add(message);
+
+            SignalConversation conversation = SignalDBContext.GetConversationByThreadId(message.ThreadId);
+            if (conversation != null)
+            {
+                await Task.Run(async () =>
+                {
+                    await SemaphoreSlim.WaitAsync(CancelSource.Token);
+                    conversation.LastMessage = message;
+                    conversation.LastActiveTimestamp = message.ComposedTimestamp;
+                    DispatchHandleMessage(message, conversation);
+                    OutgoingQueue.Add(message);
+                    SemaphoreSlim.Release();
+                });
+            }
         }
         #endregion
 

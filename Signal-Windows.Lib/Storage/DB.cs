@@ -1092,6 +1092,33 @@ namespace Signal_Windows.Storage
 
         #region Contacts
 
+        /// <summary>
+        /// Get a conversation by it's thread id.
+        /// </summary>
+        /// <param name="threadId">The conversation thread id</param>
+        /// <returns>A SignalConversation. This may return null if the Contact or Group requested was deleted.</returns>
+        public static SignalConversation GetConversationByThreadId(string threadId)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    SignalConversation conversation = null;
+                    conversation = ctx.Contacts
+                        .Where(c => c.ThreadId == threadId)
+                        .SingleOrDefault();
+                    if (conversation == null)
+                    {
+                        conversation = ctx.Groups
+                            .Where(g => g.ThreadId == threadId)
+                            .SingleOrDefault();
+                    }
+
+                    return conversation;
+                }
+            }
+        }
+
         public static List<SignalContact> GetAllContactsLocked()
         {
             lock (DBLock)
