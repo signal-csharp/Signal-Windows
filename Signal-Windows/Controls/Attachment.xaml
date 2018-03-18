@@ -9,14 +9,16 @@
     d:DesignHeight="200"
     d:DesignWidth="200">
 
-    <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8,0,0,0">
+    <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8">
         <Grid MaxWidth="300">
-            <Image Name="AttachmentImage" Stretch="Uniform">
+            <Image Name="AttachmentImage" Stretch="Uniform" Visibility="{x:Bind AttachmentDownloaded, Mode=OneWay}">
                 <Image.Source>
                     <BitmapImage UriSource="{x:Bind ImagePath, Mode=TwoWay}"/>
                 </Image.Source>
             </Image>
-            <SymbolIcon Name="AttachmentDownloadIcon" Symbol="Download" Tapped="AttachmentDownloadIcon_Tapped" />
+            <Button x:Name="AttachmentDownloadButton" Click="AttachmentDownloadButton_Click" HorizontalAlignment="Center" Width="50" Height="50" Visibility="{x:Bind local:Attachment.Negate(attachmentDownloaded), Mode=OneWay}">
+                <SymbolIcon Symbol="Download"/>
+            </Button>
         </Grid>
     </StackPanel>
 </UserControl>
