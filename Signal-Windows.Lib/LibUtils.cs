@@ -1,3 +1,6 @@
+using libsignalservice.push;
+using Microsoft.Toolkit.Uwp.Notifications;
+using Signal_Windows.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +10,7 @@ using libsignalservice.push;
 using libsignalservice;
 using Microsoft.Extensions.Logging;
 using Microsoft.Toolkit.Uwp.Notifications;
+using System.Linq;
 
 namespace Signal_Windows.Lib
 {
@@ -168,6 +172,26 @@ namespace Signal_Windows.Lib
                 }
             };
             return new ToastNotification(toastContent.GetXml());
+        }
+
+        public static string GetAttachmentExtension(SignalAttachment attachment)
+        {
+            string fileExtension = "plain";
+            string filename = GetAttachmentFilename(attachment);
+            if (!string.IsNullOrEmpty(filename))
+            {
+                string extension = filename.Split('.').LastOrDefault();
+                if (extension != null)
+                {
+                    fileExtension = extension;
+                }
+            }
+            return fileExtension;
+        }
+
+        public static string GetAttachmentFilename(SignalAttachment attachment)
+        {
+            return !string.IsNullOrEmpty(attachment.SentFileName) ? attachment.SentFileName : attachment.FileName;
         }
     }
 }

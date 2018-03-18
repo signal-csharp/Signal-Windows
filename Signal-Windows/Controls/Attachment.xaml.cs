@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using libsignalservice;
 using Microsoft.Extensions.Logging;
+using Signal_Windows.Lib;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Windows.Foundation;
@@ -54,7 +55,7 @@ namespace Signal_Windows.Controls
             DataContextChanged += Attachment_DataContextChanged;
         }
 
-        private void Attachment_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
+        private async void Attachment_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             if (Model != null)
             {
@@ -64,8 +65,17 @@ namespace Signal_Windows.Controls
                     AttachmentDownloadIcon.Visibility = Visibility.Collapsed;
                     if (IMAGE_TYPES.Contains(Model.ContentType))
                     {
-                        var path = ApplicationData.Current.LocalCacheFolder.Path + @"\Attachments\" + Model.Id + ".plain";
-                        ImagePath = new Uri(path);
+                        try
+                        {
+                            string fileExtension = LibUtils.GetAttachmentExtension(Model);
+                            // using ms-appdata is the only way to get the image properties
+                            StorageFile imageFile = await StorageFile.GetFileFromApplicationUriAsync(new Uri($@"ms-appdata:///LocalCache\Attachments\{Model.Id}.{fileExtension}"));
+                            var properties = await imageFile.Properties.GetImagePropertiesAsync();
+                            ImagePath = new Uri(imageFile.Path);
+                        }
+                        catch (FileNotFoundException)
+                        {
+                        }
                     }
                 }
                 else if (Model.Status == SignalAttachmentStatus.Default || Model.Status == SignalAttachmentStatus.Finished || Model.Status == SignalAttachmentStatus.Failed)
