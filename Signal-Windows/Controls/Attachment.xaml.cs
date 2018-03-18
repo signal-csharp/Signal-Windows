@@ -49,6 +49,13 @@ namespace Signal_Windows.Controls
             get { return DataContext as SignalAttachment; }
         }
 
+        private bool attachmentDownloaded;
+        public bool AttachmentDownloaded
+        {
+            get { return attachmentDownloaded; }
+            set { attachmentDownloaded = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AttachmentDownloaded))); }
+        }
+
         public Attachment()
         {
             this.InitializeComponent();
@@ -61,8 +68,7 @@ namespace Signal_Windows.Controls
             {
                 if (Model.Status == SignalAttachmentStatus.Finished)
                 {
-                    AttachmentImage.Visibility = Visibility.Visible;
-                    AttachmentDownloadIcon.Visibility = Visibility.Collapsed;
+                    AttachmentDownloaded = true;
                     if (IMAGE_TYPES.Contains(Model.ContentType))
                     {
                         try
@@ -80,15 +86,21 @@ namespace Signal_Windows.Controls
                 }
                 else if (Model.Status == SignalAttachmentStatus.Default || Model.Status == SignalAttachmentStatus.Finished || Model.Status == SignalAttachmentStatus.Failed)
                 {
-                    AttachmentImage.Visibility = Visibility.Collapsed;
-                    AttachmentDownloadIcon.Visibility = Visibility.Visible;
+                    AttachmentDownloaded = false;
                 }
             }
         }
 
-        private void AttachmentDownloadIcon_Tapped(object sender, TappedRoutedEventArgs e)
+        public static Visibility Negate(bool value)
         {
-            App.Handle.StartAttachmentDownload(Model);
+            if (value)
+            {
+                return Visibility.Collapsed;
+            }
+            else
+            {
+                return Visibility.Visible;
+            }
         }
 
         private static HashSet<string> IMAGE_TYPES = new HashSet<string>()
@@ -97,5 +109,10 @@ namespace Signal_Windows.Controls
             "image/png",
             "image/gif"
         };
+
+        private void AttachmentDownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            App.Handle.StartAttachmentDownload(Model);
+        }
     }
 }
