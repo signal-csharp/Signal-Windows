@@ -508,7 +508,8 @@ namespace Signal_Windows.Lib
             try
             {
                 SemaphoreSlim.Wait(CancelSource.Token);
-                StorageFile plaintextFile = await ApplicationData.Current.LocalCacheFolder.CreateFileAsync(@"Attachments\" + attachment.Id + ".plain", CreationCollisionOption.ReplaceExisting);
+                string fileExtension = LibUtils.GetAttachmentExtension(attachment);
+                StorageFile plaintextFile = await ApplicationData.Current.LocalCacheFolder.CreateFileAsync($@"Attachments\{attachment.Id}.{fileExtension}", CreationCollisionOption.ReplaceExisting);
                 using (var tmpFileStream = (await tmpDownload.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
                 using (var plaintextFileStream = (await plaintextFile.OpenAsync(FileAccessMode.ReadWrite)).AsStream())
                 {
