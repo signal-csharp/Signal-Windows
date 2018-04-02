@@ -178,9 +178,11 @@ namespace Signal_Windows.Lib
             IncomingMessagesTask?.Wait();
             OutgoingMessagesTask?.Wait();
             Instance = null;
-            Logger.LogTrace("Release() releasing (global and local)");
+            Logger.LogTrace("Release() releasing global)");
             LibUtils.Unlock();
+            Logger.LogTrace("Release() releasing local)");
             SemaphoreSlim.Release();
+            Logger.LogTrace("Release() released");
         }
 
         public void BackgroundRelease()

@@ -130,30 +130,38 @@ namespace Signal_Windows
 
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
-            string taskName = "SignalMessageBackgroundTask";
-            BackgroundExecutionManager.RemoveAccess();
-
-            var builder = new BackgroundTaskBuilder();
-            builder.Name = taskName;
-            builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
-            builder.IsNetworkRequested = true;
-            builder.SetTrigger(new TimeTrigger(15, false));
-            builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
-            var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
-            if (requestStatus != BackgroundAccessStatus.DeniedBySystemPolicy ||
-                requestStatus != BackgroundAccessStatus.DeniedByUser ||
-                requestStatus != BackgroundAccessStatus.Unspecified)
+            try
             {
-                backgroundTaskRegistration = builder.Register();
+                string taskName = "SignalMessageBackgroundTask";
+                BackgroundExecutionManager.RemoveAccess();
+
+                var builder = new BackgroundTaskBuilder();
+                builder.Name = taskName;
+                builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
+                builder.IsNetworkRequested = true;
+                builder.SetTrigger(new TimeTrigger(15, false));
+                builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
+                var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
+                if (requestStatus != BackgroundAccessStatus.DeniedBySystemPolicy ||
+                    requestStatus != BackgroundAccessStatus.DeniedByUser ||
+                    requestStatus != BackgroundAccessStatus.Unspecified)
+                {
+                    backgroundTaskRegistration = builder.Register();
+                }
+                else
+                {
+                    Logger.LogWarning($"Unable to register background task: {requestStatus}");
+                }
+
+                backgroundTaskRegistration.Completed += BackgroundTaskRegistration_Completed;
             }
-            else
+            catch(Exception ex)
             {
-                Logger.LogWarning($"Unable to register background task: {requestStatus}");
+                Logger.LogError("Cannot setup bg task: {0}\n{1}", ex.Message, ex.StackTrace);
             }
 
-            backgroundTaskRegistration.Completed += BackgroundTaskRegistration_Completed;
 
-            Logger.LogInformation("Launching ({0})", e.PreviousExecutionState);
+            Logger.LogInformation("Launching ({0}) ### 1", e.PreviousExecutionState);
             Logger.LogDebug(LocalCacheFolder.Path);
 
             bool createdMainWindow = await CreateMainWindow(null);
