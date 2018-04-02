@@ -20,40 +20,64 @@ namespace Signal_Windows.RC
     public sealed class SignalBackgroundTask : IBackgroundTask
     {
         private const string TaskName = "SignalMessageBackgroundTask";
-        private const string SemaphoreName = "Signal_Windows_Semaphore";
-
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalBackgroundTask>();
-
-        private BackgroundTaskDeferral deferral;
-
-        private Semaphore semaphore;
-        private DateTime taskStartTime;
-        private DateTime taskEndTime;
-        private SignalLibHandle handle;
-        private ToastNotifier toastNotifier;
+        private BackgroundTaskDeferral Deferral;
+        private DateTime TaskStartTime;
+        private DateTime TaskEndTime;
+        private SignalLibHandle Handle;
+        private ToastNotifier ToastNotifier;
 
         public async void Run(IBackgroundTaskInstance taskInstance)
         {
-            taskStartTime = DateTime.Now;
-            taskEndTime = taskStartTime + TimeSpan.FromSeconds(25);
-            taskInstance.Canceled += TaskInstance_Canceled;
-            deferral = taskInstance.GetDeferral();
-            SignalLogging.SetupLogging(false);
-            toastNotifier = ToastNotificationManager.CreateToastNotifier();
             Logger.LogInformation("Background task starting");
-            bool appRunning = IsAppRunning();
-            if (appRunning)
+            TaskStartTime = DateTime.Now;
+            TaskEndTime = TaskStartTime + TimeSpan.FromSeconds(25);
+            Deferral = taskInstance.GetDeferral();
+            SignalLogging.SetupLogging(false);
+            ToastNotifier = ToastNotificationManager.CreateToastNotifier();
+            taskInstance.Canceled += OnCanceled;
+            bool locked = LibUtils.Lock(5000);
+            Logger.LogTrace("Locking global finished, locked = {0}", locked);
+            if (!locked)
             {
                 Logger.LogWarning("App is running, background task shutting down");
-                deferral.Complete();
+                Deferral.Complete();
                 return;
             }
-            handle = new SignalLibHandle(true);
-            handle.SignalMessageEvent += Handle_SignalMessageEvent;
-            handle.BackgroundAcquire();
-            await CheckTimer();
-            Shutdown();
-            deferral.Complete();
+            try
+            {
+                Handle = new SignalLibHandle(true);
+                Handle.SignalMessageEvent += Handle_SignalMessageEvent;
+                Handle.BackgroundAcquire();
+                await CheckTimer();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Background task failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
+            finally
+            {
+                LibUtils.Unlock();
+                Deferral.Complete();
+            }
+        }
+
+        private void OnCanceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
+        {
+            Logger.LogWarning("Background task received cancel request");
+            try
+            {
+                Handle.BackgroundRelease();
+            }
+            catch(Exception e)
+            {
+                Logger.LogError("OnCanceled() failed : {0}\n{1}", e.Message, e.StackTrace);
+            }
+            finally
+            {
+                LibUtils.Unlock();
+                Logger.LogWarning("Background task cancel handler finished");
+            }
         }
 
         private async Task CheckTimer()
@@ -61,42 +85,12 @@ namespace Signal_Windows.RC
             Logger.LogInformation("Started listening for messages");
             while (true)
             {
-                if (DateTime.Now >= taskEndTime)
+                if (DateTime.Now >= TaskEndTime)
                 {
                     return;
                 }
                 await Task.Delay(TimeSpan.FromMilliseconds(250));
             }
-        }
-
-        private void TaskInstance_Canceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
-        {
-            Logger.LogError($"Background task cancelled: {reason}");
-            Shutdown();
-            deferral.Complete();
-        }
-
-        private bool IsAppRunning()
-        {
-            semaphore = null;
-            try
-            {
-                semaphore = Semaphore.OpenExisting(LibUtils.GlobalSemaphoreName);
-            }
-            catch (WaitHandleCannotBeOpenedException)
-            {
-                semaphore = new Semaphore(1, 1, LibUtils.GlobalSemaphoreName);
-            }
-
-            bool gotSignal = semaphore.WaitOne(TimeSpan.FromSeconds(5));
-            return !gotSignal;
-        }
-
-        private void Shutdown()
-        {
-            Logger.LogInformation("Background task shutting down");
-            handle.BackgroundRelease();
-            semaphore.Release();
         }
 
         private void Handle_SignalMessageEvent(object sender, SignalMessageEventArgs e)
@@ -127,7 +121,7 @@ namespace Signal_Windows.RC
                 toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(expiresIn));
             }
             toastNotification.Tag = notificationId;
-            toastNotifier.Show(toastNotification);
+            ToastNotifier.Show(toastNotification);
         }
 
         private IList<AdaptiveText> GetNotificationText(string authorName, string content)

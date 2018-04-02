@@ -1,4 +1,6 @@
-﻿using libsignalservice.push;
+﻿using libsignalservice;
+using libsignalservice.push;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,6 +60,7 @@ namespace Signal_Windows.Lib
 
     public class LibUtils
     {
+        private static readonly ILogger Logger = LibsignalLogging.CreateLogger<LibUtils>();
         public const string GlobalSemaphoreName = "SignalWindowsPrivateMessenger_Mutex";
         public static string URL = "https://textsecure-service.whispersystems.org";
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
@@ -65,17 +68,66 @@ namespace Signal_Windows.Lib
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
         public static bool WindowActive = false;
-        public static Semaphore GlobalSemaphore;
+        public static Mutex GlobalLock;
+        private static SynchronizationContext GlobalLockContext;
 
         internal static void Lock()
         {
-            GlobalSemaphore = new Semaphore(1, 1, GlobalSemaphoreName, out bool b);
-            GlobalSemaphore.WaitOne();
+            Logger.LogTrace("System lock locking, sync context = {0}", SynchronizationContext.Current);
+            GlobalLock = new Mutex(false, GlobalSemaphoreName, out bool createdNew);
+            GlobalLockContext = SynchronizationContext.Current;
+            try
+            {
+                GlobalLock.WaitOne();
+            }
+            catch (AbandonedMutexException e)
+            {
+                Logger.LogWarning("System lock was abandoned! {0}", e.Message);
+            }
+            Logger.LogTrace("System lock locked");
         }
 
-        internal static void Unlock()
+        public static bool Lock(int timeout)
         {
-            GlobalSemaphore.Release();
+            GlobalLock = new Mutex(false, GlobalSemaphoreName, out bool createdNew);
+            GlobalLockContext = SynchronizationContext.Current;
+            Logger.LogTrace("System lock locking with timeout, sync context = {0}", SynchronizationContext.Current);
+            bool success = false;
+            try
+            {
+                success = GlobalLock.WaitOne(timeout);
+            }
+            catch(AbandonedMutexException e)
+            {
+                Logger.LogWarning("System lock was abandoned! {0}", e.Message);
+                success = true;
+            }
+            Logger.LogTrace("System lock locked = {}", success);
+            return success;
+        }
+
+        public static void Unlock()
+        {
+            Logger.LogTrace("System lock releasing, sync context = {0}", SynchronizationContext.Current);
+            try
+            {
+                if(GlobalLockContext != null)
+                {
+                    GlobalLockContext.Post((a) =>
+                    {
+                        GlobalLock.ReleaseMutex();
+                    }, null);
+                }
+                else
+                {
+                    GlobalLock.ReleaseMutex();
+                }
+            }
+            catch(Exception e)
+            {
+                Logger.LogWarning("System lock failed to unlock! {0}\n{1}", e.Message, e.StackTrace);
+            }
+            Logger.LogTrace("System lock released");
         }
     }
 }
