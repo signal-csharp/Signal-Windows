@@ -142,6 +142,7 @@ namespace Signal_Windows.ViewModels
             {
                 messageTextBox.Text = string.Empty;
             }
+            messageTextBox.Focus(FocusState.Programmatic);
         }
 
         public void SelectConversation(string conversationId)
