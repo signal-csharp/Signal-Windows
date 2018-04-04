@@ -137,7 +137,7 @@ namespace Signal_Windows.ViewModels
 
         internal async Task SendMessageButton_Click(TextBox messageTextBox)
         {
-            bool sendMessageResult = await SendMessage(messageTextBox.Text);
+            bool sendMessageResult = await SendMessage(messageTextBox.Text.Replace("\r", "\r\n"));
             if (sendMessageResult)
             {
                 messageTextBox.Text = string.Empty;
