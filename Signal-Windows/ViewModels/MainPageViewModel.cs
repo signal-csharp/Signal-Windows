@@ -1,5 +1,6 @@
 using GalaSoft.MvvmLight;
 using libsignalservice;
+using libsignalservice.messages;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
 using Microsoft.Extensions.Logging;
@@ -13,9 +14,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
+using Windows.Networking.BackgroundTransfer;
+using Windows.Storage;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Notifications;
@@ -88,7 +92,7 @@ namespace Signal_Windows.ViewModels
             Debug.WriteLine("starting sendmessage");
             try
             {
-                if (messageText != string.Empty)
+                if (!string.IsNullOrEmpty(messageText))
                 {
                     var now = Util.CurrentTimeMillis();
                     SignalMessage message = new SignalMessage()
@@ -102,8 +106,7 @@ namespace Signal_Windows.ViewModels
                         Read = true,
                         Type = SignalMessageType.Normal
                     };
-                    await SignalLibHandle.Instance.SendMessage(message, SelectedThread);
-                    Debug.WriteLine("keydown lock released");
+                    await App.Handle.SendMessage(message, SelectedThread);
                 }
                 return true;
             }
@@ -281,6 +284,11 @@ namespace Signal_Windows.ViewModels
             {
                 SelectConversation(RequestedConversationId);
             }
+        }
+
+        public void HandleAttachmentStatusChanged(SignalAttachment sa)
+        {
+            Logger.LogInformation("MPVM received attachment status update! {0}", sa.Status);
         }
         #endregion
     }

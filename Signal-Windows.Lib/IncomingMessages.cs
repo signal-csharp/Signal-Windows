@@ -431,13 +431,18 @@ namespace Signal_Windows.Lib
                         Message = message,
                         Status = (uint)SignalAttachmentStatus.Default,
                         SentFileName = pointer.FileName,
-                        ContentType = "",
+                        ContentType = receivedAttachment.getContentType(),
                         Key = pointer.Key,
                         Relay = pointer.Relay,
-                        StorageId = pointer.Id
+                        StorageId = pointer.Id,
+                        Size = (long)pointer.Size,
+                        Digest = pointer.Digest
                     };
                     attachments.Add(sa);
                 }
+
+                // Make sure to update attachments count
+                message.AttachmentsCount = (uint)attachments.Count;
             }
             SignalLibHandle.Instance.SaveAndDispatchSignalMessage(message, conversation);
         }

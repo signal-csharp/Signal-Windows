@@ -907,13 +907,44 @@ namespace Signal_Windows.Storage
 
         #region Attachments
 
-        public static void UpdateAttachmentLocked(SignalAttachment sa)
+        public static SignalAttachment GetAttachmentByGuidNameLocked(string guid)
         {
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    ctx.Attachments.Update(sa);
+                    return ctx.Attachments
+                        .Where(a => a.Guid == guid)
+                        .FirstOrDefault();
+                }
+            }
+        }
+
+        internal static void UpdateAttachmentGuid(SignalAttachment attachment)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var savedAttachment = ctx.Attachments
+                        .Where(a => a.Id == attachment.Id)
+                        .First();
+                    savedAttachment.Guid = attachment.Guid;
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        internal static void UpdateAttachmentStatus(SignalAttachment attachment)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var savedAttachment = ctx.Attachments
+                        .Where(a => a.Id == attachment.Id)
+                        .First();
+                    savedAttachment.Status = attachment.Status;
                     ctx.SaveChanges();
                 }
             }

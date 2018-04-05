@@ -1,0 +1,24 @@
+﻿<UserControl
+    x:Class="Signal_Windows.Controls.Attachment"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Signal_Windows.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="200"
+    d:DesignWidth="200">
+
+    <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8">
+        <Grid MaxWidth="300">
+            <Image Name="AttachmentImage" Stretch="Uniform" Visibility="{x:Bind AttachmentDownloaded, Mode=OneWay}">
+                <Image.Source>
+                    <BitmapImage UriSource="{x:Bind ImagePath, Mode=TwoWay}"/>
+                </Image.Source>
+            </Image>
+            <Button x:Name="AttachmentDownloadButton" Click="AttachmentDownloadButton_Click" HorizontalAlignment="Center" Width="50" Height="50" Visibility="{x:Bind local:Attachment.Negate(attachmentDownloaded), Mode=OneWay}">
+                <SymbolIcon Symbol="Download"/>
+            </Button>
+        </Grid>
+    </StackPanel>
+</UserControl>

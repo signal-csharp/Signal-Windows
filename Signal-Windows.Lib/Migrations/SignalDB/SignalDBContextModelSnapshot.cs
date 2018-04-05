@@ -14,7 +14,7 @@ namespace Signal_Windows.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.2");
+                .HasAnnotation("ProductVersion", "1.1.4");
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
                 {
@@ -41,7 +41,11 @@ namespace Signal_Windows.Migrations
 
                     b.Property<string>("ContentType");
 
+                    b.Property<byte[]>("Digest");
+
                     b.Property<string>("FileName");
+
+                    b.Property<string>("Guid");
 
                     b.Property<byte[]>("Key");
 
@@ -50,6 +54,8 @@ namespace Signal_Windows.Migrations
                     b.Property<string>("Relay");
 
                     b.Property<string>("SentFileName");
+
+                    b.Property<long>("Size");
 
                     b.Property<int>("Status");
 

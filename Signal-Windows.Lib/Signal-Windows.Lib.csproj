@@ -126,6 +126,14 @@
     <Compile Include="Migrations\SignalDB\20170901124533_m3.Designer.cs">
       <DependentUpon>20170901124533_m3.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\SignalDB\20180203062229_m4.cs" />
+    <Compile Include="Migrations\SignalDB\20180203062229_m4.designer.cs">
+      <DependentUpon>20180203062229_m4.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\SignalDB\20180211071131_m5.cs" />
+    <Compile Include="Migrations\SignalDB\20180211071131_m5.designer.cs">
+      <DependentUpon>20180211071131_m5.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\PhoneContact.cs" />
     <Compile Include="Models\SignalAttachment.cs" />
@@ -151,7 +159,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="libsignal-service-dotnet">
-      <Version>2.5.15.1</Version>
+      <Version>2.5.15.2</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore">
       <Version>1.1.4</Version>
@@ -168,11 +176,13 @@
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.0.1</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
+      <Version>2.1.1</Version>
+    </PackageReference>
     <PackageReference Include="System.ValueTuple">
       <Version>4.4.0</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

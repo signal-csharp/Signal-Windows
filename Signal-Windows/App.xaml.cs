@@ -22,6 +22,7 @@ using Windows.UI.ViewManagement;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Windows.ApplicationModel.Background;
+using Windows.Networking.BackgroundTransfer;
 
 namespace Signal_Windows
 {
@@ -39,7 +40,7 @@ namespace Signal_Windows
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
-        public static SignalLibHandle Handle = new SignalLibHandle(false);
+        public static ISignalLibHandle Handle = SignalHelper.CreateSignalLibHandle(false);
         private Dictionary<int, SignalWindowsFrontend> Views = new Dictionary<int, SignalWindowsFrontend>();
         public static int MainViewId;
         private IBackgroundTaskRegistration backgroundTaskRegistration;
@@ -131,7 +132,13 @@ namespace Signal_Windows
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
             string taskName = "SignalMessageBackgroundTask";
-            BackgroundExecutionManager.RemoveAccess();
+            foreach (var task in BackgroundTaskRegistration.AllTasks)
+            {
+                if (task.Value.Name == taskName)
+                {
+                    task.Value.Unregister(false);
+                }
+            }
 
             var builder = new BackgroundTaskBuilder();
             builder.Name = taskName;
