@@ -279,8 +279,13 @@ namespace Signal_Windows.Lib
                     Frames[dispatcher].HandleMessage(message, conversation);
                 }));
             }
-            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message));
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalMessageType.NormalMessage));
             Task.WaitAll(operations.ToArray());
+        }
+
+        internal void DispatchPipeEmptyMessage()
+        {
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(null, Events.SignalMessageType.PipeEmptyMessage));
         }
 
         internal void HandleMessageSentLocked(SignalMessage msg)
