@@ -24,7 +24,7 @@ namespace Signal_Windows.RC
         private BackgroundTaskDeferral Deferral;
         private SignalLibHandle Handle;
         private ToastNotifier ToastNotifier;
-        private AutoResetEvent e = new AutoResetEvent(false);
+        private AutoResetEvent ResetEvent = new AutoResetEvent(false);
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
@@ -47,7 +47,7 @@ namespace Signal_Windows.RC
                 Handle = new SignalLibHandle(true);
                 Handle.SignalMessageEvent += Handle_SignalMessageEvent;
                 Handle.BackgroundAcquire();
-                e.WaitOne();
+                ResetEvent.WaitOne();
             }
             catch (Exception e)
             {
@@ -65,38 +65,46 @@ namespace Signal_Windows.RC
         private void OnCanceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
         {
             Logger.LogInformation("Background task received cancel request");
-            e.Set();
+            ResetEvent.Set();
         }
 
         private void Handle_SignalMessageEvent(object sender, SignalMessageEventArgs e)
         {
-            string notificationId = e.Message.ThreadId;
-            ToastBindingGeneric toastBinding = new ToastBindingGeneric();
-
-            var notificationText = GetNotificationText(e.Message.Author.ThreadDisplayName, e.Message.Content.Content);
-            foreach (var item in notificationText)
+            if (e.MessageType == Lib.Events.SignalMessageType.NormalMessage)
             {
-                toastBinding.Children.Add(item);
-            }
+                string notificationId = e.Message.ThreadId;
+                ToastBindingGeneric toastBinding = new ToastBindingGeneric();
 
-            ToastContent toastContent = new ToastContent()
-            {
-                Launch = notificationId,
-                Visual = new ToastVisual()
+                var notificationText = GetNotificationText(e.Message.Author.ThreadDisplayName, e.Message.Content.Content);
+                foreach (var item in notificationText)
                 {
-                    BindingGeneric = toastBinding
-                },
-                DisplayTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(e.Message.ReceivedTimestamp)
-            };
+                    toastBinding.Children.Add(item);
+                }
 
-            ToastNotification toastNotification = new ToastNotification(toastContent.GetXml());
-            uint expiresIn = e.Message.ExpiresAt;
-            if (expiresIn > 0)
-            {
-                toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(expiresIn));
+                ToastContent toastContent = new ToastContent()
+                {
+                    Launch = notificationId,
+                    Visual = new ToastVisual()
+                    {
+                        BindingGeneric = toastBinding
+                    },
+                    DisplayTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(e.Message.ReceivedTimestamp)
+                };
+
+                ToastNotification toastNotification = new ToastNotification(toastContent.GetXml());
+                uint expiresIn = e.Message.ExpiresAt;
+                if (expiresIn > 0)
+                {
+                    toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(expiresIn));
+                }
+                toastNotification.Tag = notificationId;
+                ToastNotifier.Show(toastNotification);
             }
-            toastNotification.Tag = notificationId;
-            ToastNotifier.Show(toastNotification);
+            else if (e.MessageType == Lib.Events.SignalMessageType.PipeEmptyMessage)
+            {
+                Logger.LogInformation("Background task has drained the pipe");
+                ResetEvent.Set();
+            }
         }
 
         private IList<AdaptiveText> GetNotificationText(string authorName, string content)

@@ -81,6 +81,10 @@ namespace Signal_Windows.Lib
                         Logger.LogWarning("OnMessage() could not handle unknown message type {0}", envelope.getType());
                     }
                 }
+                else if (message is SignalServiceMessagePipeEmptyMessage)
+                {
+                    Handle.DispatchPipeEmptyMessage();
+                }
             }
             finally
             {
