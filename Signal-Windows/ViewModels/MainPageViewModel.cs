@@ -273,12 +273,14 @@ namespace Signal_Windows.ViewModels
             }
             if (SelectedThread != null)
             {
+                Logger.LogDebug("SelectedThread is != null, refreshing");
                 SelectedThread = ConversationsDictionary[SelectedThread.ThreadId];
-                View.Thread.Collection.Conversation = SelectedThread;
+                SelectConversation(SelectedThread.ThreadId);
             }
 
             if (RequestedConversationId != null && RequestedConversationId != "")
             {
+                Logger.LogDebug("RequestedConversationId is != null, refreshing");
                 SelectConversation(RequestedConversationId);
             }
         }
