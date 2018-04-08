@@ -22,16 +22,14 @@ namespace Signal_Windows.RC
         private const string TaskName = "SignalMessageBackgroundTask";
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalBackgroundTask>();
         private BackgroundTaskDeferral Deferral;
-        private DateTime TaskStartTime;
-        private DateTime TaskEndTime;
         private SignalLibHandle Handle;
         private ToastNotifier ToastNotifier;
+        private AutoResetEvent e = new AutoResetEvent(false);
 
-        public async void Run(IBackgroundTaskInstance taskInstance)
+        public void Run(IBackgroundTaskInstance taskInstance)
         {
+            
             Logger.LogInformation("Background task starting");
-            TaskStartTime = DateTime.Now;
-            TaskEndTime = TaskStartTime + TimeSpan.FromSeconds(25);
             Deferral = taskInstance.GetDeferral();
             SignalLogging.SetupLogging(false);
             ToastNotifier = ToastNotificationManager.CreateToastNotifier();
@@ -49,7 +47,7 @@ namespace Signal_Windows.RC
                 Handle = new SignalLibHandle(true);
                 Handle.SignalMessageEvent += Handle_SignalMessageEvent;
                 Handle.BackgroundAcquire();
-                await CheckTimer();
+                e.WaitOne();
             }
             catch (Exception e)
             {
@@ -57,6 +55,8 @@ namespace Signal_Windows.RC
             }
             finally
             {
+                Logger.LogInformation("Background task shutting down");
+                Handle.BackgroundRelease();
                 LibUtils.Unlock();
                 Deferral.Complete();
             }
@@ -64,33 +64,8 @@ namespace Signal_Windows.RC
 
         private void OnCanceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
         {
-            Logger.LogWarning("Background task received cancel request");
-            try
-            {
-                Handle.BackgroundRelease();
-            }
-            catch(Exception e)
-            {
-                Logger.LogError("OnCanceled() failed : {0}\n{1}", e.Message, e.StackTrace);
-            }
-            finally
-            {
-                LibUtils.Unlock();
-                Logger.LogWarning("Background task cancel handler finished");
-            }
-        }
-
-        private async Task CheckTimer()
-        {
-            Logger.LogInformation("Started listening for messages");
-            while (true)
-            {
-                if (DateTime.Now >= TaskEndTime)
-                {
-                    return;
-                }
-                await Task.Delay(TimeSpan.FromMilliseconds(250));
-            }
+            Logger.LogInformation("Background task received cancel request");
+            e.Set();
         }
 
         private void Handle_SignalMessageEvent(object sender, SignalMessageEventArgs e)
