@@ -25,6 +25,7 @@ namespace Signal_Windows.RC
         private SignalLibHandle Handle;
         private ToastNotifier ToastNotifier;
         private AutoResetEvent ResetEvent = new AutoResetEvent(false);
+        private EventWaitHandle GlobalResetEvent;
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
@@ -42,6 +43,13 @@ namespace Signal_Windows.RC
                 Deferral.Complete();
                 return;
             }
+            GlobalResetEvent = LibUtils.OpenResetEventUnset();
+            Task.Run(() =>
+            {
+                GlobalResetEvent.WaitOne();
+                Logger.LogInformation("Background task received app startup signal");
+                ResetEvent.Set();
+            });
             try
             {
                 Handle = new SignalLibHandle(true);
