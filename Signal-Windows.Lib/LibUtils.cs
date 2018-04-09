@@ -61,7 +61,8 @@ namespace Signal_Windows.Lib
     public class LibUtils
     {
         private static readonly ILogger Logger = LibsignalLogging.CreateLogger<LibUtils>();
-        public const string GlobalSemaphoreName = "SignalWindowsPrivateMessenger_Mutex";
+        public const string GlobalMutexName = "SignalWindowsPrivateMessenger_Mutex";
+        public const string GlobalEventWaitHandleName = "SignalWindowsPrivateMessenger_EventWaitHandle";
         public static string URL = "https://textsecure-service.whispersystems.org";
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
         public static bool MainPageActive = false;
@@ -74,7 +75,7 @@ namespace Signal_Windows.Lib
         internal static void Lock()
         {
             Logger.LogTrace("System lock locking, sync context = {0}", SynchronizationContext.Current);
-            GlobalLock = new Mutex(false, GlobalSemaphoreName, out bool createdNew);
+            GlobalLock = new Mutex(false, GlobalMutexName, out bool createdNew);
             GlobalLockContext = SynchronizationContext.Current;
             try
             {
@@ -89,7 +90,7 @@ namespace Signal_Windows.Lib
 
         public static bool Lock(int timeout)
         {
-            GlobalLock = new Mutex(false, GlobalSemaphoreName, out bool createdNew);
+            GlobalLock = new Mutex(false, GlobalMutexName, out bool createdNew);
             GlobalLockContext = SynchronizationContext.Current;
             Logger.LogTrace("System lock locking with timeout, sync context = {0}", SynchronizationContext.Current);
             bool success = false;
@@ -128,6 +129,24 @@ namespace Signal_Windows.Lib
                 Logger.LogWarning("System lock failed to unlock! {0}\n{1}", e.Message, e.StackTrace);
             }
             Logger.LogTrace("System lock released");
+        }
+
+        public static EventWaitHandle OpenResetEventSet()
+        {
+            Logger.LogTrace("OpenResetEventSet()");
+            var handle = new EventWaitHandle(true, EventResetMode.ManualReset, GlobalEventWaitHandleName, out bool createdNew);
+            if(!createdNew)
+            {
+                Logger.LogTrace("OpenResetEventSet() setting old event");
+                handle.Set();
+            }
+            return handle;
+        }
+
+        public static EventWaitHandle OpenResetEventUnset()
+        {
+            Logger.LogTrace("OpenResetEventUnset()");
+            return new EventWaitHandle(false, EventResetMode.ManualReset, GlobalEventWaitHandleName, out bool createdNew);
         }
     }
 }

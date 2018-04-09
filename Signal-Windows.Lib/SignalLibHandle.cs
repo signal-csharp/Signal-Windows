@@ -44,6 +44,7 @@ namespace Signal_Windows.Lib
         private SignalServiceMessageSender MessageSender;
         private SignalServiceMessageReceiver MessageReceiver;
         public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
+        private EventWaitHandle GlobalResetEvent;
 
         public event EventHandler<SignalMessageEventArgs> SignalMessageEvent;
 
@@ -99,7 +100,9 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("Acquire() locking");
             CancelSource = new CancellationTokenSource();
             SemaphoreSlim.Wait(CancelSource.Token);
+            GlobalResetEvent = LibUtils.OpenResetEventSet();
             LibUtils.Lock();
+            GlobalResetEvent.Reset();
             var getConversationsTask = Task.Run(() =>
             {
                 return GetConversations(); // we want to display the conversations asap!
@@ -146,7 +149,9 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("Reacquire() locking");
             CancelSource = new CancellationTokenSource();
             SemaphoreSlim.Wait(CancelSource.Token);
+            GlobalResetEvent = LibUtils.OpenResetEventSet();
             LibUtils.Lock();
+            GlobalResetEvent.Reset();
             LibsignalDBContext.ClearSessionCache();
             Instance = this;
             await Task.Run(() =>

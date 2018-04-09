@@ -161,7 +161,7 @@ namespace Signal_Windows
             }
 
 
-            Logger.LogInformation("Launching ({0}) ### 1", e.PreviousExecutionState);
+            Logger.LogInformation("Launching (PreviousExecutionState={0})", e.PreviousExecutionState);
             Logger.LogDebug(LocalCacheFolder.Path);
 
             bool createdMainWindow = await CreateMainWindow(null);
