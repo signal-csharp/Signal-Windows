@@ -40,6 +40,7 @@ namespace Signal_Windows.Lib
         private Dictionary<CoreDispatcher, ISignalFrontend> Frames = new Dictionary<CoreDispatcher, ISignalFrontend>();
         private Task IncomingMessagesTask;
         private Task OutgoingMessagesTask;
+        internal OutgoingMessages OutgoingMessages;
         private SignalServiceMessagePipe Pipe;
         private SignalServiceMessageSender MessageSender;
         private SignalServiceMessageReceiver MessageReceiver;
@@ -381,7 +382,8 @@ namespace Signal_Windows.Lib
             Pipe = MessageReceiver.createMessagePipe();
             MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceUrls, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
             IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, this).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
-            OutgoingMessagesTask = Task.Factory.StartNew(() => new OutgoingMessages(CancelSource.Token, MessageSender, this).HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
+            OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
+            OutgoingMessagesTask = Task.Factory.StartNew(() => OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
         }
         #endregion
     }

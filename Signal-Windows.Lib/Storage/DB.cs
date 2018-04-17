@@ -958,9 +958,10 @@ namespace Signal_Windows.Storage
 
         #region Groups
 
-        public static SignalGroup GetOrCreateGroupLocked(string groupId, long timestamp)
+        public static SignalGroup GetOrCreateGroupLocked(string groupId, long timestamp, bool notify = true)
         {
             SignalGroup dbgroup;
+            bool createdNew = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -984,8 +985,13 @@ namespace Signal_Windows.Storage
                         };
                         ctx.Add(dbgroup);
                         ctx.SaveChanges();
+                        createdNew = true;
                     }
                 }
+            }
+            if (createdNew && notify)
+            {
+                SignalLibHandle.Instance.DispatchAddOrUpdateConversation(dbgroup, null);
             }
             return dbgroup;
         }
@@ -1087,9 +1093,10 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static SignalContact GetOrCreateContactLocked(string username, long timestamp)
+        public static SignalContact GetOrCreateContactLocked(string username, long timestamp, bool notify = true)
         {
             SignalContact contact;
+            bool createdNew = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -1109,8 +1116,13 @@ namespace Signal_Windows.Storage
                         };
                         ctx.Contacts.Add(contact);
                         ctx.SaveChanges();
+                        createdNew = true;
                     }
                 }
+            }
+            if (createdNew && notify)
+            {
+                SignalLibHandle.Instance.DispatchAddOrUpdateConversation(contact, null);
             }
             return contact;
         }
