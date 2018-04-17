@@ -32,6 +32,14 @@ namespace Signal_Windows.Lib
             Handle = handle;
         }
 
+        public void SendMessage(List<SignalServiceAddress> recipients, SignalServiceDataMessage message)
+        {
+            lock (this)
+            {
+                MessageSender.sendMessage(recipients, message);
+            }
+        }
+
         public void HandleOutgoingMessages()
         {
             Logger.LogDebug("HandleOutgoingMessages()");
@@ -74,7 +82,7 @@ namespace Signal_Windows.Lib
                         };
                         if (!Token.IsCancellationRequested)
                         {
-                            MessageSender.sendMessage(recipients, message);
+                            SendMessage(recipients, message);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }

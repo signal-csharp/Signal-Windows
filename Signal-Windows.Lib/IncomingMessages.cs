@@ -377,7 +377,9 @@ namespace Signal_Windows.Lib
                         Group = group,
                         Timestamp = Util.CurrentTimeMillis()
                     };
-                    //MessageSender.sendMessage(envelope.getSourceAddress(), requestInfoMessage); TODO
+                    var list = new List<SignalServiceAddress>();
+                    list.Add(new SignalServiceAddress(envelope.getSource()));
+                    SignalLibHandle.Instance.OutgoingMessages.SendMessage(list, requestInfoMessage);
                 }
                 composedTimestamp = envelope.getTimestamp();
             }
