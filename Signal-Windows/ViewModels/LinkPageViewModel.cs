@@ -113,7 +113,6 @@ namespace Signal_Windows.ViewModels
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         UIEnabled = false;
-                        App.Store = store;
                         App.Handle.Store = store;
                     }).AsTask().Wait();
 
@@ -124,7 +123,6 @@ namespace Signal_Windows.ViewModels
                     store = LibsignalDBContext.GetSignalStore();
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
                         App.Handle.Store = store;
                         View.Finish(true);
                     }).AsTask().Wait();

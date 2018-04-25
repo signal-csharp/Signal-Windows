@@ -45,7 +45,6 @@ namespace Signal_Windows.ViewModels
                     LibsignalDBContext.SaveOrUpdateSignalStore(store);
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
                         App.Handle.Store = store;
                     }).AsTask().Wait();
 
@@ -57,7 +56,7 @@ namespace Signal_Windows.ViewModels
                     store = LibsignalDBContext.GetSignalStore();
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        App.Store = store;
+                        App.Handle.Store = store;
                     }).AsTask().Wait();
                 });
                 View.Frame.Navigate(typeof(MainPage));
