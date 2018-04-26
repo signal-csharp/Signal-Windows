@@ -289,16 +289,6 @@ namespace Signal_Windows.Lib
         {
             MessageReceiver.retrieveAttachment(pointer, downloadStream, tempStream, 0);
         }
-
-        public string RetrieveAttachmentUrl(SignalServiceAttachmentPointer pointer)
-        {
-            return MessageReceiver.RetrieveAttachmentDownloadUrl(pointer);
-        }
-
-        public void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream tempStream, Stream downloadStream)
-        {
-            MessageReceiver.DecryptAttachment(pointer, tempStream, downloadStream);
-        }
         #endregion
 
         #region attachment api
@@ -547,6 +537,16 @@ namespace Signal_Windows.Lib
                 }
                 SemaphoreSlim.Release();
             }
+        }
+
+        private string RetrieveAttachmentUrl(SignalServiceAttachmentPointer pointer)
+        {
+            return MessageReceiver.RetrieveAttachmentDownloadUrl(pointer);
+        }
+
+        private void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream tempStream, Stream downloadStream)
+        {
+            MessageReceiver.DecryptAttachment(pointer, tempStream, downloadStream);
         }
 
         private async Task RecoverDownloads()
