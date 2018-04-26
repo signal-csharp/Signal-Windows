@@ -113,7 +113,7 @@ namespace Signal_Windows
                         }
                         else
                         {
-                            await CreateSecondaryWindow(switcher, toastArgs.Argument);
+                            await CreateSecondaryWindowOrShowMain(switcher, toastArgs.Argument);
                         }
                     }
                     else
@@ -177,7 +177,7 @@ namespace Signal_Windows
                 int currentId = e.CurrentlyShownApplicationViewId;
                 if (!switcher.IsViewPresentedOnActivationVirtualDesktop(currentId))
                 {
-                    await CreateSecondaryWindow(e.ViewSwitcher, e.Arguments);
+                    await CreateSecondaryWindowOrShowMain(e.ViewSwitcher, e.Arguments);
                 }
                 else
                 {
@@ -186,7 +186,7 @@ namespace Signal_Windows
             }
         }
 
-        private async Task CreateSecondaryWindow(ActivationViewSwitcher switcher, string conversationId)
+        private async Task CreateSecondaryWindowOrShowMain(ActivationViewSwitcher switcher, string conversationId)
         {
             Logger.LogInformation("CreateSecondaryWindow()");
             CoreApplicationView newView = CoreApplication.CreateNewView();
@@ -200,16 +200,29 @@ namespace Signal_Windows
                 var currView = ApplicationView.GetForCurrentView();
                 currView.Consolidated += CurrView_Consolidated;
                 newViewId = currView.Id;
-                await switcher.ShowAsStandaloneAsync(newViewId);
+                //await switcher.ShowAsStandaloneAsync(newViewId);
                 ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
                 return new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);
             });
-            Views.Add(newViewId, frontend);
-            await newView.Dispatcher.RunTaskAsync(() =>
+            bool success = await newView.Dispatcher.RunTaskAsync(async () =>
             {
-                Handle.AddFrontend(frontend.Dispatcher, frontend);
+                //AddFrontend blocks for the handle lock, but the new window is not yet registered, so nothing will be invoked
+                return Handle.AddFrontend(frontend.Dispatcher, frontend);
             });
-            Logger.LogInformation("OnLaunched added view {0}", newViewId);
+            if (success)
+            {
+                Views.Add(newViewId, frontend);
+                await newView.Dispatcher.RunTaskAsync(async () =>
+                {
+                    await switcher.ShowAsStandaloneAsync(newViewId);
+                });
+                Logger.LogInformation("CreateSecondaryWindow() added view {0}", newViewId);
+            }
+            else
+            {
+                Logger.LogInformation("CreateSecondaryWindow() showing MainView {0}", MainViewId);
+                await switcher.ShowAsStandaloneAsync(MainViewId);
+            }
         }
 
         private async Task<bool> CreateMainWindow(string conversationId)
@@ -227,7 +240,7 @@ namespace Signal_Windows
 
                 if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
                 {
-                    var sb = Windows.UI.ViewManagement.StatusBar.GetForCurrentView();
+                    var sb = StatusBar.GetForCurrentView();
                     sb.BackgroundColor = Windows.UI.Color.FromArgb(1, 0x20, 0x90, 0xEA);
                     sb.BackgroundOpacity = 1;
                     sb.ForegroundColor = Windows.UI.Colors.White;
@@ -237,16 +250,23 @@ namespace Signal_Windows
                 {
                     ApplicationViewSwitcher.DisableShowingMainViewOnActivation();
                     ApplicationViewSwitcher.DisableSystemViewActivationPolicy();
-                    rootFrame.Navigate(typeof(MainPage), conversationId);
-                    Window.Current.Activate();
                     TileUpdateManager.CreateTileUpdaterForApplication().Clear();
                     // We need to await here so that any exception that Acquire throws actually gets caught
-                    await Handle.Acquire(frontend.Dispatcher, frontend);
+                    var hasStoreRecord = await Handle.Acquire(frontend.Dispatcher, frontend);
+                    if (hasStoreRecord)
+                    {
+                        rootFrame.Navigate(typeof(MainPage), conversationId);
+                    }
+                    else
+                    {
+                        rootFrame.Navigate(typeof(StartPage));
+                    }
+                    Window.Current.Activate();
                 }
                 catch (Exception ex)
                 {
                     var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
-                    Logger.LogError("OnLaunchedOrActivated() could not load signal handle: {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
+                    Logger.LogError("OnLaunchedOrActivated() could not load signal handle: {0}\n{1}", ex.Message, ex.StackTrace);
                     rootFrame.Navigate(typeof(StartPage));
                 }
                 return true;
