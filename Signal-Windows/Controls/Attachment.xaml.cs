@@ -18,6 +18,7 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
@@ -52,6 +53,12 @@ namespace Signal_Windows.Controls
         {
             this.InitializeComponent();
             DataContextChanged += Attachment_DataContextChanged;
+            AttachmentImage.ImageFailed += AttachmentImage_ImageFailed;
+        }
+
+        private void AttachmentImage_ImageFailed(object sender, ExceptionRoutedEventArgs e)
+        {
+            Logger.LogError("AttachmentImage_ImageFailed {0}", e.ErrorMessage);
         }
 
         private void Attachment_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
@@ -87,5 +94,11 @@ namespace Signal_Windows.Controls
             "image/png",
             "image/gif"
         };
+
+        public bool HandleUpdate(SignalAttachment sa)
+        {
+            DataContext = sa;
+            return Model.Status != SignalAttachmentStatus.Finished && Model.Status != SignalAttachmentStatus.Failed_Permanently;
+        }
     }
 }

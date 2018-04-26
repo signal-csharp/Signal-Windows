@@ -21,7 +21,7 @@ namespace Signal_Windows.Models
         public long ComposedTimestamp { get; set; }
         public uint ExpiresAt { get; set; }
         public uint AttachmentsCount { get; set; }
-        public List<SignalAttachment> Attachments { get; set; }
+        public List<SignalAttachment> Attachments { get; set; } = new List<SignalAttachment>();
     }
 
     public enum SignalMessageType

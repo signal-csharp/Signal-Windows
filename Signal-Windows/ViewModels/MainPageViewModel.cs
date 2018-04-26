@@ -291,6 +291,10 @@ namespace Signal_Windows.ViewModels
         public void HandleAttachmentStatusChanged(SignalAttachment sa)
         {
             Logger.LogInformation("MPVM received attachment status update! {0}", sa.Status);
+            if (SelectedThread != null && SelectedThread.ThreadId == sa.Message.ThreadId)
+            {
+                View.Thread.UpdateAttachment(sa);
+            }
         }
         #endregion
     }

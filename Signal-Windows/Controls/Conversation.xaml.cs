@@ -1,5 +1,8 @@
+using libsignalservice;
 using libsignalservice.util;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Lib;
+using Signal_Windows.Lib.Models;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
@@ -10,6 +13,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.Storage;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -25,6 +29,7 @@ namespace Signal_Windows.Controls
         public event PropertyChangedEventHandler PropertyChanged;
         private bool SendingMessage = false;
         private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
+        private Dictionary<long, SignalAttachmentContainer> UnfinishedAttachmentsCache = new Dictionary<long, SignalAttachmentContainer>();
         private SignalConversation SignalConversation;
         public VirtualizedCollection Collection;
 
@@ -150,6 +155,7 @@ namespace Signal_Windows.Controls
         public void DisposeCurrentThread()
         {
             OutgoingCache.Clear();
+            UnfinishedAttachmentsCache.Clear();
         }
 
         public T FindElementByName<T>(FrameworkElement element, string sChildName) where T : FrameworkElement
@@ -195,6 +201,25 @@ namespace Signal_Windows.Controls
             }
         }
 
+        public void UpdateAttachment(SignalAttachment sa)
+        {
+            if (UnfinishedAttachmentsCache.ContainsKey(sa.Id))
+            {
+                var a = UnfinishedAttachmentsCache[sa.Id];
+                var messageItem = (ListViewItem)ConversationItemsControl.ContainerFromIndex(Collection.GetVirtualIndex(a.MessageIndex));
+                if (messageItem != null)
+                {
+                    var message = FindElementByName<Message>(messageItem, "ListBoxItemContent");
+                    var attachment = FindElementByName<Attachment>(message, "Attachment");
+                    bool retain = attachment.HandleUpdate(sa);
+                    if (!retain)
+                    {
+                        OutgoingCache.Remove(sa.Id);
+                    }
+                }
+            }
+        }
+
         public void Append(SignalMessageContainer sm)
         {
             var sourcePanel = (ItemsStackPanel)ConversationItemsControl.ItemsPanelRoot;
@@ -210,6 +235,11 @@ namespace Signal_Windows.Controls
         public void AddToOutgoingMessagesCache(SignalMessageContainer m)
         {
             OutgoingCache[m.Message.Id] = m;
+        }
+
+        public void AddToUnfinishedAttachmentsCache(SignalAttachmentContainer m)
+        {
+            UnfinishedAttachmentsCache[m.Attachment.Id] = m;
         }
         
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)

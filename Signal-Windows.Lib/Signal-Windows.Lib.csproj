@@ -137,6 +137,7 @@
     <Compile Include="Migrations\SignalDB\SignalDBContextModelSnapshot.cs" />
     <Compile Include="Models\PhoneContact.cs" />
     <Compile Include="Models\SignalAttachment.cs" />
+    <Compile Include="Models\SignalAttachmentContainer.cs" />
     <Compile Include="Models\SignalContact.cs" />
     <Compile Include="Models\SignalConversation.cs" />
     <Compile Include="Models\SignalEarlyReceipt.cs" />

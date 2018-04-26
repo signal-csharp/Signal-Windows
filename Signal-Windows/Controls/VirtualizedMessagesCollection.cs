@@ -2,6 +2,7 @@
 using libsignalservice;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Lib;
+using Signal_Windows.Lib.Models;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using System;
@@ -86,14 +87,7 @@ namespace Signal_Windows.Controls
             if (!Cache.ContainsKey(pageIndex))
             {
                 Logger.LogTrace("Get() cache miss ({0})", pageIndex);
-                Cache[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
-                foreach (var msg in Cache[pageIndex])
-                {
-                    if (msg.Message.Author == null)
-                    {
-                        ConversationView.AddToOutgoingMessagesCache(msg);
-                    }
-                }
+                LoadPage(pageIndex);
             }
             var page = Cache[pageIndex];
             var item = page[inpageIndex];
@@ -144,24 +138,40 @@ namespace Signal_Windows.Controls
             Logger.LogTrace("Add() Id={0} Index={1} PageIndex={2} InpageIndex={3}", message.Message.Id, message.Index, pageIndex, inpageIndex);
             if (!Cache.ContainsKey(pageIndex))
             {
-                Cache[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
-                foreach (var msg in Cache[pageIndex])
-                {
-                    if (msg.Message.Author == null)
-                    {
-                        ConversationView.AddToOutgoingMessagesCache(msg);
-                    }
-                }
+                LoadPage(pageIndex);
             }
             Cache[pageIndex].Insert(inpageIndex, message);
             int virtualIndex = GetVirtualIndex(message.Index);
             Logger.LogTrace("Add() Index={0} VirtualIndex={1}", message.Index, virtualIndex);
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, message, virtualIndex));
-            if (message.Message.Author == null)
-            {
-                ConversationView.AddToOutgoingMessagesCache(message);
-            }
+            FillUpdateCaches(message);
             return message.Index;
+        }
+
+        private void LoadPage(int pageIndex)
+        {
+            Cache[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
+            foreach (var msg in Cache[pageIndex])
+            {
+                FillUpdateCaches(msg);
+            }
+        }
+
+        private void FillUpdateCaches(SignalMessageContainer msg)
+        {
+            if (msg.Message.Author == null)
+            {
+                ConversationView.AddToOutgoingMessagesCache(msg);
+            }
+            int attachmentIndex = 0;
+            foreach (var attachment in msg.Message.Attachments)
+            {
+                if (attachment.Status != SignalAttachmentStatus.Finished && attachment.Status != SignalAttachmentStatus.Failed_Permanently)
+                {
+                    ConversationView.AddToUnfinishedAttachmentsCache(new SignalAttachmentContainer(attachment, attachmentIndex, msg.Index));
+                }
+                attachmentIndex++;
+            }
         }
 
         public void Clear()
