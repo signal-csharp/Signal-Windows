@@ -210,7 +210,6 @@ namespace Signal_Windows.Lib
                 }
                 Task.WaitAll(tasks.ToArray());
                 InitNetwork();
-                Downloads.Clear();
                 RecoverDownloads().Wait();
             });
             Running = true;
@@ -494,7 +493,7 @@ namespace Signal_Windows.Lib
                     // this is the recommended way to call CreateDownload
                     // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
                     DownloadOperation download = downloader.CreateDownload(new Uri(RetrieveAttachmentUrl(attachmentPointer)), tmpDownload);
-                    attachment.Guid = "" + download.Guid;
+                    attachment.Guid = download.Guid.ToString();
                     SignalDBContext.UpdateAttachmentGuid(attachment);
                     Downloads.Add(attachment.Id, download);
                     Task.Run(async () =>
@@ -559,13 +558,20 @@ namespace Signal_Windows.Lib
                     SignalAttachment attachment = SignalDBContext.GetAttachmentByGuidNameLocked(download.Guid.ToString());
                     if (attachment != null)
                     {
-                        Downloads.Add(attachment.Id, download);
-                        var t = Task.Run(async () =>
+                        if (!Downloads.ContainsKey(attachment.Id))
                         {
-                            Logger.LogInformation("Attaching to download {0} ({1})", attachment.Id, download.Guid);
-                            await download.AttachAsync();
-                            await HandleSuccessfullDownload(attachment, download.ResultFile, download);
-                        });
+                            Logger.LogInformation("Creating attach task for attachment {0} ({1})", attachment.Id, download.Guid);
+                            Downloads.Add(attachment.Id, download);
+                            var t = Task.Run(async () =>
+                            {
+                                await download.AttachAsync();
+                                await HandleSuccessfullDownload(attachment, download.ResultFile, download);
+                            });
+                        }
+                        else
+                        {
+                            Logger.LogInformation("Attachment {0} ({1}) already has a running task", attachment.Id, download.Guid);
+                        }
                     }
                     else
                     {
