@@ -135,6 +135,7 @@
     <Content Include="Assets\Wide310x150Logo.scale-150.png" />
     <Content Include="Assets\Wide310x150Logo.scale-400.png" />
     <None Include="Package.StoreAssociation.xml" />
+    <None Include="Package.xml" />
     <Content Include="textsecure-servicewhispersystemsorg.crt" />
     <None Include="Signal-Windows_StoreKey.pfx" />
   </ItemGroup>
