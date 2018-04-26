@@ -325,7 +325,7 @@ namespace Signal_Windows.ViewModels
             };
             await Task.Run(() =>
             {
-                //TODO inform UI
+                App.Handle.SaveAndDispatchSignalConversation(contact, null);
             });
         }
 
