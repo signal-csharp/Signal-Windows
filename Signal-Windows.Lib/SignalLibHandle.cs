@@ -485,7 +485,7 @@ namespace Signal_Windows.Lib
                     IStorageFolder localFolder = ApplicationData.Current.LocalFolder;
                     IStorageFile tmpDownload = Task.Run(async () =>
                     {
-                        return await ApplicationData.Current.LocalCacheFolder.CreateFileAsync(@"Attachments\" + attachment.Id + ".cipher");
+                        return await ApplicationData.Current.LocalCacheFolder.CreateFileAsync(@"Attachments\" + attachment.Id + ".cipher", CreationCollisionOption.ReplaceExisting);
                     }).Result;
                     BackgroundDownloader downloader = new BackgroundDownloader();
                     downloader.SetRequestHeader("Content-Type", "application/octet-stream");
