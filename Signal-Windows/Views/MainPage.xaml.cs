@@ -85,9 +85,9 @@ namespace Signal_Windows
             UpdateLayout();
             SwitchToStyle(GetCurrentViewStyle());
             MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
-            if (e.Parameter != null)
+            if (Vm.RequestedConversationId != null && Vm.RequestedConversationId != "")
             {
-                Vm.SelectConversation((string) e.Parameter);
+                Vm.SelectConversation(Vm.RequestedConversationId);
             }
             else if (Vm.SelectedThread != null)
             {
