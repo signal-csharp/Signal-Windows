@@ -986,8 +986,9 @@ namespace Signal_Windows.Storage
         }
 
 
-        internal static void UpdateMessageRead(long index, SignalConversation conversation)
+        internal static SignalConversation UpdateMessageRead(long index, SignalConversation conversation)
         {
+            SignalConversation dbConversation = null;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -999,8 +1000,9 @@ namespace Signal_Windows.Storage
                             .SingleOrDefault();
                         if (contact != null)
                         {
-                            contact.LastSeenMessageIndex = index;
-                            contact.UnreadCount = (uint)(contact.MessagesCount - index);
+                            contact.LastSeenMessageIndex = Math.Max(index, contact.LastSeenMessageIndex);
+                            contact.UnreadCount = (uint)(contact.MessagesCount - contact.LastSeenMessageIndex);
+                            dbConversation = contact;
                         }
                     }
                     else
@@ -1010,13 +1012,15 @@ namespace Signal_Windows.Storage
                             .SingleOrDefault();
                         if (group != null)
                         {
-                            group.LastSeenMessageIndex = index;
-                            group.UnreadCount = (uint)(group.MessagesCount - index);
+                            group.LastSeenMessageIndex = Math.Max(index, group.LastSeenMessageIndex);
+                            group.UnreadCount =  (uint)(group.MessagesCount - group.LastSeenMessageIndex);
+                            dbConversation = group;
                         }
                     }
                     ctx.SaveChanges();
                 }
             }
+            return dbConversation;
         }
 
         #endregion Threads

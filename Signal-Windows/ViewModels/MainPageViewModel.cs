@@ -243,6 +243,7 @@ namespace Signal_Windows.ViewModels
             var localConversation = ConversationsDictionary[conversation.ThreadId];
             Logger.LogTrace("LastSeenMessageIndex = {0}", messageIndex);
             localConversation.LastSeenMessageIndex = messageIndex;
+            localConversation.UnreadCount = conversation.UnreadCount;
             localConversation.UpdateUI();
         }
 

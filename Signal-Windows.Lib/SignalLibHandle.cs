@@ -50,6 +50,7 @@ namespace Signal_Windows.Lib
         //Frontend API
         SignalStore Store { get; set; }
         Task SendMessage(SignalMessage message, SignalConversation conversation);
+        void SetMessageRead(long index, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
         List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count);
         void SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
@@ -324,6 +325,27 @@ namespace Signal_Windows.Lib
                     Logger.LogTrace("SendMessage() released");
                 }
             });
+        }
+
+        /// <summary>
+        /// Marks and dispatches a message as read. Must not be called on a task which holds the handle lock.
+        /// </summary>
+        /// <param name="message"></param>
+        public void SetMessageRead(long index, SignalConversation conversation)
+        {
+            Logger.LogTrace("SetMessageRead() locking");
+            SemaphoreSlim.Wait(CancelSource.Token);
+            try
+            {
+                Logger.LogTrace("SetMessageRead() locked");
+                conversation = SignalDBContext.UpdateMessageRead(index, conversation);
+                DispatchMessageRead(index, conversation);
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+                Logger.LogTrace("SendMessage() released");
+            }
         }
 
         public void ResendMessage(SignalMessage message)

@@ -225,8 +225,7 @@ namespace Signal_Windows.Controls
         public AppendResult Append(SignalMessageContainer sm)
         {
             AppendResult result = null;
-            var sourcePanel = (ItemsStackPanel)ConversationItemsControl.ItemsPanelRoot;
-            bool bottom = sourcePanel.LastVisibleIndex == Collection.Count - 2; // -2 because we already incremented Count
+            bool bottom = GetBottommostIndex() == Collection.Count - 2; // -2 because we already incremented Count
             Collection.Add(sm, sm.Message.Author == null);
             if (bottom)
             {
@@ -302,12 +301,30 @@ namespace Signal_Windows.Controls
             }
         }
 
+        private int GetBottommostIndex()
+        {
+            var sourcePanel = (ItemsStackPanel)ConversationItemsControl.ItemsPanelRoot;
+            return sourcePanel.LastVisibleIndex;
+        }
+
         private void ConversationSettingsButton_Click(object sender, RoutedEventArgs e)
         {
             if (SignalConversation is SignalContact)
             {
                 App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
                 GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
+            }
+        }
+
+        private void ScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+        {
+            int bottomIndex = GetBottommostIndex();
+            if (SignalConversation.LastSeenMessageIndex < bottomIndex)
+            {
+                Task.Run(() =>
+                {
+                    App.Handle.SetMessageRead(bottomIndex, SignalConversation);
+                });
             }
         }
     }
