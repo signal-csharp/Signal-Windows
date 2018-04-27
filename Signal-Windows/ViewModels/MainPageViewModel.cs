@@ -219,8 +219,9 @@ namespace Signal_Windows.ViewModels
             RepositionConversation(uiConversation);
         }
 
-        public void HandleMessage(SignalMessage message, SignalConversation conversation)
+        public AppendResult HandleMessage(SignalMessage message, SignalConversation conversation)
         {
+            AppendResult result = null;
             var localConversation = ConversationsDictionary[conversation.ThreadId];
             localConversation.LastMessage = message;
             localConversation.MessagesCount = conversation.MessagesCount;
@@ -231,18 +232,18 @@ namespace Signal_Windows.ViewModels
             if (SelectedThread != null && SelectedThread == localConversation)
             {
                 var container = new SignalMessageContainer(message, (int)SelectedThread.MessagesCount - 1);
-                View.Thread.Append(container);
+                result = View.Thread.Append(container);
             }
             RepositionConversation(localConversation);
-            if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
-            {
-                if (message.Author != null)
-                {
-                    SignalNotifications.TryVibrate(true);
-                    SignalNotifications.SendMessageNotification(message);
-                    SignalNotifications.SendTileNotification(message);
-                }
-            }
+            return result;
+        }
+
+        public void HandleMessageRead(long messageIndex, SignalConversation conversation)
+        {
+            var localConversation = ConversationsDictionary[conversation.ThreadId];
+            Logger.LogTrace("LastSeenMessageIndex = {0}", messageIndex);
+            localConversation.LastSeenMessageIndex = messageIndex;
+            localConversation.UpdateUI();
         }
 
         public void HandleIdentitykeyChange(LinkedList<SignalMessage> messages)

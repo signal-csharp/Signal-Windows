@@ -985,6 +985,40 @@ namespace Signal_Windows.Storage
             }
         }
 
+
+        internal static void UpdateMessageRead(long index, SignalConversation conversation)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    if (!conversation.ThreadId.EndsWith("="))
+                    {
+                        var contact = ctx.Contacts
+                            .Where(c => c.ThreadId == conversation.ThreadId)
+                            .SingleOrDefault();
+                        if (contact != null)
+                        {
+                            contact.LastSeenMessageIndex = index;
+                            contact.UnreadCount = (uint)(contact.MessagesCount - index);
+                        }
+                    }
+                    else
+                    {
+                        var group = ctx.Groups
+                            .Where(c => c.ThreadId == conversation.ThreadId)
+                            .SingleOrDefault();
+                        if (group != null)
+                        {
+                            group.LastSeenMessageIndex = index;
+                            group.UnreadCount = (uint)(group.MessagesCount - index);
+                        }
+                    }
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
         #endregion Threads
 
         #region Groups

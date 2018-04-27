@@ -23,10 +23,21 @@ using Windows.Web;
 
 namespace Signal_Windows.Lib
 {
+    public class AppendResult
+    {
+        public long Index { get;  }
+        public AppendResult(long index)
+        {
+            Index = index;
+        }
+    }
+
     public interface ISignalFrontend
     {
         void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage);
-        void HandleMessage(SignalMessage message, SignalConversation conversation);
+        AppendResult HandleMessage(SignalMessage message, SignalConversation conversation);
+        void HandleUnreadMessage(SignalMessage message);
+        void HandleMessageRead(long messageIndex, SignalConversation conversation);
         void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
@@ -436,15 +447,61 @@ namespace Signal_Windows.Lib
 
         internal void DispatchHandleMessage(SignalMessage message, SignalConversation conversation)
         {
+            List<TaskCompletionSource<AppendResult>> operations = new List<TaskCompletionSource<AppendResult>>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                TaskCompletionSource<AppendResult> b = new TaskCompletionSource<AppendResult>();
+                var a = dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    b.SetResult(Frames[dispatcher].HandleMessage(message, conversation));
+                });
+                operations.Add(b);
+            }
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalMessageType.NormalMessage));
+            if (message.Author != null)
+            {
+                bool wasInstantlyRead = false;
+                foreach (var b in operations)
+                {
+                    AppendResult result = b.Task.Result;
+                    if (result != null)
+                    {
+                        SignalDBContext.UpdateMessageRead(result.Index, conversation);
+                        DispatchMessageRead(result.Index, conversation);
+                        wasInstantlyRead = true;
+                        break;
+                    }
+                }
+                if (!wasInstantlyRead)
+                {
+                    DispatchHandleUnreadMessage(message);
+                }
+            }
+        }
+
+        internal void DispatchHandleUnreadMessage(SignalMessage message)
+        {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
                 operations.Add(dispatcher.RunTaskAsync(() =>
                 {
-                    Frames[dispatcher].HandleMessage(message, conversation);
+                    Frames[dispatcher].HandleUnreadMessage(message);
                 }));
             }
-            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalMessageType.NormalMessage));
+            Task.WaitAll(operations.ToArray());
+        }
+
+        internal void DispatchMessageRead(long messageIndex, SignalConversation conversation)
+        {
+            List<Task> operations = new List<Task>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                operations.Add(dispatcher.RunTaskAsync(() =>
+                {
+                    Frames[dispatcher].HandleMessageRead(messageIndex, conversation);
+                }));
+            }
             Task.WaitAll(operations.ToArray());
         }
 

@@ -39,9 +39,9 @@ namespace Signal_Windows
             Locator.MainPageInstance.HandleIdentitykeyChange(messages);
         }
 
-        public void HandleMessage(SignalMessage message, SignalConversation conversation)
+        public AppendResult HandleMessage(SignalMessage message, SignalConversation conversation)
         {
-            Locator.MainPageInstance.HandleMessage(message, conversation);
+            return Locator.MainPageInstance.HandleMessage(message, conversation);
         }
 
         public void HandleMessageUpdate(SignalMessage updatedMessage)
@@ -73,6 +73,24 @@ namespace Signal_Windows
         public void HandleAttachmentStatusChanged(SignalAttachment sa)
         {
             Locator.MainPageInstance.HandleAttachmentStatusChanged(sa);
+        }
+
+        public void HandleMessageRead(long messageIndex, SignalConversation conversation)
+        {
+            Locator.MainPageInstance.HandleMessageRead(messageIndex, conversation);
+        }
+
+        public void HandleUnreadMessage(SignalMessage message)
+        {
+            if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
+            {
+                if (message.Author != null)
+                {
+                    SignalNotifications.TryVibrate(true);
+                    SignalNotifications.SendMessageNotification(message);
+                    SignalNotifications.SendTileNotification(message);
+                }
+            }
         }
     }
 }

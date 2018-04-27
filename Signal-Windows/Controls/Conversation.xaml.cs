@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Storage;
+using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -26,6 +27,7 @@ namespace Signal_Windows.Controls
 {
     public sealed partial class Conversation : UserControl, INotifyPropertyChanged
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<Conversation>();
         public event PropertyChangedEventHandler PropertyChanged;
         private bool SendingMessage = false;
         private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
@@ -220,8 +222,9 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public void Append(SignalMessageContainer sm)
+        public AppendResult Append(SignalMessageContainer sm)
         {
+            AppendResult result = null;
             var sourcePanel = (ItemsStackPanel)ConversationItemsControl.ItemsPanelRoot;
             bool bottom = sourcePanel.LastVisibleIndex == Collection.Count - 2; // -2 because we already incremented Count
             Collection.Add(sm, sm.Message.Author == null);
@@ -229,7 +232,13 @@ namespace Signal_Windows.Controls
             {
                 UpdateLayout();
                 ScrollToBottom();
+                if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground)
+                {
+                    Logger.LogTrace("Append at no-virt-index  {0}", sm.Index);
+                    result = new AppendResult(sm.Index + 1);
+                }
             }
+            return result;
         }
 
         public void AddToOutgoingMessagesCache(SignalMessageContainer m)
