@@ -182,6 +182,7 @@ rcf/
 AppPackages/
 BundleArtifacts/
 Package.StoreAssociation.xml
+Package.xml
 _pkginfo.txt
 
 # Visual Studio cache files
