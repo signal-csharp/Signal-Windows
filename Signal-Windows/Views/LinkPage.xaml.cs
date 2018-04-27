@@ -1,4 +1,5 @@
 using Signal_Windows.ViewModels;
+using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using ZXing.Mobile;
@@ -53,16 +54,14 @@ namespace Signal_Windows.Views
             QRCode.Source = writer.Write(qr);
         }
 
-        public void Finish(bool success)
+        public async Task Finish(bool success)
         {
             if (success)
             {
+                var frontend = App.CurrentSignalWindowsFrontend(App.MainViewId);
+                await App.Handle.Reacquire();
                 Frame.Navigate(typeof(MainPage));
             }
-        }
-
-        private void FinishButton_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
-        {
         }
     }
 }

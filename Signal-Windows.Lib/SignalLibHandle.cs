@@ -239,6 +239,11 @@ namespace Signal_Windows.Lib
                     }
                     Task.WaitAll(tasks.ToArray());
                     RecoverDownloads().Wait();
+                    Store = LibsignalDBContext.GetSignalStore();
+                    if (Store != null)
+                    {
+                        LikelyHasValidStore = true;
+                    }
                 });
                 if (LikelyHasValidStore)
                 {

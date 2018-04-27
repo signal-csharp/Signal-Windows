@@ -121,10 +121,10 @@ namespace Signal_Windows.ViewModels
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async() =>
                     {
                         App.Handle.Store = store;
-                        View.Finish(true);
+                        await View.Finish(true);
                     }).AsTask().Wait();
                 });
                 await LinkingTask;

@@ -259,6 +259,7 @@ namespace Signal_Windows
                     }
                     else
                     {
+                        Handle.Release();
                         rootFrame.Navigate(typeof(StartPage));
                     }
                     Window.Current.Activate();

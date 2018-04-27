@@ -27,7 +27,7 @@ namespace Signal_Windows.ViewModels
                 {
                     string SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
                     App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.verifyAccountWithCode(
-                        App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode,
+                        App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
                             SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
                             true);
                     SignalStore store = new SignalStore()
@@ -59,6 +59,8 @@ namespace Signal_Windows.ViewModels
                         App.Handle.Store = store;
                     }).AsTask().Wait();
                 });
+                var frontend = App.CurrentSignalWindowsFrontend(App.MainViewId);
+                await App.Handle.Reacquire();
                 View.Frame.Navigate(typeof(MainPage));
             }
             catch (Exception e)
