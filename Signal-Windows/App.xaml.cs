@@ -95,7 +95,8 @@ namespace Signal_Windows
             Logger.LogInformation("OnActivated() {0}", args.GetType());
             if (args is ToastNotificationActivatedEventArgs toastArgs)
             {
-                bool createdMainWindow = await CreateMainWindow(toastArgs.Argument);
+                string requestedConversation = toastArgs.Argument;
+                bool createdMainWindow = await CreateMainWindow(requestedConversation);
                 if (!createdMainWindow)
                 {
                     if (args is IViewSwitcherProvider viewSwitcherProvider && viewSwitcherProvider.ViewSwitcher != null)
@@ -107,13 +108,13 @@ namespace Signal_Windows
                             await Views[currentId].Dispatcher.RunTaskAsync(() =>
                             {
                                 Logger.LogInformation("OnActivated() selecting conversation");
-                                Views[currentId].Locator.MainPageInstance.SelectConversation(toastArgs.Argument);
+                                Views[currentId].Locator.MainPageInstance.TrySelectConversation(requestedConversation);
                             });
                             await ApplicationViewSwitcher.TryShowAsStandaloneAsync(currentId);
                         }
                         else
                         {
-                            await CreateSecondaryWindowOrShowMain(switcher, toastArgs.Argument);
+                            await CreateSecondaryWindowOrShowMain(switcher, requestedConversation);
                         }
                     }
                     else

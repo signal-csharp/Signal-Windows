@@ -148,9 +148,16 @@ namespace Signal_Windows.ViewModels
             messageTextBox.Focus(FocusState.Programmatic);
         }
 
-        public void SelectConversation(string conversationId)
+        public void TrySelectConversation(string conversationId)
         {
-            SelectedConversation = ConversationsDictionary[conversationId];
+            if (ConversationsDictionary.ContainsKey(conversationId))
+            {
+                SelectedConversation = ConversationsDictionary[conversationId];
+            }
+            else
+            {
+                Logger.LogError("TrySelectConversation could not select conversation: key is not present");
+            }
         }
 
         public void ConversationsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -276,17 +283,17 @@ namespace Signal_Windows.ViewModels
             {
                 ConversationsDictionary.Add(c.ThreadId, c);
             }
-            if (SelectedThread != null)
-            {
-                Logger.LogDebug("SelectedThread is != null, refreshing");
-                SelectedThread = ConversationsDictionary[SelectedThread.ThreadId];
-                SelectConversation(SelectedThread.ThreadId);
-            }
-
             if (RequestedConversationId != null && RequestedConversationId != "")
             {
                 Logger.LogDebug("RequestedConversationId is != null, refreshing");
-                SelectConversation(RequestedConversationId);
+                TrySelectConversation(RequestedConversationId);
+                RequestedConversationId = null;
+            }
+            else if (SelectedThread != null)
+            {
+                Logger.LogDebug("SelectedThread is != null, refreshing");
+                SelectedThread = ConversationsDictionary[SelectedThread.ThreadId];
+                TrySelectConversation(SelectedThread.ThreadId);
             }
         }
 
