@@ -150,13 +150,9 @@ namespace Signal_Windows.ViewModels
 
         public void TrySelectConversation(string conversationId)
         {
-            if (ConversationsDictionary.ContainsKey(conversationId))
+            if (conversationId != null && ConversationsDictionary.ContainsKey(conversationId))
             {
                 SelectedConversation = ConversationsDictionary[conversationId];
-            }
-            else
-            {
-                Logger.LogError("TrySelectConversation could not select conversation: key is not present");
             }
         }
 
@@ -278,7 +274,6 @@ namespace Signal_Windows.ViewModels
             ConversationsDictionary.Clear();
             Conversations.Clear();
             Conversations.AddRange(conversations);
-
             foreach (var c in Conversations)
             {
                 ConversationsDictionary.Add(c.ThreadId, c);

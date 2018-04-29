@@ -86,6 +86,7 @@ namespace Signal_Windows
             SwitchToStyle(GetCurrentViewStyle());
             MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
             Frame.SizeChanged += Frame_SizeChanged;
+            Vm.TrySelectConversation(Vm.RequestedConversationId);
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
