@@ -8,10 +8,25 @@ using System.Threading.Tasks;
 using Windows.Foundation.Metadata;
 using Windows.UI.Notifications;
 
-namespace Signal_Windows
+namespace Signal_Windows.Lib
 {
-    class SignalNotifications
+    public class NotificationsUtils
     {
+        public static void Notify(SignalMessage message)
+        {
+            TryVibrate(true);
+            SendMessageNotification(message);
+            SendTileNotification(message);
+        }
+
+        public static void TryVibrate(bool quick)
+        {
+            if (ApiInformation.IsTypePresent("Windows.Phone.Devices.Notification.VibrationDevice"))
+            {
+                Windows.Phone.Devices.Notification.VibrationDevice.GetDefault().Vibrate(TimeSpan.FromMilliseconds(quick ? 100 : 500));
+            }
+        }
+
         public static void SendMessageNotification(SignalMessage message)
         {
             // notification tags can only be 16 chars (64 after creators update)
@@ -67,14 +82,6 @@ namespace Signal_Windows
             text.Add(title);
             text.Add(messageText);
             return text;
-        }
-
-        public static void TryVibrate(bool quick)
-        {
-            if (ApiInformation.IsTypePresent("Windows.Phone.Devices.Notification.VibrationDevice"))
-            {
-                Windows.Phone.Devices.Notification.VibrationDevice.GetDefault().Vibrate(TimeSpan.FromMilliseconds(quick ? 100 : 500));
-            }
         }
 
         public static void SendTileNotification(SignalMessage message)

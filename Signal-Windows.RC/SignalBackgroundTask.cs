@@ -81,33 +81,7 @@ namespace Signal_Windows.RC
         {
             if (e.MessageType == Lib.Events.SignalMessageType.NormalMessage)
             {
-                string notificationId = e.Message.ThreadId;
-                ToastBindingGeneric toastBinding = new ToastBindingGeneric();
-
-                var notificationText = GetNotificationText(e.Message.Author.ThreadDisplayName, e.Message.Content.Content);
-                foreach (var item in notificationText)
-                {
-                    toastBinding.Children.Add(item);
-                }
-
-                ToastContent toastContent = new ToastContent()
-                {
-                    Launch = notificationId,
-                    Visual = new ToastVisual()
-                    {
-                        BindingGeneric = toastBinding
-                    },
-                    DisplayTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(e.Message.ReceivedTimestamp)
-                };
-
-                ToastNotification toastNotification = new ToastNotification(toastContent.GetXml());
-                uint expiresIn = e.Message.ExpiresAt;
-                if (expiresIn > 0)
-                {
-                    toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(expiresIn));
-                }
-                toastNotification.Tag = notificationId;
-                ToastNotifier.Show(toastNotification);
+                NotificationsUtils.Notify(e.Message);
             }
             else if (e.MessageType == Lib.Events.SignalMessageType.PipeEmptyMessage)
             {

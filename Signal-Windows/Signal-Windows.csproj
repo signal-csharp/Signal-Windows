@@ -168,7 +168,6 @@
     <Compile Include="Controls\Welcome.xaml.cs">
       <DependentUpon>Welcome.xaml</DependentUpon>
     </Compile>
-    <Compile Include="SignalNotifications.cs" />
     <Compile Include="SignalWindowsFrontend.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />

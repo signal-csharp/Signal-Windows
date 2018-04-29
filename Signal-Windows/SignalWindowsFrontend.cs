@@ -86,9 +86,7 @@ namespace Signal_Windows
             {
                 if (message.Author != null)
                 {
-                    SignalNotifications.TryVibrate(true);
-                    SignalNotifications.SendMessageNotification(message);
-                    SignalNotifications.SendTileNotification(message);
+                    NotificationsUtils.Notify(message);
                 }
             }
         }
