@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Windows.ApplicationModel.Background;
 using Windows.Networking.BackgroundTransfer;
+using Windows.UI;
 
 namespace Signal_Windows
 {
@@ -203,6 +204,7 @@ namespace Signal_Windows
                 newViewId = currView.Id;
                 //await switcher.ShowAsStandaloneAsync(newViewId);
                 ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
+                SetupTopBar();
                 return new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);
             });
             bool success = await newView.Dispatcher.RunTaskAsync(async () =>
@@ -226,6 +228,38 @@ namespace Signal_Windows
             }
         }
 
+        private void SetupTopBar()
+        {
+            // mobile clients have a status bar
+            if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
+            {
+                var sb = StatusBar.GetForCurrentView();
+                sb.BackgroundColor = Color.FromArgb(1, 0x20, 0x90, 0xEA);
+                sb.BackgroundOpacity = 1;
+                sb.ForegroundColor = Colors.White;
+            }
+            // desktop clients have a title bar
+            else if(Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.ApplicationView"))
+            {
+                var titleBar = ApplicationView.GetForCurrentView().TitleBar;
+                if (titleBar != null)
+                {
+                    titleBar.ButtonBackgroundColor = Color.FromArgb(1, 0x20, 0x90, 0xEA);
+                    titleBar.ButtonForegroundColor = Colors.White;
+                    titleBar.BackgroundColor = Color.FromArgb(1, 0x20, 0x90, 0xEA);
+                    titleBar.ForegroundColor = Colors.White;
+                }
+                else
+                {
+                    Logger.LogError("TitleBar is null");
+                }
+            }
+            else
+            {
+                Logger.LogError("Neither TitleBar nor StatusBar found");
+            }
+        }
+
         private async Task<bool> CreateMainWindow(string conversationId)
         {
             Frame rootFrame = Window.Current.Content as Frame;
@@ -238,14 +272,7 @@ namespace Signal_Windows
                 var frontend = new SignalWindowsFrontend(Window.Current.Dispatcher, (ViewModelLocator)Resources["Locator"], currView.Id);
                 Views.Add(currView.Id, frontend);
                 MainViewId = currView.Id;
-
-                if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
-                {
-                    var sb = StatusBar.GetForCurrentView();
-                    sb.BackgroundColor = Windows.UI.Color.FromArgb(1, 0x20, 0x90, 0xEA);
-                    sb.BackgroundOpacity = 1;
-                    sb.ForegroundColor = Windows.UI.Colors.White;
-                }
+                SetupTopBar();
 
                 try
                 {
