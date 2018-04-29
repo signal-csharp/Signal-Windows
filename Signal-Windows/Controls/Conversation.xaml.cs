@@ -319,7 +319,8 @@ namespace Signal_Windows.Controls
         private void ScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
         {
             int bottomIndex = GetBottommostIndex();
-            if (SignalConversation.LastSeenMessageIndex < bottomIndex)
+            if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground
+                && SignalConversation.LastSeenMessageIndex < bottomIndex)
             {
                 Task.Run(() =>
                 {

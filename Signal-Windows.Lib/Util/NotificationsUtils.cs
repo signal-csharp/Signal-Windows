@@ -12,6 +12,7 @@ namespace Signal_Windows.Lib
 {
     public class NotificationsUtils
     {
+        public static ToastNotifier Notifier = ToastNotificationManager.CreateToastNotifier();
         public static void Notify(SignalMessage message)
         {
             TryVibrate(true);
@@ -63,7 +64,7 @@ namespace Signal_Windows.Lib
                 toastNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
             }
             toastNotification.Tag = notificationId;
-            ToastNotificationManager.CreateToastNotifier().Show(toastNotification);
+            Notifier.Show(toastNotification);
         }
 
         private static IList<AdaptiveText> GetNotificationText(SignalMessage message)
@@ -122,6 +123,11 @@ namespace Signal_Windows.Lib
                 tileNotification.ExpirationTime = DateTime.Now.Add(TimeSpan.FromSeconds(message.Author.ExpiresInSeconds));
             }
             TileUpdateManager.CreateTileUpdaterForApplication().Update(tileNotification);
+        }
+
+        public static void Withdraw(string threadId)
+        {
+            ToastNotificationManager.History.Remove(threadId);
         }
     }
 }

@@ -156,7 +156,7 @@
     <Compile Include="SignalMessageContainer.cs" />
     <Compile Include="Storage\DB.cs" />
     <Compile Include="Storage\Store.cs" />
-    <Compile Include="Util\SignalNotificationsUtils.cs" />
+    <Compile Include="Util\NotificationsUtils.cs" />
     <EmbeddedResource Include="Properties\Signal_Windows.Lib.rd.xml" />
   </ItemGroup>
   <ItemGroup>

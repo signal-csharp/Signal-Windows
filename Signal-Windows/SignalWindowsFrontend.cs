@@ -78,16 +78,20 @@ namespace Signal_Windows
         public void HandleMessageRead(long messageIndex, SignalConversation conversation)
         {
             Locator.MainPageInstance.HandleMessageRead(messageIndex, conversation);
+            if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
+            {
+                if (conversation.UnreadCount == 0)
+                {
+                    NotificationsUtils.Withdraw(conversation.ThreadId);
+                }
+            }
         }
 
         public void HandleUnreadMessage(SignalMessage message)
         {
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
             {
-                if (message.Author != null)
-                {
-                    NotificationsUtils.Notify(message);
-                }
+                NotificationsUtils.Notify(message);
             }
         }
     }
