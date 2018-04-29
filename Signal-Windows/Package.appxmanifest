@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="2383BenediktRadtke.SignalPrivateMessenger" Publisher="CN=83951ACF-6CF8-48C5-BDC4-D778CAFD26C0" Version="0.2.6.0" />
+  <Identity Name="2383BenediktRadtke.SignalPrivateMessenger" Publisher="CN=83951ACF-6CF8-48C5-BDC4-D778CAFD26C0" Version="0.2.7.0" />
   <mp:PhoneIdentity PhoneProductId="25d58032-97d6-4555-96ed-ffe17d57a51f" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>Signal Private Messenger</DisplayName>
@@ -21,22 +21,22 @@
         <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#2090EA" />
       </uap:VisualElements>
       <Extensions>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="ms-ipmessaging">
+            <uap:DisplayName>Signal Private Messenger Message</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="ms-contact-profile">
+            <uap:DisplayName>Signal Private Messenger Contact</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
         <Extension Category="windows.backgroundTasks" EntryPoint="Signal_Windows.RC.SignalBackgroundTask">
           <BackgroundTasks>
             <Task Type="systemEvent" />
             <Task Type="timer" />
           </BackgroundTasks>
         </Extension>
-        <uap:Extension Category="windows.protocol">
-          <uap:Protocol Name="ms-contact-profile">
-            <uap:DisplayName>Signal Private Messenger Contact</uap:DisplayName>
-          </uap:Protocol>
-        </uap:Extension>
-        <uap:Extension Category="windows.protocol">
-          <uap:Protocol Name="ms-ipmessaging">
-            <uap:DisplayName>Signal Private Messenger Message</uap:DisplayName>
-          </uap:Protocol>
-        </uap:Extension>
       </Extensions>
     </Application>
   </Applications>
