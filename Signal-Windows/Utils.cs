@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
+using Windows.ApplicationModel;
 using Windows.Foundation;
 using Windows.Foundation.Metadata;
 using Windows.UI;
@@ -261,6 +262,16 @@ namespace Signal_Windows
             int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
             double num = Math.Round(bytes / Math.Pow(1024, place), 1);
             return (Math.Sign(byteCount) * num).ToString() + suf[place];
+        }
+
+
+        public static string GetAppStartMessage()
+        {
+            var version = Package.Current.Id.Version;
+            return
+                "-------------------------------------------------\n" +
+                String.Format("    Signal-Windows {0}.{1}.{2}.{3} starting\n", version.Major, version.Minor, version.Build, version.Revision) +
+                "-------------------------------------------------\n";
         }
 
         public static string GetCountryCode(string ISO3166) //https://stackoverflow.com/questions/34837436/uwp-get-country-phone-number-prefix

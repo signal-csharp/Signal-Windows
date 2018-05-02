@@ -33,7 +33,7 @@ namespace Signal_Windows
     sealed partial class App : Application
     {
         private static App Instance;
-        private readonly ILogger Logger = LibsignalLogging.CreateLogger<App>();
+        private static ILogger Logger = LibsignalLogging.CreateLogger<App>();
         public static string URL = "https://textsecure-service.whispersystems.org";
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
         public static StorageFolder LocalCacheFolder = ApplicationData.Current.LocalCacheFolder;
@@ -47,7 +47,7 @@ namespace Signal_Windows
 
         static App()
         {
-            // TODO enforce these have begun before initializing
+            // TODO enforce these have begun before initializing and ensure the logger is working
             Task.Run(() => { SignalDBContext.Migrate(); });
             Task.Run(() => { LibsignalDBContext.Migrate(); });
         }
@@ -57,6 +57,7 @@ namespace Signal_Windows
         /// </summary>
         public App()
         {
+            SignalFileLoggerProvider.ForceAddUILog(Utils.GetAppStartMessage());
             Instance = this;
             SignalLogging.SetupLogging(true);
             this.InitializeComponent();

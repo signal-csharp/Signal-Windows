@@ -93,23 +93,41 @@ namespace Signal_Windows.Storage
         }
     }
 
-    class SignalFileLoggerProvider : ILoggerProvider
+    public class SignalFileLoggerProvider : ILoggerProvider
     {
+        private static string UILog = ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log";
         private readonly string Filename;
+        private readonly string OldFilename;
         private readonly string Prefix;
-        private StreamWriter Writer;
-        private object Lock = new object();
+        private const int MaxLogSize = 64 * 1024;
+        private static object Lock = new object();
 
         public SignalFileLoggerProvider(string filename, string prefix)
         {
             Filename = filename;
+            OldFilename = Filename + ".old";
             Prefix = prefix;
-            Open();
         }
 
-        public void Open()
+        public void TruncateLog()
         {
-            Writer = File.CreateText(Filename);
+            try
+            {
+                var length = new FileInfo(Filename).Length;
+                if (length > MaxLogSize)
+                {
+                    if (File.Exists(OldFilename))
+                    {
+                        File.Delete(OldFilename);
+                    }
+                    File.Move(Filename, OldFilename);
+                    File.AppendAllText(Filename, $"{DateTime.UtcNow.ToString("s")} [SignalFileLoggerProvider] truncated log file\n");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(string.Format("SignalFileLoggerProvider failed to truncate file: {0}", e));
+            }
         }
 
         public void Log(string line)
@@ -118,10 +136,10 @@ namespace Signal_Windows.Storage
             {
                 try
                 {
-                    Writer.WriteLine($"{DateTime.UtcNow.ToString("s")} [{Prefix}] {line}");
-                    Writer.Flush();
+                    TruncateLog();
+                    File.AppendAllText(Filename, $"{DateTime.UtcNow.ToString("s")} [{Prefix}] {line}\n");
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Debug.WriteLine(string.Format("SignalFileLoggerProvider failed to write: {0}", e));
                 }
@@ -135,10 +153,20 @@ namespace Signal_Windows.Storage
 
         public void Dispose()
         {
-            lock(Lock)
+        }
+
+        public static void ForceAddUILog(string msg)
+        {
+            lock (Lock)
             {
-                Writer?.Dispose();
-                Writer = null;
+                try
+                {
+                    File.AppendAllText(UILog, msg);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(string.Format("SignalFileLoggerProvider failed to write: {0}", e));
+                }
             }
         }
     }
