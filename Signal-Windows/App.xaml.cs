@@ -111,7 +111,7 @@ namespace Signal_Windows
                                 Logger.LogInformation("OnActivated() selecting conversation");
                                 Views[currentId].Locator.MainPageInstance.TrySelectConversation(requestedConversation);
                             });
-                            await ApplicationViewSwitcher.TryShowAsStandaloneAsync(currentId);
+                            await viewSwitcherProvider.ViewSwitcher.ShowAsStandaloneAsync(currentId);
                         }
                         else
                         {
