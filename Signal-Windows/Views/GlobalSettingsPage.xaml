@@ -15,7 +15,7 @@
             <TextBlock FontSize="24" Text="Settings"/>
         </Grid>
         <Grid HorizontalAlignment="Center">
-            <Button Click="ExportUIDebugLog">Submit debug log</Button>
+            <Button Click="ExportUIDebugLog">Export debug log</Button>
         </Grid>
     </StackPanel>
 </Page>
