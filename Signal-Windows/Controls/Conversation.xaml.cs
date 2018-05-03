@@ -34,6 +34,7 @@ namespace Signal_Windows.Controls
         private Dictionary<long, SignalAttachmentContainer> UnfinishedAttachmentsCache = new Dictionary<long, SignalAttachmentContainer>();
         private SignalConversation SignalConversation;
         public VirtualizedCollection Collection;
+        private int LastMarkReadRequest;
 
         private string _ThreadDisplayName;
 
@@ -135,6 +136,7 @@ namespace Signal_Windows.Controls
         public void Load(SignalConversation conversation)
         {
             SignalConversation = conversation;
+            LastMarkReadRequest = -1;
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();
             UpdateHeader(conversation);
@@ -319,9 +321,11 @@ namespace Signal_Windows.Controls
         private void ScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
         {
             int bottomIndex = GetBottommostIndex();
-            if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground
-                && SignalConversation.LastSeenMessageIndex < bottomIndex)
+            if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground &&
+                SignalConversation.LastSeenMessageIndex < bottomIndex &&
+                LastMarkReadRequest < bottomIndex)
             {
+                LastMarkReadRequest = bottomIndex;
                 Task.Run(() =>
                 {
                     App.Handle.SetMessageRead(bottomIndex, SignalConversation);

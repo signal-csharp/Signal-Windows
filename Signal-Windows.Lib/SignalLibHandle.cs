@@ -344,7 +344,7 @@ namespace Signal_Windows.Lib
             finally
             {
                 SemaphoreSlim.Release();
-                Logger.LogTrace("SendMessage() released");
+                Logger.LogTrace("SetMessageRead() released");
             }
         }
 
