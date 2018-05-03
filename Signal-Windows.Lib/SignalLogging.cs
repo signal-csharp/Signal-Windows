@@ -174,16 +174,23 @@ namespace Signal_Windows.Storage
         {
             lock(Lock)
             {
-                var oldLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log.old");
-                var newLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log");
                 FileIO.WriteTextAsync(file, "").AsTask().Wait();
                 CachedFileManager.DeferUpdates(file);
                 var writer = file.OpenStreamForWriteAsync().Result;
-                MoveFileContent(oldLog, writer);
-                MoveFileContent(newLog, writer);
+                try
+                {
+                    var oldLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log.old");
+                    MoveFileContent(oldLog, writer);
+                    oldLog.Dispose();
+                } catch (Exception e) { }
+                try
+                {
+                    var newLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log");
+                    MoveFileContent(newLog, writer);
+                    newLog.Dispose();
+                }
+                catch (Exception e) { }
                 Windows.Storage.Provider.FileUpdateStatus status = CachedFileManager.CompleteUpdatesAsync(file).AsTask().Result;
-                oldLog.Dispose();
-                newLog.Dispose();
             }
         }
 
