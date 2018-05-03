@@ -53,6 +53,5 @@
             </toolbox:PullToRefreshListView>
             <ProgressRing Width="75" Height="75" IsActive="{x:Bind Vm.RefreshingContacts, Mode=OneWay}"/>
         </Grid>
-        
     </Grid>
 </Page>

@@ -158,5 +158,10 @@ namespace Signal_Windows
         {
             ConversationControl.Load(Vm.SelectedThread);
         }
+
+        private void GlobalSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(GlobalSettingsPage));
+        }
     }
 }

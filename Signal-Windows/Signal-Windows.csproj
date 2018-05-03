@@ -173,6 +173,7 @@
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
     <Compile Include="ViewModels\ConversationSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\FinishRegistrationPageViewModel.cs" />
+    <Compile Include="ViewModels\GlobalSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\LinkPageViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\RegisterFinalizationPageViewModel.cs" />
@@ -187,6 +188,9 @@
     </Compile>
     <Compile Include="Views\FinishRegistrationPage.xaml.cs">
       <DependentUpon>FinishRegistrationPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\GlobalSettingsPage.xaml.cs">
+      <DependentUpon>GlobalSettingsPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\LinkPage.xaml.cs">
       <DependentUpon>LinkPage.xaml</DependentUpon>
@@ -266,6 +270,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\FinishRegistrationPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\GlobalSettingsPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

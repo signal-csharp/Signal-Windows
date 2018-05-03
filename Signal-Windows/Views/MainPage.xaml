@@ -28,14 +28,24 @@
         <SplitView.Pane>
             <Grid x:Name="ContactsGrid">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Signal" FontSize="34" FontWeight="Light" Margin="0,16" HorizontalAlignment="Center" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
-                <Button x:Name="AddContactButton" Grid.Row="0" HorizontalAlignment="Right" Background="{x:Null}" Click="AddContactButton_Click">
-                    <TextBlock Text="+" FontSize="34" FontWeight="Light" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
-                </Button>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock HorizontalAlignment="Center" Grid.Column="0" Text="Signal" FontSize="34" FontWeight="Light" Margin="0,16" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+                    <Button Grid.Column="1" x:Name="AddContactButton" Background="{x:Null}" Click="AddContactButton_Click">
+                        <SymbolIcon Symbol="AddFriend" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+                    </Button>
+                    <Button Grid.Column="2" x:Name="GlobalSettingsButton" Background="{x:Null}" Click="GlobalSettingsButton_Click">
+                        <SymbolIcon Symbol="Setting" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+                    </Button>
+                </Grid>
                 <AutoSuggestBox Grid.Row="1" Margin="16"/>
                 <ListView Grid.Row="2" Name="ContactsList" ItemsSource="{x:Bind Vm.Conversations, Mode=TwoWay}" SelectionMode="Single" SelectionChanged="Vm.ConversationsList_SelectionChanged" SelectedItem="{x:Bind Vm.SelectedConversation, Mode=TwoWay}">
                     <ListView.ItemsPanel>

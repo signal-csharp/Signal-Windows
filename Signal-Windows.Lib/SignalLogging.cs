@@ -169,5 +169,33 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
+        public static void ExportUILog(StorageFile file)
+        {
+            lock(Lock)
+            {
+                var oldLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log.old");
+                var newLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log");
+                FileIO.WriteTextAsync(file, "").AsTask().Wait();
+                CachedFileManager.DeferUpdates(file);
+                var writer = file.OpenStreamForWriteAsync().Result;
+                MoveFileContent(oldLog, writer);
+                MoveFileContent(newLog, writer);
+                Windows.Storage.Provider.FileUpdateStatus status = CachedFileManager.CompleteUpdatesAsync(file).AsTask().Result;
+                oldLog.Dispose();
+                newLog.Dispose();
+            }
+        }
+
+        private static void MoveFileContent(Stream source, Stream destination)
+        {
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                destination.Write(buffer, 0, read);
+            }
+            destination.Flush();
+        }
     }
 }

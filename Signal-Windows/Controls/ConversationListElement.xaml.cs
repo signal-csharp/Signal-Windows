@@ -120,14 +120,17 @@ namespace Signal_Windows.Controls
 
         public void UpdateConversationDisplay()
         {
-            ConversationDisplayName.Text = Model.ThreadDisplayName;
-            UnreadCount = Model.UnreadCount;
-            LastMessage = Model.LastMessage?.Content.Content;
-            Initials = Utils.GetInitials(Model.ThreadDisplayName);
-            FillBrush = Model is SignalContact contact ?
-                contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
-                    Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.ThreadDisplayName)) : Utils.Blue;
-            LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
+            if (Model != null)
+            {
+                ConversationDisplayName.Text = Model.ThreadDisplayName;
+                UnreadCount = Model.UnreadCount;
+                LastMessage = Model.LastMessage?.Content.Content;
+                Initials = Utils.GetInitials(Model.ThreadDisplayName);
+                FillBrush = Model is SignalContact contact ?
+                    contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
+                        Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.ThreadDisplayName)) : Utils.Blue;
+                LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
+            }
         }
     }
 }
