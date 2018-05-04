@@ -331,16 +331,23 @@ namespace Signal_Windows.Controls
         {
             int bottomIndex = GetBottommostIndex();
             Logger.LogTrace("ScrollViewer_ViewChanged() bottomIndex={}", bottomIndex);
-            if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground &&
-                SignalConversation.LastSeenMessageIndex < bottomIndex &&
-                LastMarkReadRequest < bottomIndex)
+            try
             {
-                Logger.LogTrace("ScrollViewer_ViewChanged() setting index {0} as read", bottomIndex);
-                LastMarkReadRequest = bottomIndex;
-                Task.Run(async () =>
+                if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground &&
+                    SignalConversation.LastSeenMessageIndex < bottomIndex &&
+                    LastMarkReadRequest < bottomIndex)
                 {
-                    await App.Handle.SetMessageRead(bottomIndex, SignalConversation);
-                });
+                    Logger.LogTrace("ScrollViewer_ViewChanged() setting index {0} as read", bottomIndex);
+                    LastMarkReadRequest = bottomIndex;
+                    Task.Run(async () =>
+                    {
+                        await App.Handle.SetMessageRead(bottomIndex, SignalConversation);
+                    });
+                }
+            }
+            catch(Exception ex)
+            {
+                Logger.LogError("ScrollViewer_ViewChanged() failed: {0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
     }
