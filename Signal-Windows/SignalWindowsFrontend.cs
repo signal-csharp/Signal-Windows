@@ -41,7 +41,9 @@ namespace Signal_Windows
 
         public AppendResult HandleMessage(SignalMessage message, SignalConversation conversation)
         {
-            return Locator.MainPageInstance.HandleMessage(message, conversation);
+            var result = Locator.MainPageInstance.HandleMessage(message, conversation);
+            CheckNotification(conversation);
+            return result;
         }
 
         public void HandleMessageUpdate(SignalMessage updatedMessage)
@@ -78,13 +80,7 @@ namespace Signal_Windows
         public void HandleMessageRead(long messageIndex, SignalConversation conversation)
         {
             Locator.MainPageInstance.HandleMessageRead(messageIndex, conversation);
-            if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
-            {
-                if (conversation.UnreadCount == 0)
-                {
-                    NotificationsUtils.Withdraw(conversation.ThreadId);
-                }
-            }
+            CheckNotification(conversation);
         }
 
         public void HandleUnreadMessage(SignalMessage message)
@@ -92,6 +88,17 @@ namespace Signal_Windows
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
             {
                 NotificationsUtils.Notify(message);
+            }
+        }
+
+        private void CheckNotification(SignalConversation conversation)
+        {
+            if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
+            {
+                if (conversation.UnreadCount == 0)
+                {
+                    NotificationsUtils.Withdraw(conversation.ThreadId);
+                }
             }
         }
     }
