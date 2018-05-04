@@ -326,9 +326,9 @@ namespace Signal_Windows.Controls
                 LastMarkReadRequest < bottomIndex)
             {
                 LastMarkReadRequest = bottomIndex;
-                Task.Run(() =>
+                Task.Run(async () =>
                 {
-                    App.Handle.SetMessageRead(bottomIndex, SignalConversation);
+                    await App.Handle.SetMessageRead(bottomIndex, SignalConversation);
                 });
             }
         }

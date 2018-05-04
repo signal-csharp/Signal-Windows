@@ -50,7 +50,7 @@ namespace Signal_Windows.Lib
         //Frontend API
         SignalStore Store { get; set; }
         Task SendMessage(SignalMessage message, SignalConversation conversation);
-        void SetMessageRead(long index, SignalConversation conversation);
+        Task SetMessageRead(long index, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
         List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count);
         void SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
@@ -331,15 +331,15 @@ namespace Signal_Windows.Lib
         /// Marks and dispatches a message as read. Must not be called on a task which holds the handle lock.
         /// </summary>
         /// <param name="message"></param>
-        public void SetMessageRead(long index, SignalConversation conversation)
+        public async Task SetMessageRead(long index, SignalConversation conversation)
         {
             Logger.LogTrace("SetMessageRead() locking");
-            SemaphoreSlim.Wait(CancelSource.Token);
+            await SemaphoreSlim.WaitAsync(CancelSource.Token);
             try
             {
                 Logger.LogTrace("SetMessageRead() locked");
                 conversation = SignalDBContext.UpdateMessageRead(index, conversation);
-                DispatchMessageRead(index, conversation);
+                await DispatchMessageRead(index, conversation);
             }
             finally
             {
@@ -489,7 +489,7 @@ namespace Signal_Windows.Lib
                     if (result != null)
                     {
                         SignalDBContext.UpdateMessageRead(result.Index, conversation);
-                        DispatchMessageRead(result.Index, conversation);
+                        DispatchMessageRead(result.Index, conversation).Wait();
                         wasInstantlyRead = true;
                         break;
                     }
@@ -514,7 +514,7 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        internal void DispatchMessageRead(long messageIndex, SignalConversation conversation)
+        internal async Task DispatchMessageRead(long messageIndex, SignalConversation conversation)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
@@ -523,6 +523,10 @@ namespace Signal_Windows.Lib
                 {
                     Frames[dispatcher].HandleMessageRead(messageIndex, conversation);
                 }));
+            }
+            foreach (var waitHandle in operations)
+            {
+                await waitHandle;
             }
             Task.WaitAll(operations.ToArray());
         }
