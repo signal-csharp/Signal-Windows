@@ -305,8 +305,17 @@ namespace Signal_Windows.Controls
 
         private int GetBottommostIndex()
         {
-            var sourcePanel = (ItemsStackPanel)ConversationItemsControl.ItemsPanelRoot;
-            return sourcePanel.LastVisibleIndex;
+            Logger.LogTrace("GetBottommostIndex()");
+            var sourcePanel = ConversationItemsControl.ItemsPanelRoot as ItemsStackPanel;
+            if (sourcePanel != null)
+            {
+                return sourcePanel.LastVisibleIndex;
+            }
+            else
+            {
+                Logger.LogError("GetBottommostIndex() ItemsPanelRoot is not a valid ItemsStackPanel ({0})", ConversationItemsControl.ItemsPanelRoot);
+                return -1;
+            }
         }
 
         private void ConversationSettingsButton_Click(object sender, RoutedEventArgs e)
@@ -321,10 +330,12 @@ namespace Signal_Windows.Controls
         private void ScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
         {
             int bottomIndex = GetBottommostIndex();
+            Logger.LogTrace("ScrollViewer_ViewChanged() bottomIndex={}", bottomIndex);
             if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground &&
                 SignalConversation.LastSeenMessageIndex < bottomIndex &&
                 LastMarkReadRequest < bottomIndex)
             {
+                Logger.LogTrace("ScrollViewer_ViewChanged() setting index {0} as read", bottomIndex);
                 LastMarkReadRequest = bottomIndex;
                 Task.Run(async () =>
                 {
