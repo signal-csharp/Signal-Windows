@@ -330,19 +330,27 @@ namespace Signal_Windows.Controls
         private void ScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
         {
             int bottomIndex = GetBottommostIndex();
-            Logger.LogTrace("ScrollViewer_ViewChanged() bottomIndex={}", bottomIndex);
+            Logger.LogTrace("ScrollViewer_ViewChanged() bottomIndex={0}", bottomIndex);
             try
             {
-                if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground &&
-                    SignalConversation.LastSeenMessageIndex < bottomIndex &&
-                    LastMarkReadRequest < bottomIndex)
+                CoreWindow window = Window.Current.CoreWindow;
+                Logger.LogTrace("ScrollViewer_ViewChanged() window={0}", window);
+                CoreWindowActivationMode mode = window.ActivationMode;
+                Logger.LogTrace("ScrollViewer_ViewChanged() mode={0}", mode);
+                if (mode == CoreWindowActivationMode.ActivatedInForeground)
                 {
-                    Logger.LogTrace("ScrollViewer_ViewChanged() setting index {0} as read", bottomIndex);
-                    LastMarkReadRequest = bottomIndex;
-                    Task.Run(async () =>
+                    Logger.LogTrace("ScrollViewer_ViewChanged() mode ==  CoreWindowActivationMode.ActivatedInForeground");
+                    long lastSeenIndex = SignalConversation.LastSeenMessageIndex;
+                    Logger.LogTrace("ScrollViewer_ViewChanged() lastSeenIndex={0} LastMarkReadRequest={1}", lastSeenIndex, LastMarkReadRequest);
+                    if (lastSeenIndex < bottomIndex && LastMarkReadRequest < bottomIndex)
                     {
-                        await App.Handle.SetMessageRead(bottomIndex, SignalConversation);
-                    });
+                        Logger.LogTrace("ScrollViewer_ViewChanged() setting index {0} as read", bottomIndex);
+                        LastMarkReadRequest = bottomIndex;
+                        Task.Run(async () =>
+                        {
+                            await App.Handle.SetMessageRead(bottomIndex, SignalConversation);
+                        });
+                    }
                 }
             }
             catch(Exception ex)
