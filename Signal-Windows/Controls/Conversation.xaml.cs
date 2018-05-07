@@ -34,6 +34,7 @@ namespace Signal_Windows.Controls
         private Dictionary<long, SignalAttachmentContainer> UnfinishedAttachmentsCache = new Dictionary<long, SignalAttachmentContainer>();
         private SignalConversation SignalConversation;
         public VirtualizedCollection Collection;
+        private CoreWindowActivationState ActivationState = CoreWindowActivationState.Deactivated;
         private int LastMarkReadRequest;
 
         private string _ThreadDisplayName;
@@ -99,6 +100,13 @@ namespace Signal_Windows.Controls
             Separator.Foreground = Utils.ForegroundIncoming;
             Username.Foreground = Utils.ForegroundIncoming;
             SendButtonEnabled = false;
+            Window.Current.Activated += HandleWindowActivated;
+        }
+
+        private void HandleWindowActivated(object sender, WindowActivatedEventArgs e)
+        {
+            Logger.LogTrace("HandleWindowActivated() new activation state {0}", e.WindowActivationState);
+            ActivationState = e.WindowActivationState;
         }
 
         public MainPageViewModel GetMainPageVm()
@@ -233,9 +241,8 @@ namespace Signal_Windows.Controls
             {
                 UpdateLayout();
                 ScrollToBottom();
-                if (Window.Current.CoreWindow.ActivationMode == CoreWindowActivationMode.ActivatedInForeground)
+                if (ActivationState != CoreWindowActivationState.Deactivated)
                 {
-                    Logger.LogTrace("Append at no-virt-index  {0}", sm.Index);
                     result = new AppendResult(sm.Index + 1);
                 }
             }
@@ -305,7 +312,6 @@ namespace Signal_Windows.Controls
 
         private int GetBottommostIndex()
         {
-            Logger.LogTrace("GetBottommostIndex()");
             var sourcePanel = ConversationItemsControl.ItemsPanelRoot as ItemsStackPanel;
             if (sourcePanel != null)
             {
@@ -329,33 +335,18 @@ namespace Signal_Windows.Controls
 
         private void ScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
         {
-            int bottomIndex = GetBottommostIndex();
-            Logger.LogTrace("ScrollViewer_ViewChanged() bottomIndex={0}", bottomIndex);
-            try
+            if (ActivationState != CoreWindowActivationState.Deactivated)
             {
-                CoreWindow window = Window.Current.CoreWindow;
-                Logger.LogTrace("ScrollViewer_ViewChanged() window={0}", window);
-                CoreWindowActivationMode mode = window.ActivationMode;
-                Logger.LogTrace("ScrollViewer_ViewChanged() mode={0}", mode);
-                if (mode == CoreWindowActivationMode.ActivatedInForeground)
+                int bottomIndex = GetBottommostIndex();
+                long lastSeenIndex = SignalConversation.LastSeenMessageIndex;
+                if (lastSeenIndex < bottomIndex && LastMarkReadRequest < bottomIndex)
                 {
-                    Logger.LogTrace("ScrollViewer_ViewChanged() mode ==  CoreWindowActivationMode.ActivatedInForeground");
-                    long lastSeenIndex = SignalConversation.LastSeenMessageIndex;
-                    Logger.LogTrace("ScrollViewer_ViewChanged() lastSeenIndex={0} LastMarkReadRequest={1}", lastSeenIndex, LastMarkReadRequest);
-                    if (lastSeenIndex < bottomIndex && LastMarkReadRequest < bottomIndex)
+                    LastMarkReadRequest = bottomIndex;
+                    Task.Run(async () =>
                     {
-                        Logger.LogTrace("ScrollViewer_ViewChanged() setting index {0} as read", bottomIndex);
-                        LastMarkReadRequest = bottomIndex;
-                        Task.Run(async () =>
-                        {
-                            await App.Handle.SetMessageRead(bottomIndex, SignalConversation);
-                        });
-                    }
+                        await App.Handle.SetMessageRead(bottomIndex, SignalConversation);
+                    });
                 }
-            }
-            catch(Exception ex)
-            {
-                Logger.LogError("ScrollViewer_ViewChanged() failed: {0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
     }
