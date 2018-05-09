@@ -133,6 +133,7 @@ namespace Signal_Windows
 
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
+            Logger.LogInformation("Launching (PreviousExecutionState={0})", e.PreviousExecutionState);
             try
             {
                 string taskName = "SignalMessageBackgroundTask";
@@ -169,10 +170,6 @@ namespace Signal_Windows
                 Logger.LogError("Cannot setup bg task: {0}\n{1}", ex.Message, ex.StackTrace);
             }
 
-
-            Logger.LogInformation("Launching (PreviousExecutionState={0})", e.PreviousExecutionState);
-            Logger.LogDebug(LocalCacheFolder.Path);
-
             bool createdMainWindow = await CreateMainWindow(null);
             if (!createdMainWindow)
             {
@@ -184,7 +181,7 @@ namespace Signal_Windows
                 }
                 else
                 {
-                    await ApplicationViewSwitcher.TryShowAsStandaloneAsync(currentId);
+                    await switcher.ShowAsStandaloneAsync(currentId);
                 }
             }
         }
