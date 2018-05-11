@@ -1044,6 +1044,7 @@ namespace Signal_Windows.Storage
         internal static SignalConversation UpdateMessageRead(long index, SignalConversation conversation)
         {
             SignalConversation dbConversation = null;
+            long newMarkerIndex = index + 1;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -1055,7 +1056,7 @@ namespace Signal_Windows.Storage
                             .SingleOrDefault();
                         if (contact != null)
                         {
-                            contact.LastSeenMessageIndex = Math.Max(index, contact.LastSeenMessageIndex);
+                            contact.LastSeenMessageIndex = Math.Max(newMarkerIndex, contact.LastSeenMessageIndex);
                             contact.UnreadCount = (uint)(contact.MessagesCount - contact.LastSeenMessageIndex);
                             dbConversation = contact;
                         }
@@ -1067,7 +1068,7 @@ namespace Signal_Windows.Storage
                             .SingleOrDefault();
                         if (group != null)
                         {
-                            group.LastSeenMessageIndex = Math.Max(index, group.LastSeenMessageIndex);
+                            group.LastSeenMessageIndex = Math.Max(newMarkerIndex, group.LastSeenMessageIndex);
                             group.UnreadCount =  (uint)(group.MessagesCount - group.LastSeenMessageIndex);
                             dbConversation = group;
                         }

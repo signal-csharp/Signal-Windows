@@ -157,7 +157,7 @@ namespace Signal_Windows.Lib
                     {
                         try
                         {
-                            HandleReadMessage(readMessage);
+                            HandleSyncedReadMessage(readMessage);
                         }
                         catch(Exception e)
                         {
@@ -172,14 +172,10 @@ namespace Signal_Windows.Lib
             }
         }
 
-        private void HandleReadMessage(ReadMessage readMessage)
+        private void HandleSyncedReadMessage(ReadMessage readMessage)
         {
             var conv = SignalDBContext.UpdateMessageRead(readMessage);
-            long readIndex = conv.LastSeenMessageIndex - 1;
-            if (readIndex > 0)
-            {
-                SignalLibHandle.Instance.DispatchMessageRead(conv.LastSeenMessageIndex - 1, conv).Wait();
-            }
+            SignalLibHandle.Instance.DispatchMessageRead(conv.LastSeenMessageIndex, conv).Wait();
         }
 
         private void HandleExpirationUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage message, bool isSync, long timestamp)
