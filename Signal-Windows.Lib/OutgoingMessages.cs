@@ -2,6 +2,7 @@
 using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
+using libsignalservice.messages.multidevice;
 using libsignalservice.push;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
@@ -37,6 +38,14 @@ namespace Signal_Windows.Lib
             lock (this)
             {
                 MessageSender.sendMessage(recipients, message);
+            }
+        }
+
+        public void SendMessage(SignalServiceSyncMessage message)
+        {
+            lock (this)
+            {
+                MessageSender.sendMessage(message);
             }
         }
 
