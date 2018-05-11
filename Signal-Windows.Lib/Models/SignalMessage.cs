@@ -30,7 +30,8 @@ namespace Signal_Windows.Models
         GroupUpdate = 1,
         SessionReset = 2,
         ExpireUpdate = 3,
-        IdentityKeyChange = 4
+        IdentityKeyChange = 4,
+        GroupLeave = 5
     }
 
     public enum SignalMessageDirection
