@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Signal_Windows.Controls"
+    xmlns:model="using:Signal_Windows.Models"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -26,7 +27,17 @@
                 <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="15" FontWeight="SemiLight" Text="{x:Bind Model.ThreadDisplayName, Mode=OneWay}" TextTrimming="CharacterEllipsis"/>
                 <TextBlock x:Name="LastActiveTextBlock" Grid.Column="1" Text="{x:Bind LastMessageTimestamp, Mode=OneWay}" FontSize="11" Foreground="#999999" TextTrimming="CharacterEllipsis"/>
             </Grid>
-            <TextBlock Text="{x:Bind LastMessage, Mode=OneWay}" FontSize="12"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{x:Bind LastMessage, Mode=OneWay}" FontSize="12"/>
+                <Grid Grid.Column="1" Width="20" Height="20" Margin="10 0 0 0">
+                    <Ellipse Fill="#2190EA" Visibility="{x:Bind UnreadStringVisibility, Mode=TwoWay}"/>
+                    <TextBlock Text="{x:Bind UnreadString, Mode=TwoWay}" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+            </Grid>
         </StackPanel>
     </Grid>
 </UserControl>

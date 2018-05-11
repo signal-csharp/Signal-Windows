@@ -42,6 +42,26 @@ namespace Signal_Windows.Controls
             {
                 _UnreadCount = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UnreadString)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UnreadStringVisibility)));
+            }
+        }
+
+        public Visibility UnreadStringVisibility
+        {
+            get
+            {
+                if (UnreadCount > 0)
+                {
+                    return Visibility.Visible;
+                }
+                else
+                {
+                    return Visibility.Collapsed;
+                }
+            }
+            set
+            {
+                // we never set this
             }
         }
 
@@ -57,6 +77,10 @@ namespace Signal_Windows.Controls
                 {
                     return "";
                 }
+            }
+            set
+            {
+                // we never set this
             }
         }
 
