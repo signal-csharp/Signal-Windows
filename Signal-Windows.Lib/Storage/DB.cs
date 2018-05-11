@@ -4,6 +4,7 @@ using libsignal.state;
 using libsignal.util;
 using libsignalservice;
 using libsignalservice.messages;
+using libsignalservice.messages.multidevice;
 using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
@@ -985,6 +986,59 @@ namespace Signal_Windows.Storage
             }
         }
 
+        internal static void UpdateMessageRead(ReadMessage readMessage)
+        {
+            SignalConversation conversation;
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var message = ctx.Messages
+                        .Where(m => m.ComposedTimestamp == readMessage.getTimestamp())
+                        .Single(); //TODO care about early reads sometime
+                    conversation = GetSignalConversation(ctx, message.ThreadId);
+                    var currentLastSeenMessage = ctx.Messages
+                        .Where(m => m.ThreadId == conversation.ThreadId)
+                        .Skip((int) conversation.LastSeenMessageIndex-1)
+                        .Take(1)
+                        .Single();
+                    if (message.Id > currentLastSeenMessage.Id)
+                    {
+                        var diff = ctx.Messages
+                            .Where(m => m.ThreadId == conversation.ThreadId && m.Id <= message.Id && m.Id > currentLastSeenMessage.Id)
+                            .Count();
+                        conversation.LastSeenMessageIndex += diff;
+                        conversation.UnreadCount -= (uint) diff;
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+            SignalLibHandle.Instance.DispatchAddOrUpdateConversation(conversation, null);
+        }
+
+        private static SignalConversation GetSignalConversation(SignalDBContext ctx, string threadid)
+        {
+            SignalConversation conversation;
+            if (!threadid.EndsWith("="))
+            {
+                conversation = ctx.Contacts
+                    .Where(contact => threadid == contact.ThreadId)
+                    .Include(c => c.LastMessage)
+                    .ThenInclude(m => m.Content)
+                    .SingleOrDefault();
+            }
+            else
+            {
+                conversation = ctx.Groups
+                        .Where(g => threadid == g.ThreadId)
+                        .Include(g => g.GroupMemberships)
+                        .ThenInclude(gm => gm.Contact)
+                        .Include(g => g.LastMessage)
+                        .ThenInclude(m => m.Content)
+                        .SingleOrDefault();
+            }
+            return conversation;
+        }
 
         internal static SignalConversation UpdateMessageRead(long index, SignalConversation conversation)
         {
