@@ -241,11 +241,11 @@ namespace Signal_Windows.ViewModels
             return result;
         }
 
-        public void HandleMessageRead(long messageIndex, SignalConversation conversation)
+        public void HandleMessageRead(long unreadMarkerIndex, SignalConversation conversation)
         {
             var localConversation = ConversationsDictionary[conversation.ThreadId];
-            Logger.LogTrace("LastSeenMessageIndex = {0}", messageIndex);
-            localConversation.LastSeenMessageIndex = messageIndex;
+            Logger.LogTrace("LastSeenMessageIndex = {0}", unreadMarkerIndex);
+            localConversation.LastSeenMessageIndex = unreadMarkerIndex;
             localConversation.UnreadCount = conversation.UnreadCount;
             localConversation.UpdateUI();
         }

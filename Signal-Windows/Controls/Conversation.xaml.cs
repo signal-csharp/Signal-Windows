@@ -243,7 +243,7 @@ namespace Signal_Windows.Controls
                 ScrollToBottom();
                 if (ActivationState != CoreWindowActivationState.Deactivated)
                 {
-                    result = new AppendResult(sm.Index + 1);
+                    result = new AppendResult(sm.Index);
                 }
             }
             return result;
@@ -338,13 +338,15 @@ namespace Signal_Windows.Controls
             if (ActivationState != CoreWindowActivationState.Deactivated)
             {
                 int bottomIndex = GetBottommostIndex();
+                int rawBottomIndex = Collection.GetRawIndex(bottomIndex);
                 long lastSeenIndex = SignalConversation.LastSeenMessageIndex;
-                if (lastSeenIndex < bottomIndex && LastMarkReadRequest < bottomIndex)
+                Logger.LogTrace("bottom={0} rawBottom={1} lastSeen={2} LastMarkReadRequest={3}", bottomIndex, rawBottomIndex, lastSeenIndex, LastMarkReadRequest);
+                if (lastSeenIndex <= rawBottomIndex && LastMarkReadRequest < rawBottomIndex)
                 {
-                    LastMarkReadRequest = bottomIndex;
+                    LastMarkReadRequest = rawBottomIndex;
                     Task.Run(async () =>
                     {
-                        await App.Handle.SetMessageRead(bottomIndex, ((SignalMessageContainer) Collection[bottomIndex]).Message, SignalConversation);
+                        await App.Handle.SetMessageRead(rawBottomIndex, ((SignalMessageContainer) Collection[bottomIndex]).Message, SignalConversation);
                     });
                 }
             }

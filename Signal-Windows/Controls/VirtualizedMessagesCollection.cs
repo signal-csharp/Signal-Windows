@@ -230,6 +230,25 @@ namespace Signal_Windows.Controls
             }
         }
 
+        public int GetRawIndex(int virtualIndex)
+        {
+            if (UnreadMarkerIndex > 0)
+            {
+                if (virtualIndex < UnreadMarkerIndex)
+                {
+                    return virtualIndex;
+                }
+                else
+                {
+                    return virtualIndex - 1;
+                }
+            }
+            else
+            {
+                return virtualIndex;
+            }
+        }
+
         public void Insert(int index, object value)
         {
             throw new NotImplementedException();

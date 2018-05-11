@@ -40,7 +40,7 @@ namespace Signal_Windows.Lib
         void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage);
         AppendResult HandleMessage(SignalMessage message, SignalConversation conversation);
         void HandleUnreadMessage(SignalMessage message);
-        void HandleMessageRead(long messageIndex, SignalConversation conversation);
+        void HandleMessageRead(long unreadMarkerIndex, SignalConversation conversation);
         void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
@@ -345,7 +345,7 @@ namespace Signal_Windows.Lib
                 OutgoingMessages.SendMessage(SignalServiceSyncMessage.forRead(new List<ReadMessage>() {
                         new ReadMessage(message.Author.ThreadId, message.ComposedTimestamp)
                 }));
-                await DispatchMessageRead(index, conversation);
+                await DispatchMessageRead(index + 1, conversation);
             }
             finally
             {
@@ -495,7 +495,7 @@ namespace Signal_Windows.Lib
                     if (result != null)
                     {
                         SignalDBContext.UpdateMessageRead(result.Index, conversation);
-                        DispatchMessageRead(result.Index, conversation).Wait();
+                        DispatchMessageRead(result.Index + 1, conversation).Wait();
                         wasInstantlyRead = true;
                         break;
                     }
@@ -520,14 +520,14 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        internal async Task DispatchMessageRead(long messageIndex, SignalConversation conversation)
+        internal async Task DispatchMessageRead(long unreadMarkerIndex, SignalConversation conversation)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
                 operations.Add(dispatcher.RunTaskAsync(() =>
                 {
-                    Frames[dispatcher].HandleMessageRead(messageIndex, conversation);
+                    Frames[dispatcher].HandleMessageRead(unreadMarkerIndex, conversation);
                 }));
             }
             foreach (var waitHandle in operations)
