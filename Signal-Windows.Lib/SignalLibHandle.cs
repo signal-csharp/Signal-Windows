@@ -20,6 +20,9 @@ using System.IO;
 using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
 using Windows.Web;
+using libsignalservice.push;
+using Strilanc.Value;
+using libsignalservice.messages.multidevice;
 
 namespace Signal_Windows.Lib
 {
@@ -50,7 +53,7 @@ namespace Signal_Windows.Lib
         //Frontend API
         SignalStore Store { get; set; }
         Task SendMessage(SignalMessage message, SignalConversation conversation);
-        Task SetMessageRead(long index, SignalConversation conversation);
+        Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
         List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count);
         void SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
@@ -331,7 +334,7 @@ namespace Signal_Windows.Lib
         /// Marks and dispatches a message as read. Must not be called on a task which holds the handle lock.
         /// </summary>
         /// <param name="message"></param>
-        public async Task SetMessageRead(long index, SignalConversation conversation)
+        public async Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation)
         {
             Logger.LogTrace("SetMessageRead() locking");
             await SemaphoreSlim.WaitAsync(CancelSource.Token);
@@ -339,6 +342,9 @@ namespace Signal_Windows.Lib
             {
                 Logger.LogTrace("SetMessageRead() locked");
                 conversation = SignalDBContext.UpdateMessageRead(index, conversation);
+                OutgoingMessages.SendMessage(SignalServiceSyncMessage.forRead(new List<ReadMessage>() {
+                        new ReadMessage(message.Author.ThreadId, message.ComposedTimestamp)
+                }));
                 await DispatchMessageRead(index, conversation);
             }
             finally
