@@ -745,70 +745,77 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    long timestamp;
-                    if (message.Direction == SignalMessageDirection.Synced)
-                    {
-                        var receipts = ctx.EarlyReceipts
-                        .Where(er => er.Timestamp == message.ComposedTimestamp)
-                        .ToList();
-
-                        message.Receipts = (uint)receipts.Count;
-                        ctx.EarlyReceipts.RemoveRange(receipts);
-                        if (message.Receipts > 0)
-                        {
-                            message.Status = SignalMessageStatus.Received;
-                        }
-                    }
-                    if (message.Author != null)
-                    {
-                        timestamp = message.ReceivedTimestamp;
-                        message.Author = ctx.Contacts.Where(a => a.Id == message.Author.Id).Single();
-                    }
-                    else
-                    {
-                        timestamp = message.ComposedTimestamp;
-                    }
-                    if (!message.ThreadId.EndsWith("="))
-                    {
-                        var contact = ctx.Contacts
-                            .Where(c => c.ThreadId == message.ThreadId)
-                            .Single();
-                        contact.LastActiveTimestamp = timestamp;
-                        contact.LastMessage = message;
-                        contact.MessagesCount += 1;
-                        if (message.Author == null)
-                        {
-                            contact.UnreadCount = 0;
-                            contact.LastSeenMessageIndex = contact.MessagesCount;
-                        }
-                        else
-                        {
-                            contact.UnreadCount += 1;
-                        }
-                    }
-                    else
-                    {
-                        var group = ctx.Groups
-                            .Where(c => c.ThreadId == message.ThreadId)
-                            .Single();
-                        message.ExpiresAt = group.ExpiresInSeconds;
-                        group.LastActiveTimestamp = timestamp;
-                        group.LastMessage = message;
-                        group.MessagesCount += 1;
-                        if (message.Author == null)
-                        {
-                            group.UnreadCount = 0;
-                            group.LastSeenMessageIndex = group.MessagesCount;
-                        }
-                        else
-                        {
-                            group.UnreadCount += 1;
-                        }
-                    }
-                    ctx.Messages.Add(message);
-                    ctx.SaveChanges();
+                    SaveMessage(ctx, message);
                 }
             }
+        }
+
+        private static SignalConversation SaveMessage(SignalDBContext ctx, SignalMessage message)
+        {
+            SignalConversation conversation;
+            long timestamp;
+            if (message.Direction == SignalMessageDirection.Synced)
+            {
+                var receipts = ctx.EarlyReceipts
+                .Where(er => er.Timestamp == message.ComposedTimestamp)
+                .ToList();
+
+                message.Receipts = (uint)receipts.Count;
+                ctx.EarlyReceipts.RemoveRange(receipts);
+                if (message.Receipts > 0)
+                {
+                    message.Status = SignalMessageStatus.Received;
+                }
+            }
+            if (message.Author != null)
+            {
+                timestamp = message.ReceivedTimestamp;
+                message.Author = ctx.Contacts.Where(a => a.Id == message.Author.Id).Single();
+            }
+            else
+            {
+                timestamp = message.ComposedTimestamp;
+            }
+            if (!message.ThreadId.EndsWith("="))
+            {
+                conversation = ctx.Contacts
+                    .Where(c => c.ThreadId == message.ThreadId)
+                    .Single();
+                conversation.LastActiveTimestamp = timestamp;
+                conversation.LastMessage = message;
+                conversation.MessagesCount += 1;
+                if (message.Author == null)
+                {
+                    conversation.UnreadCount = 0;
+                    conversation.LastSeenMessageIndex = conversation.MessagesCount;
+                }
+                else
+                {
+                    conversation.UnreadCount += 1;
+                }
+            }
+            else
+            {
+                conversation = ctx.Groups
+                    .Where(c => c.ThreadId == message.ThreadId)
+                    .Single();
+                message.ExpiresAt = conversation.ExpiresInSeconds;
+                conversation.LastActiveTimestamp = timestamp;
+                conversation.LastMessage = message;
+                conversation.MessagesCount += 1;
+                if (message.Author == null)
+                {
+                    conversation.UnreadCount = 0;
+                    conversation.LastSeenMessageIndex = conversation.MessagesCount;
+                }
+                else
+                {
+                    conversation.UnreadCount += 1;
+                }
+            }
+            ctx.Messages.Add(message);
+            ctx.SaveChanges();
+            return conversation;
         }
 
         public static List<SignalMessageContainer> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
@@ -1026,6 +1033,23 @@ namespace Signal_Windows.Storage
         #endregion Threads
 
         #region Groups
+
+        public static SignalConversation RemoveMemberFromGroup(string groupId, SignalContact member, SignalMessage quitMessage)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var dbgroup = ctx.Groups
+                        .Where(g => g.ThreadId == groupId)
+                        .Include(g => g.GroupMemberships)
+                        .ThenInclude(gm => gm.Contact)
+                        .Single();
+                    dbgroup.GroupMemberships.RemoveAll(gm => gm.Contact.Id == member.Id);
+                    return SaveMessage(ctx, quitMessage);
+                }
+            }
+        }
 
         public static SignalGroup GetOrCreateGroupLocked(string groupId, long timestamp, bool notify = true)
         {

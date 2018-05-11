@@ -112,6 +112,14 @@ namespace Signal_Windows.Lib
                     {
                         HandleGroupUpdateMessage(envelope, content, message, false, timestamp);
                     }
+                    else if (message.Group.Type == SignalServiceGroup.GroupType.QUIT)
+                    {
+                        HandleGroupLeaveMessage(envelope, content, message, false, timestamp);
+                    }
+                    else if (message.Group.Type == SignalServiceGroup.GroupType.REQUEST_INFO)
+                    {
+                        Logger.LogWarning("Received REQUEST_INFO request");
+                    }
                 }
                 else if (message.ExpirationUpdate)
                 {
@@ -138,6 +146,14 @@ namespace Signal_Windows.Lib
                         if (dataMessage.Group.Type == SignalServiceGroup.GroupType.UPDATE)
                         {
                             HandleGroupUpdateMessage(envelope, content, dataMessage, true, timestamp);
+                        }
+                        else if (dataMessage.Group.Type == SignalServiceGroup.GroupType.QUIT)
+                        {
+                            HandleGroupLeaveMessage(envelope, content, dataMessage, true, timestamp);
+                        }
+                        else if (dataMessage.Group.Type == SignalServiceGroup.GroupType.REQUEST_INFO)
+                        {
+                            Logger.LogWarning("Received synced REQUEST_INFO request");
                         }
                     }
                     else if (dataMessage.ExpirationUpdate)
@@ -269,6 +285,43 @@ namespace Signal_Windows.Lib
                 ReceivedTimestamp = timestamp,
             };
             SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, conversation);
+        }
+
+        private void HandleGroupLeaveMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
+        {
+            SignalServiceGroup sentGroup = dataMessage.Group;
+            if (sentGroup != null)
+            {
+                string groupid = Base64.encodeBytes(sentGroup.GroupId);
+                SignalGroup group = SignalDBContext.GetOrCreateGroupLocked(groupid, 0);
+                if (isSync)
+                {
+                    //TODO
+                }
+                else
+                {
+                    SignalContact author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), 0);
+                    SignalMessage sm = new SignalMessage()
+                    {
+                        Direction = SignalMessageDirection.Incoming,
+                        Type = SignalMessageType.GroupLeave,
+                        Status = SignalMessageStatus.Received,
+                        Author = author,
+                        Content = new SignalMessageContent() { Content = $"{author.ThreadDisplayName} has left the group." },
+                        ThreadId = groupid,
+                        DeviceId = (uint)envelope.getSourceDevice(),
+                        Receipts = 0,
+                        ComposedTimestamp = envelope.getTimestamp(),
+                        ReceivedTimestamp = timestamp,
+                    };
+                    SignalConversation updatedConversation = SignalDBContext.RemoveMemberFromGroup(groupid, author, sm);
+                    SignalLibHandle.Instance.DispatchAddOrUpdateConversation(updatedConversation, sm);
+                }
+            }
+            else
+            {
+                Logger.LogError("HandleGroupLeaveMessage() received group update without group info");
+            }
         }
 
         private void HandleGroupUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
