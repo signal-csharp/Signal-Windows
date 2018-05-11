@@ -1,6 +1,7 @@
 ﻿using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
+using libsignalservice.messages.multidevice;
 using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.Extensions.Logging;
@@ -154,7 +155,14 @@ namespace Signal_Windows.Lib
                     var readMessages = content.SynchronizeMessage.getRead().ForceGetValue();
                     foreach (var readMessage in readMessages)
                     {
-                        //TODO
+                        try
+                        {
+                            HandleReadMessage(readMessage);
+                        }
+                        catch(Exception e)
+                        {
+                            Logger.LogError("HandleReadMessage failed: {0}\n{1}", e.Message, e.StackTrace);
+                        }
                     }
                 }
             } //TODO callmessages
@@ -162,6 +170,11 @@ namespace Signal_Windows.Lib
             {
                 Logger.LogWarning("HandleMessage() received unrecognized message");
             }
+        }
+
+        private void HandleReadMessage(ReadMessage readMessage)
+        {
+            SignalDBContext.UpdateMessageRead(readMessage);
         }
 
         private void HandleExpirationUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage message, bool isSync, long timestamp)
