@@ -986,7 +986,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        internal static void UpdateMessageRead(ReadMessage readMessage)
+        internal static SignalConversation UpdateMessageRead(ReadMessage readMessage)
         {
             SignalConversation conversation;
             lock (DBLock)
@@ -1014,6 +1014,7 @@ namespace Signal_Windows.Storage
                 }
             }
             SignalLibHandle.Instance.DispatchAddOrUpdateConversation(conversation, null);
+            return conversation;
         }
 
         private static SignalConversation GetSignalConversation(SignalDBContext ctx, string threadid)
