@@ -340,7 +340,6 @@ namespace Signal_Windows.Controls
                 int bottomIndex = GetBottommostIndex();
                 int rawBottomIndex = Collection.GetRawIndex(bottomIndex);
                 long lastSeenIndex = SignalConversation.LastSeenMessageIndex;
-                Logger.LogTrace("bottom={0} rawBottom={1} lastSeen={2} LastMarkReadRequest={3}", bottomIndex, rawBottomIndex, lastSeenIndex, LastMarkReadRequest);
                 if (lastSeenIndex <= rawBottomIndex && LastMarkReadRequest < rawBottomIndex)
                 {
                     LastMarkReadRequest = rawBottomIndex;
