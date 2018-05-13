@@ -596,7 +596,7 @@ namespace Signal_Windows.Storage
         {
             List<PreKeyRecord> oneTimePreKeys = GeneratePreKeys();
             SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(GetIdentityKeyPair());
-            accountManager.setPreKeys(GetIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+            accountManager.SetPreKeys(GetIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
         }
 
         private static List<PreKeyRecord> GeneratePreKeys()

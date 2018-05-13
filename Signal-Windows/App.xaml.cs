@@ -24,6 +24,7 @@ using System.Collections.Concurrent;
 using Windows.ApplicationModel.Background;
 using Windows.Networking.BackgroundTransfer;
 using Windows.UI;
+using libsignalservice.configuration;
 
 namespace Signal_Windows
 {
@@ -34,8 +35,8 @@ namespace Signal_Windows
     {
         private static App Instance;
         private static ILogger Logger = LibsignalLogging.CreateLogger<App>();
-        public static string URL = "https://textsecure-service.whispersystems.org";
-        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
+        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl("https://textsecure-service.whispersystems.org") };
+        public static SignalServiceConfiguration ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null);
         public static StorageFolder LocalCacheFolder = ApplicationData.Current.LocalCacheFolder;
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";

@@ -23,6 +23,7 @@ using Windows.Web;
 using libsignalservice.push;
 using Strilanc.Value;
 using libsignalservice.messages.multidevice;
+using libsignalservice.crypto;
 
 namespace Signal_Windows.Lib
 {
@@ -373,11 +374,6 @@ namespace Signal_Windows.Lib
             SemaphoreSlim.Release();
             Logger.LogTrace("SaveAndDispatchSignalConversation() released");
         }
-
-        public void RetrieveAttachment(SignalServiceAttachmentPointer pointer, Stream downloadStream, Stream tempStream)
-        {
-            MessageReceiver.retrieveAttachment(pointer, downloadStream, tempStream, 0);
-        }
         #endregion
 
         #region attachment api
@@ -631,9 +627,9 @@ namespace Signal_Windows.Lib
         {
             try
             {
-                MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceUrls, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
-                Pipe = MessageReceiver.createMessagePipe();
-                MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceUrls, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
+                MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
+                Pipe = MessageReceiver.CreateMessagePipe();
+                MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
                 IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, this).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
                 OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
                 OutgoingMessagesTask = Task.Factory.StartNew(() => OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
@@ -737,9 +733,11 @@ namespace Signal_Windows.Lib
             return MessageReceiver.RetrieveAttachmentDownloadUrl(pointer);
         }
 
-        private void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream tempStream, Stream downloadStream)
+        private void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream ciphertextFileStream, Stream plaintextFileStream)
         {
-            MessageReceiver.DecryptAttachment(pointer, tempStream, downloadStream);
+            byte[] buf = new byte[32];
+            Stream s = new AttachmentCipherInputStream(ciphertextFileStream, pointer.Key, pointer.Digest);
+            s.CopyTo(plaintextFileStream);
         }
 
         private async Task RecoverDownloads()

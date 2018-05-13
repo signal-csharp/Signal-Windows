@@ -26,7 +26,7 @@ namespace Signal_Windows.ViewModels
                 await Task.Run(() =>
                 {
                     string SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
-                    App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.verifyAccountWithCode(
+                    App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.VerifyAccountWithCode(
                         App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
                             SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
                             true);
@@ -50,7 +50,7 @@ namespace Signal_Windows.ViewModels
 
                     /* create prekeys */
                     LibsignalDBContext.RefreshPreKeys(
-                        new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                        new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();

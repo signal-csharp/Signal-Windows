@@ -30,7 +30,7 @@ namespace Signal_Windows.Models
                 ContentType,
                 Key,
                 Relay,
-                (uint)Util.toIntExact(Size),
+                (uint)Util.ToIntExact(Size),
                 null,
                 Digest,
                 FileName,

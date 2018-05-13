@@ -1,4 +1,5 @@
 using libsignalservice;
+using libsignalservice.configuration;
 using libsignalservice.push;
 using Microsoft.Extensions.Logging;
 using Microsoft.Toolkit.Uwp.Notifications;
@@ -69,7 +70,8 @@ namespace Signal_Windows.Lib
         public const string GlobalMutexName = "SignalWindowsPrivateMessenger_Mutex";
         public const string GlobalEventWaitHandleName = "SignalWindowsPrivateMessenger_EventWaitHandle";
         public static string URL = "https://textsecure-service.whispersystems.org";
-        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(URL, null) };
+        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl("https://textsecure-service.whispersystems.org") };
+        public static SignalServiceConfiguration ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null);
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;

@@ -81,7 +81,7 @@ namespace Signal_Windows.ViewModels
                     /* prepare qrcode */
                     string password = Base64.encodeBytes(Util.getSecretBytes(18));
                     IdentityKeyPair tmpIdentity = KeyHelper.generateIdentityKeyPair();
-                    SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceUrls, CancelSource.Token, "Signal-Windows");
+                    SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, CancelSource.Token, "Signal-Windows");
                     string uuid = accountManager.GetNewDeviceUuid(CancelSource.Token);
                     string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.encodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -117,7 +117,7 @@ namespace Signal_Windows.ViewModels
                     }).AsTask().Wait();
 
                     /* create prekeys */
-                    LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceUrls, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                    LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();
