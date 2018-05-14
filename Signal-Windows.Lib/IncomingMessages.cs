@@ -97,7 +97,7 @@ namespace Signal_Windows.Lib
         private void HandleMessage(SignalServiceEnvelope envelope)
         {
             var cipher = new SignalServiceCipher(new SignalServiceAddress(SignalLibHandle.Instance.Store.Username), new Store());
-            var content = cipher.decrypt(envelope);
+            var content = cipher.Decrypt(envelope);
             long timestamp = Util.CurrentTimeMillis();
 
             if (content.Message != null)
@@ -175,15 +175,21 @@ namespace Signal_Windows.Lib
                         {
                             HandleSyncedReadMessage(readMessage);
                         }
-                        catch(Exception e)
+                        catch (Exception e)
                         {
                             Logger.LogError("HandleReadMessage failed: {0}\n{1}", e.Message, e.StackTrace);
                         }
                     }
                 }
-            } //TODO callmessages
+            }
+            else if (content.ReadMessage != null)
+            {
+                SignalServiceReceiptMessage receiptMessage = content.ReadMessage;
+                Logger.LogTrace("HandleMessage() received ReceiptMessage (type={0}, when={1})", receiptMessage.ReceiptType, receiptMessage.When);
+            }
             else
             {
+                //TODO callmessages
                 Logger.LogWarning("HandleMessage() received unrecognized message");
             }
         }
@@ -213,7 +219,7 @@ namespace Signal_Windows.Lib
                 prefix = "You have";
                 if (message.Group != null)
                 {
-                    conversation = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(message.Group.GroupId), 0);
+                    conversation = SignalDBContext.GetOrCreateGroupLocked(Base64.EncodeBytes(message.Group.GroupId), 0);
                 }
                 else
                 {
@@ -229,7 +235,7 @@ namespace Signal_Windows.Lib
                 composedTimestamp = envelope.getTimestamp();
                 if (message.Group != null)
                 {
-                    conversation = SignalDBContext.GetOrCreateGroupLocked(Base64.encodeBytes(message.Group.GroupId), 0);
+                    conversation = SignalDBContext.GetOrCreateGroupLocked(Base64.EncodeBytes(message.Group.GroupId), 0);
                 }
                 else
                 {
@@ -306,7 +312,7 @@ namespace Signal_Windows.Lib
             SignalServiceGroup sentGroup = dataMessage.Group;
             if (sentGroup != null)
             {
-                string groupid = Base64.encodeBytes(sentGroup.GroupId);
+                string groupid = Base64.EncodeBytes(sentGroup.GroupId);
                 SignalGroup group = SignalDBContext.GetOrCreateGroupLocked(groupid, 0);
                 if (isSync)
                 {
@@ -343,7 +349,7 @@ namespace Signal_Windows.Lib
             if (dataMessage.Group != null) //TODO check signal droid: group messages have different types!
             {
                 SignalServiceGroup group = dataMessage.Group;
-                string groupid = Base64.encodeBytes(group.GroupId);
+                string groupid = Base64.EncodeBytes(group.GroupId);
                 SignalGroup g = new SignalGroup();
                 string displayname = "Unknown group";
                 string avatarfile = null;
@@ -430,7 +436,7 @@ namespace Signal_Windows.Lib
             if (dataMessage.Group != null)
             {
                 var rawId = dataMessage.Group.GroupId;
-                var threadId = Base64.encodeBytes(rawId);
+                var threadId = Base64.EncodeBytes(rawId);
                 conversation = SignalDBContext.GetOrCreateGroupLocked(threadId, timestamp);
                 if (!conversation.CanReceive)
                 {

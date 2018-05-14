@@ -37,7 +37,7 @@ namespace Signal_Windows.Lib
         {
             lock (this)
             {
-                MessageSender.sendMessage(recipients, message);
+                MessageSender.SendMessage(recipients, message);
             }
         }
 
@@ -45,7 +45,7 @@ namespace Signal_Windows.Lib
         {
             lock (this)
             {
-                MessageSender.sendMessage(message);
+                MessageSender.SendMessage(message);
             }
         }
 
@@ -69,7 +69,7 @@ namespace Signal_Windows.Lib
                     {
                         if (!Token.IsCancellationRequested)
                         {
-                            MessageSender.sendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
+                            MessageSender.SendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
@@ -116,7 +116,7 @@ namespace Signal_Windows.Lib
                     }
                     foreach (UntrustedIdentityException e in identityExceptions)
                     {
-                        Handle.HandleOutgoingKeyChangeLocked(e.getE164Number(), Base64.encodeBytes(e.getIdentityKey().serialize()));
+                        Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
                     }
                 }
                 catch (RateLimitException)
@@ -128,7 +128,7 @@ namespace Signal_Windows.Lib
                 {
                     Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Identity;
-                    Handle.HandleOutgoingKeyChangeLocked(e.getE164Number(), Base64.encodeBytes(e.getIdentityKey().serialize()));
+                    Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
                 }
                 catch (Exception e)
                 {

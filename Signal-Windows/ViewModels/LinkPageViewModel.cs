@@ -79,7 +79,7 @@ namespace Signal_Windows.ViewModels
                     LibsignalDBContext.PurgeAccountData();
 
                     /* prepare qrcode */
-                    string password = Base64.encodeBytes(Util.getSecretBytes(18));
+                    string password = Base64.EncodeBytes(Util.getSecretBytes(18));
                     IdentityKeyPair tmpIdentity = KeyHelper.generateIdentityKeyPair();
                     SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, CancelSource.Token, "Signal-Windows");
                     string uuid = accountManager.GetNewDeviceUuid(CancelSource.Token);
@@ -91,14 +91,14 @@ namespace Signal_Windows.ViewModels
                         QRCodeString = tsdevice;
                     }).AsTask().Wait();
 
-                    string tmpSignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
+                    string tmpSignalingKey = Base64.EncodeBytes(Util.getSecretBytes(52));
                     int registrationId = (int)KeyHelper.generateRegistrationId(false);
 
                     NewDeviceLinkResult result = accountManager.FinishNewDeviceRegistration(tmpIdentity, tmpSignalingKey, password, false, true, registrationId, deviceName);
                     SignalStore store = new SignalStore()
                     {
                         DeviceId = (uint)result.DeviceId,
-                        IdentityKeyPair = Base64.encodeBytes(result.Identity.serialize()),
+                        IdentityKeyPair = Base64.EncodeBytes(result.Identity.serialize()),
                         NextSignedPreKeyId = 1,
                         Password = password,
                         PreKeyIdOffset = 1,

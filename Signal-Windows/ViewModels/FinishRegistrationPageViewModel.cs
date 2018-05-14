@@ -25,7 +25,7 @@ namespace Signal_Windows.ViewModels
             {
                 await Task.Run(() =>
                 {
-                    string SignalingKey = Base64.encodeBytes(Util.getSecretBytes(52));
+                    string SignalingKey = Base64.EncodeBytes(Util.getSecretBytes(52));
                     App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.VerifyAccountWithCode(
                         App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
                             SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
@@ -33,7 +33,7 @@ namespace Signal_Windows.ViewModels
                     SignalStore store = new SignalStore()
                     {
                         DeviceId = 1,
-                        IdentityKeyPair = Base64.encodeBytes(App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.IdentityKeyPair.serialize()),
+                        IdentityKeyPair = Base64.EncodeBytes(App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.IdentityKeyPair.serialize()),
                         NextSignedPreKeyId = 1,
                         Password = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.Password,
                         PreKeyIdOffset = 1,

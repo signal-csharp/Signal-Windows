@@ -376,14 +376,14 @@ namespace Signal_Windows.Storage
                         .SingleOrDefault();
                     if (session != null)
                     {
-                        session.Session = Base64.encodeBytes(record.serialize());
+                        session.Session = Base64.EncodeBytes(record.serialize());
                     }
                     else
                     {
                         ctx.Sessions.Add(new SignalSession()
                         {
                             DeviceId = address.DeviceId,
-                            Session = Base64.encodeBytes(record.serialize()),
+                            Session = Base64.EncodeBytes(record.serialize()),
                             Username = address.Name
                         });
                     }
@@ -470,7 +470,7 @@ namespace Signal_Windows.Storage
                     ctx.PreKeys.Add(new SignalPreKey()
                     {
                         Id = preKeyId,
-                        Key = Base64.encodeBytes(record.serialize())
+                        Key = Base64.EncodeBytes(record.serialize())
                     });
                     ctx.SaveChanges();
                 }
@@ -553,7 +553,7 @@ namespace Signal_Windows.Storage
                     ctx.SignedPreKeys.Add(new SignalSignedPreKey()
                     {
                         Id = signedPreKeyId,
-                        Key = Base64.encodeBytes(record.serialize())
+                        Key = Base64.EncodeBytes(record.serialize())
                     });
                     ctx.SaveChanges();
                 }
