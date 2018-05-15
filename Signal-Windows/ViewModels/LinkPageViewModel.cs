@@ -23,7 +23,6 @@ namespace Signal_Windows.ViewModels
         public LinkPage View;
         private CancellationTokenSource CancelSource;
         private bool UIEnabled = true;
-        private Task LinkingTask;
 
         public string DeviceName { get; set; } = "Signal on Windows";
 
@@ -71,63 +70,62 @@ namespace Signal_Windows.ViewModels
         {
             try
             {
+                Debug.WriteLine(SynchronizationContext.Current);
                 CancelSource = new CancellationTokenSource();
-                string deviceName = DeviceName;
-                LinkingTask = Task.Run(() =>
+                // clean the database from stale values
+                await Task.Run(() =>
                 {
-                    /* clean the database from stale values */
                     LibsignalDBContext.PurgeAccountData();
-
-                    /* prepare qrcode */
-                    string password = Base64.EncodeBytes(Util.getSecretBytes(18));
-                    IdentityKeyPair tmpIdentity = KeyHelper.generateIdentityKeyPair();
-                    SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, CancelSource.Token, "Signal-Windows");
-                    string uuid = accountManager.GetNewDeviceUuid(CancelSource.Token);
-                    string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.encodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        View.SetQR(tsdevice);
-                        QRVisible = Visibility.Visible;
-                        QRCodeString = tsdevice;
-                    }).AsTask().Wait();
-
-                    string tmpSignalingKey = Base64.EncodeBytes(Util.getSecretBytes(52));
-                    int registrationId = (int)KeyHelper.generateRegistrationId(false);
-
-                    NewDeviceLinkResult result = accountManager.FinishNewDeviceRegistration(tmpIdentity, tmpSignalingKey, password, false, true, registrationId, deviceName);
-                    SignalStore store = new SignalStore()
-                    {
-                        DeviceId = (uint)result.DeviceId,
-                        IdentityKeyPair = Base64.EncodeBytes(result.Identity.serialize()),
-                        NextSignedPreKeyId = 1,
-                        Password = password,
-                        PreKeyIdOffset = 1,
-                        Registered = true,
-                        RegistrationId = (uint)registrationId,
-                        SignalingKey = tmpSignalingKey,
-                        Username = result.Number
-                    };
-                    LibsignalDBContext.SaveOrUpdateSignalStore(store);
-
-                    /* reload registered state */
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        UIEnabled = false;
-                        App.Handle.Store = store;
-                    }).AsTask().Wait();
-
-                    /* create prekeys */
-                    LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
-
-                    /* reload again with prekeys and their offsets */
-                    store = LibsignalDBContext.GetSignalStore();
-                    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async() =>
-                    {
-                        App.Handle.Store = store;
-                        await View.Finish(true);
-                    }).AsTask().Wait();
                 });
-                await LinkingTask;
+
+                (string password, IdentityKeyPair tmpIdentity) = await Task.Run(() =>
+                {
+                    string newPassword = Base64.EncodeBytes(Util.getSecretBytes(18));
+                    IdentityKeyPair newTmpIdentity = KeyHelper.generateIdentityKeyPair();
+                    return (newPassword, newTmpIdentity);
+                });
+
+                // fetch new device uuid
+                SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, CancelSource.Token, "Signal-Windows");
+                string uuid = await accountManager.GetNewDeviceUuid(CancelSource.Token);
+                string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.encodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
+
+                View.SetQR(tsdevice); //TODO generate qrcode in worker task
+                QRVisible = Visibility.Visible;
+                QRCodeString = tsdevice;
+
+                string tmpSignalingKey = Base64.EncodeBytes(Util.getSecretBytes(52));
+                int registrationId = (int)KeyHelper.generateRegistrationId(false);
+
+                var provisionMessage = await accountManager.GetProvisioningMessage(CancelSource.Token, tmpIdentity);
+                int deviceId = await accountManager.FinishNewDeviceRegistration(CancelSource.Token, provisionMessage, tmpSignalingKey, password, false, true, registrationId, DeviceName);
+                SignalStore store = new SignalStore()
+                {
+                    DeviceId = (uint)deviceId,
+                    IdentityKeyPair = Base64.EncodeBytes(provisionMessage.Identity.serialize()),
+                    NextSignedPreKeyId = 1,
+                    Password = password,
+                    PreKeyIdOffset = 1,
+                    Registered = true,
+                    RegistrationId = (uint)registrationId,
+                    SignalingKey = tmpSignalingKey,
+                    Username = provisionMessage.Number
+                };
+                await Task.Run(() =>
+                {
+                    LibsignalDBContext.SaveOrUpdateSignalStore(store);
+                });
+
+                // reload registered state
+                UIEnabled = false;
+                App.Handle.Store = store;
+
+                // create prekeys
+                LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+
+                // reload again with prekeys and their offsets
+                App.Handle.Store = LibsignalDBContext.GetSignalStore();
+                await View.Finish(true);
             }
             catch (Exception e)
             {
@@ -141,18 +139,6 @@ namespace Signal_Windows.ViewModels
             if (UIEnabled)
             {
                 CancelSource.Cancel();
-                if (LinkingTask != null)
-                {
-                    try
-                    {
-                        await LinkingTask;
-                    }
-                    catch (Exception ex)
-                    {
-                        var line = new StackTrace(ex, true).GetFrames()[0].GetFileLineNumber();
-                        Logger.LogError("BackButton_Click() failed in line {0}: {1}\n{2}", line, ex.Message, ex.StackTrace);
-                    }
-                }
                 await Task.Run(() =>
                 {
                     App.Handle.PurgeAccountData();
