@@ -23,9 +23,6 @@ namespace Signal_Windows.ViewModels
         public LinkPage View;
         private CancellationTokenSource CancelSource;
         private bool UIEnabled = true;
-
-        public string DeviceName { get; set; } = "Signal on Windows";
-
         private Visibility _QRVisible;
 
         public Visibility QRVisible
@@ -70,7 +67,6 @@ namespace Signal_Windows.ViewModels
         {
             try
             {
-                Debug.WriteLine(SynchronizationContext.Current);
                 CancelSource = new CancellationTokenSource();
                 // clean the database from stale values
                 await Task.Run(() =>
@@ -98,7 +94,7 @@ namespace Signal_Windows.ViewModels
                 int registrationId = (int)KeyHelper.generateRegistrationId(false);
 
                 var provisionMessage = await accountManager.GetProvisioningMessage(CancelSource.Token, tmpIdentity);
-                int deviceId = await accountManager.FinishNewDeviceRegistration(CancelSource.Token, provisionMessage, tmpSignalingKey, password, false, true, registrationId, DeviceName);
+                int deviceId = await accountManager.FinishNewDeviceRegistration(CancelSource.Token, provisionMessage, tmpSignalingKey, password, false, true, registrationId, View.GetDeviceName());
                 SignalStore store = new SignalStore()
                 {
                     DeviceId = (uint)deviceId,

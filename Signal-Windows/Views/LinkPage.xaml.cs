@@ -54,6 +54,11 @@ namespace Signal_Windows.Views
             QRCode.Source = writer.Write(qr);
         }
 
+        public string GetDeviceName()
+        {
+            return DeviceName.Text;
+        }
+
         public async Task Finish(bool success)
         {
             if (success)
