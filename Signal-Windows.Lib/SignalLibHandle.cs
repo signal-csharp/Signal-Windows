@@ -343,7 +343,7 @@ namespace Signal_Windows.Lib
             {
                 Logger.LogTrace("SetMessageRead() locked");
                 conversation = SignalDBContext.UpdateMessageRead(index, conversation);
-                OutgoingMessages.SendMessage(SignalServiceSyncMessage.forRead(new List<ReadMessage>() {
+                OutgoingMessages.SendMessage(SignalServiceSyncMessage.ForRead(new List<ReadMessage>() {
                         new ReadMessage(message.Author.ThreadId, message.ComposedTimestamp)
                 }));
                 await DispatchMessageRead(index + 1, conversation);
@@ -627,7 +627,7 @@ namespace Signal_Windows.Lib
         {
             try
             {
-                MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
+                MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT, null);
                 Pipe = MessageReceiver.CreateMessagePipe();
                 MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
                 IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, this).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
@@ -736,7 +736,7 @@ namespace Signal_Windows.Lib
         private void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream ciphertextFileStream, Stream plaintextFileStream)
         {
             byte[] buf = new byte[32];
-            Stream s = new AttachmentCipherInputStream(ciphertextFileStream, pointer.Key, pointer.Digest);
+            Stream s = AttachmentCipherInputStream.CreateFor(ciphertextFileStream, pointer.Size != null ? pointer.Size.Value : 0, pointer.Key, pointer.Digest);
             s.CopyTo(plaintextFileStream);
         }
 

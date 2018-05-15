@@ -193,7 +193,7 @@ namespace Signal_Windows.ViewModels
                 var signalContactDetails = accountManager.GetContacts(intermediateContacts.Select(c => c.PhoneNumber).ToList());
                 foreach (var contact in intermediateContacts)
                 {
-                    var foundContact = signalContactDetails.FirstOrDefault(c => c.getNumber() == contact.PhoneNumber);
+                    var foundContact = signalContactDetails.FirstOrDefault(c => c.Number == contact.PhoneNumber);
                     if (foundContact != null)
                     {
                         contact.OnSignal = true;

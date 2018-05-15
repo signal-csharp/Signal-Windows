@@ -29,7 +29,7 @@ namespace Signal_Windows.ViewModels
                     App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.VerifyAccountWithCode(
                         App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
                             SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
-                            true);
+                            true, null);
                     SignalStore store = new SignalStore()
                     {
                         DeviceId = 1,

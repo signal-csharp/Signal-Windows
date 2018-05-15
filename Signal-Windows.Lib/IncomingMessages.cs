@@ -133,9 +133,9 @@ namespace Signal_Windows.Lib
             }
             else if (content.SynchronizeMessage != null)
             {
-                if (content.SynchronizeMessage.getSent().HasValue)
+                if (content.SynchronizeMessage.Sent != null)
                 {
-                    var syncMessage = content.SynchronizeMessage.getSent().ForceGetValue();
+                    var syncMessage = content.SynchronizeMessage.Sent;
                     var dataMessage = syncMessage.getMessage();
 
                     if (dataMessage.EndSession)
@@ -166,9 +166,9 @@ namespace Signal_Windows.Lib
                         HandleSignalMessage(envelope, content, dataMessage, true, timestamp);
                     }
                 }
-                else if (content.SynchronizeMessage.getRead().HasValue)
+                else if (content.SynchronizeMessage.Reads != null)
                 {
-                    var readMessages = content.SynchronizeMessage.getRead().ForceGetValue();
+                    var readMessages = content.SynchronizeMessage.Reads;
                     foreach (var readMessage in readMessages)
                     {
                         try
@@ -211,7 +211,7 @@ namespace Signal_Windows.Lib
 
             if (isSync)
             {
-                var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                var sent = content.SynchronizeMessage.Sent;
                 type = SignalMessageDirection.Synced;
                 status = SignalMessageStatus.Confirmed;
                 composedTimestamp = sent.getTimestamp();
@@ -271,7 +271,7 @@ namespace Signal_Windows.Lib
 
             if (isSync)
             {
-                var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                var sent = content.SynchronizeMessage.Sent;
                 type = SignalMessageDirection.Synced;
                 status = SignalMessageStatus.Confirmed;
                 composedTimestamp = sent.getTimestamp();
@@ -375,7 +375,7 @@ namespace Signal_Windows.Lib
 
                 if (isSync)
                 {
-                    var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                    var sent = content.SynchronizeMessage.Sent;
                     type = SignalMessageDirection.Synced;
                     status = SignalMessageStatus.Confirmed;
                     composedTimestamp = sent.getTimestamp();
@@ -460,7 +460,7 @@ namespace Signal_Windows.Lib
             {
                 if (isSync)
                 {
-                    var sent = content.SynchronizeMessage.getSent().ForceGetValue();
+                    var sent = content.SynchronizeMessage.Sent;
                     conversation = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), timestamp);
                     composedTimestamp = sent.getTimestamp();
                 }
@@ -504,7 +504,7 @@ namespace Signal_Windows.Lib
                 var receivedAttachments = dataMessage.Attachments;
                 foreach (var receivedAttachment in receivedAttachments)
                 {
-                    var pointer = receivedAttachment.asPointer();
+                    var pointer = receivedAttachment.AsPointer();
                     SignalAttachment sa = new SignalAttachment()
                     {
                         Message = message,

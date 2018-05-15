@@ -32,6 +32,8 @@ namespace Signal_Windows.Models
                 Relay,
                 (uint)Util.ToIntExact(Size),
                 null,
+                0,
+                0,
                 Digest,
                 FileName,
                 false);
