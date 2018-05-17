@@ -184,6 +184,7 @@ namespace Signal_Windows.ViewModels
                 uiConversation = ConversationsDictionary[conversation.ThreadId];
                 uiConversation.LastActiveTimestamp = conversation.LastActiveTimestamp;
                 uiConversation.CanReceive = conversation.CanReceive;
+                uiConversation.ExpiresInSeconds = conversation.ExpiresInSeconds;
                 uiConversation.LastMessage = conversation.LastMessage;
                 uiConversation.LastSeenMessage = conversation.LastSeenMessage;
                 uiConversation.LastSeenMessageIndex = conversation.LastSeenMessageIndex;

@@ -443,7 +443,7 @@ namespace Signal_Windows.Lib
                 {
                     displayname = group.Name;
                 }
-                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(groupid, displayname, avatarfile, true, timestamp);
+                var dbgroup = SignalDBContext.InsertOrUpdateGroupLocked(groupid, displayname, avatarfile, true, 0, timestamp);
                 if (group.Members != null)
                 {
                     foreach (var member in group.Members)
