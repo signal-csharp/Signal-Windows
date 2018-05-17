@@ -1086,14 +1086,53 @@ namespace Signal_Windows.Storage
             return dbConversation;
         }
 
-        internal static List<SignalContact> InsertOrUpdateContacts(List<SignalContact> contactsList)
+        internal static List<SignalConversation> InsertOrUpdateGroups(IList<(SignalGroup group, IList<string> members)> groups)
         {
-            List<SignalContact> refreshedContacts = new List<SignalContact>();
+            List<SignalConversation> refreshedGroups = new List<SignalConversation>();
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    foreach (var contact in contactsList)
+                    foreach (var receivedGroup in groups)
+                    {
+                        var dbGroup = ctx.Groups
+                            .Where(g => g.ThreadId == receivedGroup.group.ThreadId)
+                            .Include(g => g.GroupMemberships)
+                            .SingleOrDefault();
+                        if (dbGroup != null)
+                        {
+                            dbGroup.GroupMemberships.Clear();
+                            dbGroup.ThreadDisplayName = receivedGroup.group.ThreadDisplayName;
+                            dbGroup.CanReceive = receivedGroup.group.CanReceive;
+                            dbGroup.ExpiresInSeconds = receivedGroup.group.ExpiresInSeconds;
+                        }
+                        else
+                        {
+                            dbGroup = receivedGroup.group;
+                            ctx.Groups.Add(dbGroup);
+                        }
+                        foreach (var member in receivedGroup.members)
+                        {
+                            dbGroup.GroupMemberships.Add(new GroupMembership()
+                            {
+                                Contact = GetOrCreateContact(ctx, member, 0),
+                                Group = dbGroup
+                            });
+                        }
+                    }
+                }
+            }
+            return refreshedGroups;
+        }
+
+        internal static List<SignalConversation> InsertOrUpdateContacts(IList<SignalContact> contacts)
+        {
+            List<SignalConversation> refreshedContacts = new List<SignalConversation>();
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    foreach (var contact in contacts)
                     {
                         var dbContact = ctx.Contacts
                             .Where(c => c.ThreadId == contact.ThreadId)
@@ -1103,6 +1142,7 @@ namespace Signal_Windows.Storage
                             refreshedContacts.Add(dbContact);
                             dbContact.ThreadDisplayName = contact.ThreadDisplayName;
                             dbContact.Color = contact.Color;
+                            dbContact.CanReceive = contact.CanReceive;
                             dbContact.ExpiresInSeconds = contact.ExpiresInSeconds;
                         }
                         else
@@ -1275,30 +1315,34 @@ namespace Signal_Windows.Storage
 
         public static SignalContact GetOrCreateContactLocked(string username, long timestamp, bool notify = true)
         {
-            SignalContact contact;
-            bool createdNew = false;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    contact = ctx.Contacts
-                        .Where(c => c.ThreadId == username)
-                        .SingleOrDefault();
-                    if (contact == null)
-                    {
-                        contact = new SignalContact()
-                        {
-                            ThreadId = username,
-                            ThreadDisplayName = username,
-                            CanReceive = true,
-                            LastActiveTimestamp = timestamp,
-                            Color = null //Utils.CalculateDefaultColor(username)
-                        };
-                        ctx.Contacts.Add(contact);
-                        ctx.SaveChanges();
-                        createdNew = true;
-                    }
+                    return GetOrCreateContact(ctx, username, timestamp, notify);
                 }
+            }
+        }
+
+        private static SignalContact GetOrCreateContact(SignalDBContext ctx, string username, long timestamp, bool notify = true)
+        {
+            bool createdNew = false;
+            SignalContact contact = contact = ctx.Contacts
+                .Where(c => c.ThreadId == username)
+                .SingleOrDefault();
+            if (contact == null)
+            {
+                contact = new SignalContact()
+                {
+                    ThreadId = username,
+                    ThreadDisplayName = username,
+                    CanReceive = true,
+                    LastActiveTimestamp = timestamp,
+                    Color = null //Utils.CalculateDefaultColor(username)
+                };
+                ctx.Contacts.Add(contact);
+                ctx.SaveChanges();
+                createdNew = true;
             }
             if (createdNew && notify)
             {

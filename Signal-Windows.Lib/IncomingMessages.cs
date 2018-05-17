@@ -193,6 +193,7 @@ namespace Signal_Windows.Lib
                     var tmpFile = LibUtils.CreateTmpFile("groups_sync");
                     var plaintextStream = MessageReceiver.RetrieveAttachment(groups.AsPointer(), tmpFile, 10000, null);
                     var deviceGroupsStream = new DeviceGroupsInputStream(plaintextStream);
+                    var groupsList = new List<(SignalGroup, IList<string>)>();
                     DeviceGroup g;
                     while ((g = deviceGroupsStream.Read()) != null)
                     {
@@ -204,7 +205,18 @@ namespace Signal_Windows.Lib
 
                             }
                         }
+                        var group = new SignalGroup()
+                        {
+                            ThreadDisplayName = g.Name,
+                            ThreadId = Base64.EncodeBytes(g.Id),
+                            GroupMemberships = new List<GroupMembership>(),
+                            CanReceive = true,
+                            ExpiresInSeconds = g.ExpirationTimer != null ? g.ExpirationTimer.Value : 0
+                        };
+                        groupsList.Add((group, g.Members));
                     }
+                    List<SignalConversation> newConversations = SignalDBContext.InsertOrUpdateGroups(groupsList);
+                    SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
                 }
                 else if (content.SynchronizeMessage.Contacts != null && content.SynchronizeMessage.Contacts.Complete) //TODO incomplete updates
                 {
@@ -232,6 +244,7 @@ namespace Signal_Windows.Lib
                             ThreadDisplayName = c.Name,
                             ThreadId = c.Number,
                             Color = c.Color,
+                            CanReceive = true,
                             ExpiresInSeconds = c.ExpirationTimer != null ? c.ExpirationTimer.Value : 0
                         };
                         contactsList.Add(contact);

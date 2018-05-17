@@ -476,7 +476,7 @@ namespace Signal_Windows.Lib
             Task.WaitAll(operations.ToArray());
         }
 
-        internal void DispatchAddOrUpdateConversations(List<SignalContact> newConversations)
+        internal void DispatchAddOrUpdateConversations(List<SignalConversation> newConversations)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
