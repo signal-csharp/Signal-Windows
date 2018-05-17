@@ -1,4 +1,5 @@
-﻿using libsignalservice;
+﻿using libsignal.messages.multidevice;
+using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
 using libsignalservice.messages.multidevice;
@@ -11,10 +12,12 @@ using Strilanc.Value;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Storage;
 using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.Lib
@@ -24,13 +27,13 @@ namespace Signal_Windows.Lib
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<IncomingMessages>();
         private readonly CancellationToken Token;
         private readonly SignalServiceMessagePipe Pipe;
-        private readonly SignalLibHandle Handle;
+        private readonly SignalServiceMessageReceiver MessageReceiver;
 
-        public IncomingMessages(CancellationToken token, SignalServiceMessagePipe pipe, SignalLibHandle handle)
+        public IncomingMessages(CancellationToken token, SignalServiceMessagePipe pipe, SignalServiceMessageReceiver messageReceiver)
         {
             Token = token;
             Pipe = pipe;
-            Handle = handle;
+            MessageReceiver = messageReceiver;
         }
 
         public void HandleIncomingMessages()
@@ -58,38 +61,38 @@ namespace Signal_Windows.Lib
         public void OnMessage(SignalServiceMessagePipeMessage message)
         {
             Logger.LogTrace("OnMessage() locking");
-            Handle.SemaphoreSlim.Wait();
+            SignalLibHandle.Instance.SemaphoreSlim.Wait();
             Logger.LogTrace("OnMessage() locked");
             try
             {
                 if (message is SignalServiceEnvelope envelope)
                 {
                     List<SignalMessage> messages = new List<SignalMessage>();
-                    if (envelope.isReceipt())
+                    if (envelope.IsReceipt())
                     {
                         SignalMessage update = SignalDBContext.IncreaseReceiptCountLocked(envelope);
                         if (update != null)
                         {
-                            Handle.DispatchMessageUpdate(update);
+                            SignalLibHandle.Instance.DispatchMessageUpdate(update);
                         }
                     }
-                    else if (envelope.isPreKeySignalMessage() || envelope.isSignalMessage())
+                    else if (envelope.IsPreKeySignalMessage() || envelope.IsSignalMessage())
                     {
                         HandleMessage(envelope);
                     }
                     else
                     {
-                        Logger.LogWarning("OnMessage() could not handle unknown message type {0}", envelope.getType());
+                        Logger.LogWarning("OnMessage() could not handle unknown message type {0}", envelope.GetEnvelopeType());
                     }
                 }
                 else if (message is SignalServiceMessagePipeEmptyMessage)
                 {
-                    Handle.DispatchPipeEmptyMessage();
+                    SignalLibHandle.Instance.DispatchPipeEmptyMessage();
                 }
             }
             finally
             {
-                Handle.SemaphoreSlim.Release();
+                SignalLibHandle.Instance.SemaphoreSlim.Release();
                 Logger.LogTrace("OnMessage() released");
             }
         }
@@ -136,7 +139,7 @@ namespace Signal_Windows.Lib
                 if (content.SynchronizeMessage.Sent != null)
                 {
                     var syncMessage = content.SynchronizeMessage.Sent;
-                    var dataMessage = syncMessage.getMessage();
+                    var dataMessage = syncMessage.Message;
 
                     if (dataMessage.EndSession)
                     {
@@ -181,6 +184,61 @@ namespace Signal_Windows.Lib
                         }
                     }
                 }
+                else if (content.SynchronizeMessage.Groups != null)
+                {
+                    //return;
+                    int read;
+                    var avatarBuffer = new byte[4096];
+                    var groups = content.SynchronizeMessage.Groups;
+                    var tmpFile = LibUtils.CreateTmpFile("groups_sync");
+                    var plaintextStream = MessageReceiver.RetrieveAttachment(groups.AsPointer(), tmpFile, 10000, null);
+                    var deviceGroupsStream = new DeviceGroupsInputStream(plaintextStream);
+                    DeviceGroup g;
+                    while ((g = deviceGroupsStream.Read()) != null)
+                    {
+                        if (g.Avatar != null)
+                        {
+                            SignalServiceAttachmentStream ssas = g.Avatar.AsStream();
+                            while ((read = ssas.InputStream.Read(avatarBuffer, 0, avatarBuffer.Length)) > 0)
+                            {
+
+                            }
+                        }
+                    }
+                }
+                else if (content.SynchronizeMessage.Contacts != null && content.SynchronizeMessage.Contacts.Complete) //TODO incomplete updates
+                {
+                    //return;
+                    int read;
+                    var avatarBuffer = new byte[4096];
+                    ContactsMessage contacts = content.SynchronizeMessage.Contacts;
+                    var tmpFile = LibUtils.CreateTmpFile("contacts_sync");
+                    var plaintextStream = MessageReceiver.RetrieveAttachment(contacts.Contacts.AsPointer(), tmpFile, 10000, null);
+                    var deviceContactsStream = new DeviceContactsInputStream(plaintextStream);
+                    List<SignalContact> contactsList = new List<SignalContact>();
+                    DeviceContact c;
+                    while ((c = deviceContactsStream.Read()) != null)
+                    {
+                        if (c.Avatar != null)
+                        {
+                            SignalServiceAttachmentStream ssas = c.Avatar.AsStream();
+                            while ((read = ssas.InputStream.Read(avatarBuffer, 0, avatarBuffer.Length)) > 0)
+                            {
+
+                            }
+                        }
+                        SignalContact contact = new SignalContact()
+                        {
+                            ThreadDisplayName = c.Name,
+                            ThreadId = c.Number,
+                            Color = c.Color,
+                            ExpiresInSeconds = c.ExpirationTimer != null ? c.ExpirationTimer.Value : 0
+                        };
+                        contactsList.Add(contact);
+                    }
+                    var newConversations = SignalDBContext.InsertOrUpdateContacts(contactsList);
+                    SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
+                }
             }
             else if (content.ReadMessage != null)
             {
@@ -214,7 +272,7 @@ namespace Signal_Windows.Lib
                 var sent = content.SynchronizeMessage.Sent;
                 type = SignalMessageDirection.Synced;
                 status = SignalMessageStatus.Confirmed;
-                composedTimestamp = sent.getTimestamp();
+                composedTimestamp = sent.Timestamp;
                 author = null;
                 prefix = "You have";
                 if (message.Group != null)
@@ -223,23 +281,23 @@ namespace Signal_Windows.Lib
                 }
                 else
                 {
-                    conversation = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), 0);
+                    conversation = SignalDBContext.GetOrCreateContactLocked(sent.Destination.ForceGetValue(), 0);
                 }
             }
             else
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
-                composedTimestamp = envelope.getTimestamp();
+                composedTimestamp = envelope.GetTimestamp();
                 if (message.Group != null)
                 {
                     conversation = SignalDBContext.GetOrCreateGroupLocked(Base64.EncodeBytes(message.Group.GroupId), 0);
                 }
                 else
                 {
-                    conversation = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), 0);
+                    conversation = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
                 }
             }
             SignalDBContext.UpdateExpiresInLocked(conversation, (uint)message.ExpiresInSeconds);
@@ -251,7 +309,7 @@ namespace Signal_Windows.Lib
                 Author = author,
                 Content = new SignalMessageContent() { Content = $"{prefix} set the expiration timer to {message.ExpiresInSeconds} seconds." },
                 ThreadId = conversation.ThreadId,
-                DeviceId = (uint)envelope.getSourceDevice(),
+                DeviceId = (uint)envelope.GetSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
@@ -274,19 +332,19 @@ namespace Signal_Windows.Lib
                 var sent = content.SynchronizeMessage.Sent;
                 type = SignalMessageDirection.Synced;
                 status = SignalMessageStatus.Confirmed;
-                composedTimestamp = sent.getTimestamp();
+                composedTimestamp = sent.Timestamp;
                 author = null;
                 prefix = "You have";
-                conversationId = sent.getDestination().ForceGetValue();
+                conversationId = sent.Destination.ForceGetValue();
             }
             else
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
-                composedTimestamp = envelope.getTimestamp();
-                conversationId = envelope.getSource();
+                composedTimestamp = envelope.GetTimestamp();
+                conversationId = envelope.GetSource();
             }
             LibsignalDBContext.DeleteAllSessions(conversationId);
             conversation = SignalDBContext.GetOrCreateContactLocked(conversationId, 0);
@@ -299,7 +357,7 @@ namespace Signal_Windows.Lib
                 Author = author,
                 Content = new SignalMessageContent() { Content = $"{prefix} reset the session." },
                 ThreadId = conversationId,
-                DeviceId = (uint)envelope.getSourceDevice(),
+                DeviceId = (uint)envelope.GetSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
@@ -320,7 +378,7 @@ namespace Signal_Windows.Lib
                 }
                 else
                 {
-                    SignalContact author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), 0);
+                    SignalContact author = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
                     SignalMessage sm = new SignalMessage()
                     {
                         Direction = SignalMessageDirection.Incoming,
@@ -329,9 +387,9 @@ namespace Signal_Windows.Lib
                         Author = author,
                         Content = new SignalMessageContent() { Content = $"{author.ThreadDisplayName} has left the group." },
                         ThreadId = groupid,
-                        DeviceId = (uint)envelope.getSourceDevice(),
+                        DeviceId = (uint)envelope.GetSourceDevice(),
                         Receipts = 0,
-                        ComposedTimestamp = envelope.getTimestamp(),
+                        ComposedTimestamp = envelope.GetTimestamp(),
                         ReceivedTimestamp = timestamp,
                     };
                     SignalConversation updatedConversation = SignalDBContext.RemoveMemberFromGroup(groupid, author, sm);
@@ -378,7 +436,7 @@ namespace Signal_Windows.Lib
                     var sent = content.SynchronizeMessage.Sent;
                     type = SignalMessageDirection.Synced;
                     status = SignalMessageStatus.Confirmed;
-                    composedTimestamp = sent.getTimestamp();
+                    composedTimestamp = sent.Timestamp;
                     author = null;
                     prefix = "You have";
                 }
@@ -386,9 +444,9 @@ namespace Signal_Windows.Lib
                 {
                     status = 0;
                     type = SignalMessageDirection.Incoming;
-                    author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
+                    author = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
                     prefix = $"{author.ThreadDisplayName} has";
-                    composedTimestamp = envelope.getTimestamp();
+                    composedTimestamp = envelope.GetTimestamp();
                 }
 
                 SignalMessage sm = new SignalMessage()
@@ -399,7 +457,7 @@ namespace Signal_Windows.Lib
                     Author = author,
                     Content = new SignalMessageContent() { Content = $"{prefix} updated the group." },
                     ThreadId = groupid,
-                    DeviceId = (uint)envelope.getSourceDevice(),
+                    DeviceId = (uint)envelope.GetSourceDevice(),
                     Receipts = 0,
                     ComposedTimestamp = composedTimestamp,
                     ReceivedTimestamp = timestamp,
@@ -450,24 +508,22 @@ namespace Signal_Windows.Lib
                         Group = group,
                         Timestamp = Util.CurrentTimeMillis()
                     };
-                    var list = new List<SignalServiceAddress>();
-                    list.Add(new SignalServiceAddress(envelope.getSource()));
-                    SignalLibHandle.Instance.OutgoingMessages.SendMessage(list, requestInfoMessage);
+                    SignalLibHandle.Instance.OutgoingMessages.SendMessage(envelope.GetSourceAddress(), requestInfoMessage);
                 }
-                composedTimestamp = envelope.getTimestamp();
+                composedTimestamp = envelope.GetTimestamp();
             }
             else
             {
                 if (isSync)
                 {
                     var sent = content.SynchronizeMessage.Sent;
-                    conversation = SignalDBContext.GetOrCreateContactLocked(sent.getDestination().ForceGetValue(), timestamp);
-                    composedTimestamp = sent.getTimestamp();
+                    conversation = SignalDBContext.GetOrCreateContactLocked(sent.Destination.ForceGetValue(), timestamp);
+                    composedTimestamp = sent.Timestamp;
                 }
                 else
                 {
-                    conversation = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
-                    composedTimestamp = envelope.getTimestamp();
+                    conversation = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
+                    composedTimestamp = envelope.GetTimestamp();
                 }
             }
 
@@ -481,7 +537,7 @@ namespace Signal_Windows.Lib
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = SignalDBContext.GetOrCreateContactLocked(envelope.getSource(), timestamp);
+                author = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
             }
 
             List<SignalAttachment> attachments = new List<SignalAttachment>();
@@ -492,7 +548,7 @@ namespace Signal_Windows.Lib
                 Author = author,
                 Content = new SignalMessageContent() { Content = body },
                 ThreadId = conversation.ThreadId,
-                DeviceId = (uint)envelope.getSourceDevice(),
+                DeviceId = (uint)envelope.GetSourceDevice(),
                 Receipts = 0,
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
@@ -510,7 +566,7 @@ namespace Signal_Windows.Lib
                         Message = message,
                         Status = (uint)SignalAttachmentStatus.Default,
                         SentFileName = pointer.FileName,
-                        ContentType = receivedAttachment.getContentType(),
+                        ContentType = receivedAttachment.ContentType,
                         Key = pointer.Key,
                         Relay = pointer.Relay,
                         StorageId = pointer.Id,

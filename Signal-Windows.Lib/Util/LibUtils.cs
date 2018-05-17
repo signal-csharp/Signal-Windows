@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Toolkit.Uwp.Notifications;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -176,6 +177,11 @@ namespace Signal_Windows.Lib
                 }
             };
             return new ToastNotification(toastContent.GetXml());
+        }
+
+        public static FileStream CreateTmpFile(string name)
+        {
+            return File.Open(ApplicationData.Current.LocalCacheFolder.Path + Path.AltDirectorySeparatorChar + name, FileMode.Create, FileAccess.ReadWrite);
         }
     }
 }

@@ -37,11 +37,11 @@ namespace Signal_Windows.Views
             }
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs ev)
+        protected override void OnNavigatedTo(NavigationEventArgs ev)
         {
             base.OnNavigatedTo(ev);
             Utils.EnableBackButton(Vm.BackButton_Click);
-            await Vm.OnNavigatedTo();
+            Vm.OnNavigatedTo();
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
@@ -53,6 +53,11 @@ namespace Signal_Windows.Views
         private async void ExportUIDebugLog(object sender, RoutedEventArgs e)
         {
             await Vm.ExportUIDebugLog();
+        }
+
+        private void RequestSync(object sender, RoutedEventArgs e)
+        {
+            App.Handle.RequestSync();
         }
     }
 }

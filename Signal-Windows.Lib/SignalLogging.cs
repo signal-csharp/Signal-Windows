@@ -182,14 +182,14 @@ namespace Signal_Windows.Storage
                     var oldLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log.old");
                     MoveFileContent(oldLog, writer);
                     oldLog.Dispose();
-                } catch (Exception e) { }
+                } catch (Exception) { }
                 try
                 {
                     var newLog = File.OpenRead(ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log");
                     MoveFileContent(newLog, writer);
                     newLog.Dispose();
                 }
-                catch (Exception e) { }
+                catch (Exception) { }
                 Windows.Storage.Provider.FileUpdateStatus status = CachedFileManager.CompleteUpdatesAsync(file).AsTask().Result;
             }
         }

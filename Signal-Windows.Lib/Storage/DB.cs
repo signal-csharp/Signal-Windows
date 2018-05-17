@@ -275,7 +275,7 @@ namespace Signal_Windows.Storage
                     var ikp = ctx.Store
                         .AsNoTracking()
                         .Single().IdentityKeyPair;
-                    return new IdentityKeyPair(Base64.decode(ikp));
+                    return new IdentityKeyPair(Base64.Decode(ikp));
                 }
             }
         }
@@ -329,7 +329,7 @@ namespace Signal_Windows.Storage
                         .SingleOrDefault();
                     if (session != null)
                     {
-                        record = new SessionRecord(Base64.decode(session.Session));
+                        record = new SessionRecord(Base64.Decode(session.Session));
                     }
                     else
                     {
@@ -456,7 +456,7 @@ namespace Signal_Windows.Storage
                         .Where(p => p.Id == preKeyId)
                         .AsNoTracking()
                         .Single();
-                    return new PreKeyRecord(Base64.decode(pk.Key));
+                    return new PreKeyRecord(Base64.Decode(pk.Key));
                 }
             }
         }
@@ -520,7 +520,7 @@ namespace Signal_Windows.Storage
                         .AsNoTracking()
                         .Where(b => b.Id == signedPreKeyId)
                         .Single();
-                    return new SignedPreKeyRecord(Base64.decode(preKeys.Key));
+                    return new SignedPreKeyRecord(Base64.Decode(preKeys.Key));
                 }
             }
         }
@@ -537,7 +537,7 @@ namespace Signal_Windows.Storage
                     var v = new List<SignedPreKeyRecord>();
                     foreach (var preKey in preKeys)
                     {
-                        v.Add(new SignedPreKeyRecord(Base64.decode(preKey.Key)));
+                        v.Add(new SignedPreKeyRecord(Base64.Decode(preKey.Key)));
                     }
                     return v;
                 }
@@ -886,7 +886,7 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    m = ctx.Messages.SingleOrDefault(t => t.ComposedTimestamp == envelope.getTimestamp());
+                    m = ctx.Messages.SingleOrDefault(t => t.ComposedTimestamp == envelope.GetTimestamp());
                     if (m != null)
                     {
                         m.Receipts++;
@@ -900,9 +900,9 @@ namespace Signal_Windows.Storage
                     {
                         ctx.EarlyReceipts.Add(new SignalEarlyReceipt()
                         {
-                            DeviceId = (uint)envelope.getSourceDevice(),
-                            Timestamp = envelope.getTimestamp(),
-                            Username = envelope.getSource()
+                            DeviceId = (uint)envelope.GetSourceDevice(),
+                            Timestamp = envelope.GetTimestamp(),
+                            Username = envelope.GetSource()
                         });
                     }
                     ctx.SaveChanges();
@@ -1001,7 +1001,7 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     var message = ctx.Messages
-                        .Where(m => m.ComposedTimestamp == readMessage.getTimestamp())
+                        .Where(m => m.ComposedTimestamp == readMessage.Timestamp)
                         .Single(); //TODO care about early reads sometime
                     conversation = GetSignalConversation(ctx, message.ThreadId);
                     var currentLastSeenMessage = ctx.Messages
@@ -1084,6 +1084,37 @@ namespace Signal_Windows.Storage
                 }
             }
             return dbConversation;
+        }
+
+        internal static List<SignalContact> InsertOrUpdateContacts(List<SignalContact> contactsList)
+        {
+            List<SignalContact> refreshedContacts = new List<SignalContact>();
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    foreach (var contact in contactsList)
+                    {
+                        var dbContact = ctx.Contacts
+                            .Where(c => c.ThreadId == contact.ThreadId)
+                            .SingleOrDefault();
+                        if (dbContact != null)
+                        {
+                            refreshedContacts.Add(dbContact);
+                            dbContact.ThreadDisplayName = contact.ThreadDisplayName;
+                            dbContact.Color = contact.Color;
+                            dbContact.ExpiresInSeconds = contact.ExpiresInSeconds;
+                        }
+                        else
+                        {
+                            refreshedContacts.Add(dbContact);
+                            ctx.Contacts.Add(contact);
+                        }
+                    }
+                    ctx.SaveChanges();
+                }
+            }
+            return refreshedContacts;
         }
 
         #endregion Threads
@@ -1323,7 +1354,6 @@ namespace Signal_Windows.Storage
                 }
             }
         }
-
         #endregion Contacts
     }
 }

@@ -201,7 +201,6 @@ namespace Signal_Windows
                 var currView = ApplicationView.GetForCurrentView();
                 currView.Consolidated += CurrView_Consolidated;
                 newViewId = currView.Id;
-                //await switcher.ShowAsStandaloneAsync(newViewId);
                 ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
                 SetupTopBar();
                 return new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);

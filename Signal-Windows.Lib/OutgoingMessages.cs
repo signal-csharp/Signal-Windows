@@ -41,6 +41,22 @@ namespace Signal_Windows.Lib
             }
         }
 
+        public void SendMessage(SignalServiceAddress recipient, SignalServiceDataMessage message)
+        {
+            lock (this)
+            {
+                MessageSender.SendMessage(recipient, message);
+            }
+        }
+
+        public void SendMessage(SignalServiceAddress recipient, SignalServiceSyncMessage message)
+        {
+            lock (this)
+            {
+                MessageSender.SendMessage(message);
+            }
+        }
+
         public void SendMessage(SignalServiceSyncMessage message)
         {
             lock (this)
@@ -86,7 +102,7 @@ namespace Signal_Windows.Lib
                         }
                         message.Group = new SignalServiceGroup()
                         {
-                            GroupId = Base64.decode(g.ThreadId),
+                            GroupId = Base64.Decode(g.ThreadId),
                             Type = SignalServiceGroup.GroupType.DELIVER
                         };
                         if (!Token.IsCancellationRequested)
@@ -105,8 +121,8 @@ namespace Signal_Windows.Lib
                 {
                     outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                     Logger.LogError("HandleOutgoingMessages() encountered libsignal exceptions");
-                    IList<UntrustedIdentityException> identityExceptions = exceptions.getUntrustedIdentityExceptions();
-                    if (exceptions.getNetworkExceptions().Count > 0)
+                    IList<UntrustedIdentityException> identityExceptions = exceptions.UntrustedIdentityExceptions;
+                    if (exceptions.NetworkExceptions.Count > 0)
                     {
                         outgoingSignalMessage.Status = SignalMessageStatus.Failed_Network;
                     }

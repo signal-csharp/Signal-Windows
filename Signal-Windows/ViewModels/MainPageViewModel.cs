@@ -244,7 +244,6 @@ namespace Signal_Windows.ViewModels
         public void HandleMessageRead(long unreadMarkerIndex, SignalConversation conversation)
         {
             var localConversation = ConversationsDictionary[conversation.ThreadId];
-            Logger.LogTrace("LastSeenMessageIndex = {0}", unreadMarkerIndex);
             localConversation.LastSeenMessageIndex = unreadMarkerIndex;
             localConversation.UnreadCount = conversation.UnreadCount;
             localConversation.UpdateUI();

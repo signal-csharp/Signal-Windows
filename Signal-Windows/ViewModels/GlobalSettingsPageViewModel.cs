@@ -23,7 +23,7 @@ namespace Signal_Windows.ViewModels
             e.Handled = true;
         }
 
-        public async Task OnNavigatedTo()
+        public void OnNavigatedTo()
         {
         }
 

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
 using libsignalservice;
 using libsignalservice.util;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Lib;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
@@ -17,6 +18,7 @@ namespace Signal_Windows.ViewModels
 {
     public class FinishRegistrationPageViewModel : ViewModelBase
     {
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<FinishRegistrationPageViewModel>();
         public FinishRegistrationPage View { get; set; }
 
         internal async Task OnNavigatedTo()
@@ -25,7 +27,7 @@ namespace Signal_Windows.ViewModels
             {
                 await Task.Run(() =>
                 {
-                    string SignalingKey = Base64.EncodeBytes(Util.getSecretBytes(52));
+                    string SignalingKey = Base64.EncodeBytes(Util.GetSecretBytes(52));
                     App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.VerifyAccountWithCode(
                         App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
                             SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
@@ -65,7 +67,7 @@ namespace Signal_Windows.ViewModels
             }
             catch (Exception e)
             {
-                // TODO log exception
+                Logger.LogError("OnNavigatedTo() failed: {0}\n{1}", e.Message, e.StackTrace);
                 var title = "Verification failed";
                 var content = "Please enter the correct verification code.";
                 MessageDialog dialog = new MessageDialog(content, title);

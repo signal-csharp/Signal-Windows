@@ -76,7 +76,7 @@ namespace Signal_Windows.ViewModels
 
                 (string password, IdentityKeyPair tmpIdentity) = await Task.Run(() =>
                 {
-                    string newPassword = Base64.EncodeBytes(Util.getSecretBytes(18));
+                    string newPassword = Base64.EncodeBytes(Util.GetSecretBytes(18));
                     IdentityKeyPair newTmpIdentity = KeyHelper.generateIdentityKeyPair();
                     return (newPassword, newTmpIdentity);
                 });
@@ -84,13 +84,13 @@ namespace Signal_Windows.ViewModels
                 // fetch new device uuid
                 SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, CancelSource.Token, "Signal-Windows");
                 string uuid = await accountManager.GetNewDeviceUuid(CancelSource.Token);
-                string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.encodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
+                string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.EncodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
 
                 View.SetQR(tsdevice); //TODO generate qrcode in worker task
                 QRVisible = Visibility.Visible;
                 QRCodeString = tsdevice;
 
-                string tmpSignalingKey = Base64.EncodeBytes(Util.getSecretBytes(52));
+                string tmpSignalingKey = Base64.EncodeBytes(Util.GetSecretBytes(52));
                 int registrationId = (int)KeyHelper.generateRegistrationId(false);
 
                 var provisionMessage = await accountManager.GetProvisioningMessage(CancelSource.Token, tmpIdentity);

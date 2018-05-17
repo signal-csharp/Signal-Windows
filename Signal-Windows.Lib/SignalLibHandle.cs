@@ -53,6 +53,8 @@ namespace Signal_Windows.Lib
     {
         //Frontend API
         SignalStore Store { get; set; }
+
+        void RequestSync();
         Task SendMessage(SignalMessage message, SignalConversation conversation);
         Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
@@ -89,7 +91,7 @@ namespace Signal_Windows.Lib
         public SignalStore Store { get; set; }
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalLibHandle>();
         public SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
-        private bool Headless;
+        private readonly bool Headless;
         private bool Running = false;
         private bool LikelyHasValidStore = false;
         private CancellationTokenSource CancelSource = new CancellationTokenSource();
@@ -331,6 +333,24 @@ namespace Signal_Windows.Lib
             });
         }
 
+        public void RequestSync()
+        {
+            Task.Run(() =>
+            {
+                Logger.LogTrace("RequestSync()");
+                var contactsRequest = SignalServiceSyncMessage.ForRequest(new RequestMessage(new SyncMessage.Types.Request()
+                {
+                    Type = SyncMessage.Types.Request.Types.Type.Contacts
+                }));
+                OutgoingMessages.SendMessage(contactsRequest);
+                var groupsRequest = SignalServiceSyncMessage.ForRequest(new RequestMessage(new SyncMessage.Types.Request()
+                {
+                    Type = SyncMessage.Types.Request.Types.Type.Groups
+                }));
+                OutgoingMessages.SendMessage(groupsRequest);
+            });
+        }
+
         /// <summary>
         /// Marks and dispatches a message as read. Must not be called on a task which holds the handle lock.
         /// </summary>
@@ -451,6 +471,22 @@ namespace Signal_Windows.Lib
                 operations.Add(dispatcher.RunTaskAsync(() =>
                 {
                     Frames[dispatcher].HandleIdentitykeyChange(messages);
+                }));
+            }
+            Task.WaitAll(operations.ToArray());
+        }
+
+        internal void DispatchAddOrUpdateConversations(List<SignalContact> newConversations)
+        {
+            List<Task> operations = new List<Task>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                operations.Add(dispatcher.RunTaskAsync(() =>
+                {
+                    foreach (var contact in newConversations)
+                    {
+                        Frames[dispatcher].AddOrUpdateConversation(contact, null);
+                    }
                 }));
             }
             Task.WaitAll(operations.ToArray());
@@ -630,7 +666,7 @@ namespace Signal_Windows.Lib
                 MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT, null);
                 Pipe = MessageReceiver.CreateMessagePipe();
                 MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
-                IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, this).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
+                IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
                 OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
                 OutgoingMessagesTask = Task.Factory.StartNew(() => OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
             }

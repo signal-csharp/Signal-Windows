@@ -59,7 +59,7 @@ namespace Signal_Windows.ViewModels
             UIEnabled = false;
             Utils.EnableBackButton(BackButton_Click);
             CancelSource = new CancellationTokenSource();
-            Password = Base64.EncodeBytes(Util.getSecretBytes(18));
+            Password = Base64.EncodeBytes(Util.GetSecretBytes(18));
             SignalRegistrationId = KeyHelper.generateRegistrationId(false);
             IdentityKeyPair = KeyHelper.generateIdentityKeyPair();
             try

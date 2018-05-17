@@ -17,5 +17,8 @@
         <Grid HorizontalAlignment="Center">
             <Button Click="ExportUIDebugLog">Export debug log</Button>
         </Grid>
+        <Grid HorizontalAlignment="Center">
+            <Button Click="RequestSync">Request contact and group sync</Button>
+        </Grid>
     </StackPanel>
 </Page>
