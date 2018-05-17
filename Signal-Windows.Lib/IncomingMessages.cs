@@ -186,71 +186,75 @@ namespace Signal_Windows.Lib
                 }
                 else if (content.SynchronizeMessage.Groups != null)
                 {
-                    //return;
+                    Logger.LogInformation("HandleMessage() handling groups sync message from device {0}", envelope.GetSourceDevice());
                     int read;
                     var avatarBuffer = new byte[4096];
                     var groups = content.SynchronizeMessage.Groups;
-                    var tmpFile = LibUtils.CreateTmpFile("groups_sync");
-                    var plaintextStream = MessageReceiver.RetrieveAttachment(groups.AsPointer(), tmpFile, 10000, null);
-                    var deviceGroupsStream = new DeviceGroupsInputStream(plaintextStream);
-                    var groupsList = new List<(SignalGroup, IList<string>)>();
-                    DeviceGroup g;
-                    while ((g = deviceGroupsStream.Read()) != null)
+                    using (var tmpFile = LibUtils.CreateTmpFile("groups_sync"))
                     {
-                        if (g.Avatar != null)
+                        var plaintextStream = MessageReceiver.RetrieveAttachment(groups.AsPointer(), tmpFile, 10000, null);
+                        var deviceGroupsStream = new DeviceGroupsInputStream(plaintextStream);
+                        var groupsList = new List<(SignalGroup, IList<string>)>();
+                        DeviceGroup g;
+                        while ((g = deviceGroupsStream.Read()) != null)
                         {
-                            SignalServiceAttachmentStream ssas = g.Avatar.AsStream();
-                            while ((read = ssas.InputStream.Read(avatarBuffer, 0, avatarBuffer.Length)) > 0)
+                            if (g.Avatar != null)
                             {
+                                SignalServiceAttachmentStream ssas = g.Avatar.AsStream();
+                                while ((read = ssas.InputStream.Read(avatarBuffer, 0, avatarBuffer.Length)) > 0)
+                                {
 
+                                }
                             }
+                            var group = new SignalGroup()
+                            {
+                                ThreadDisplayName = g.Name,
+                                ThreadId = Base64.EncodeBytes(g.Id),
+                                GroupMemberships = new List<GroupMembership>(),
+                                CanReceive = true,
+                                ExpiresInSeconds = g.ExpirationTimer != null ? g.ExpirationTimer.Value : 0
+                            };
+                            groupsList.Add((group, g.Members));
                         }
-                        var group = new SignalGroup()
-                        {
-                            ThreadDisplayName = g.Name,
-                            ThreadId = Base64.EncodeBytes(g.Id),
-                            GroupMemberships = new List<GroupMembership>(),
-                            CanReceive = true,
-                            ExpiresInSeconds = g.ExpirationTimer != null ? g.ExpirationTimer.Value : 0
-                        };
-                        groupsList.Add((group, g.Members));
+                        List<SignalConversation> newConversations = SignalDBContext.InsertOrUpdateGroups(groupsList);
+                        SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
                     }
-                    List<SignalConversation> newConversations = SignalDBContext.InsertOrUpdateGroups(groupsList);
-                    SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
                 }
                 else if (content.SynchronizeMessage.Contacts != null && content.SynchronizeMessage.Contacts.Complete) //TODO incomplete updates
                 {
-                    //return;
+                    Logger.LogInformation("HandleMessage() handling contacts sync message from device {0}", envelope.GetSourceDevice());
                     int read;
                     var avatarBuffer = new byte[4096];
                     ContactsMessage contacts = content.SynchronizeMessage.Contacts;
-                    var tmpFile = LibUtils.CreateTmpFile("contacts_sync");
-                    var plaintextStream = MessageReceiver.RetrieveAttachment(contacts.Contacts.AsPointer(), tmpFile, 10000, null);
-                    var deviceContactsStream = new DeviceContactsInputStream(plaintextStream);
-                    List<SignalContact> contactsList = new List<SignalContact>();
-                    DeviceContact c;
-                    while ((c = deviceContactsStream.Read()) != null)
+                    using (var tmpFile = LibUtils.CreateTmpFile("contacts_sync"))
                     {
-                        if (c.Avatar != null)
+                        var plaintextStream = MessageReceiver.RetrieveAttachment(contacts.Contacts.AsPointer(), tmpFile, 10000, null);
+                        var deviceContactsStream = new DeviceContactsInputStream(plaintextStream);
+                        List<SignalContact> contactsList = new List<SignalContact>();
+                        DeviceContact c;
+                        while ((c = deviceContactsStream.Read()) != null)
                         {
-                            SignalServiceAttachmentStream ssas = c.Avatar.AsStream();
-                            while ((read = ssas.InputStream.Read(avatarBuffer, 0, avatarBuffer.Length)) > 0)
+                            if (c.Avatar != null)
                             {
+                                SignalServiceAttachmentStream ssas = c.Avatar.AsStream();
+                                while ((read = ssas.InputStream.Read(avatarBuffer, 0, avatarBuffer.Length)) > 0)
+                                {
 
+                                }
                             }
+                            SignalContact contact = new SignalContact()
+                            {
+                                ThreadDisplayName = c.Name,
+                                ThreadId = c.Number,
+                                Color = c.Color,
+                                CanReceive = true,
+                                ExpiresInSeconds = c.ExpirationTimer != null ? c.ExpirationTimer.Value : 0
+                            };
+                            contactsList.Add(contact);
                         }
-                        SignalContact contact = new SignalContact()
-                        {
-                            ThreadDisplayName = c.Name,
-                            ThreadId = c.Number,
-                            Color = c.Color,
-                            CanReceive = true,
-                            ExpiresInSeconds = c.ExpirationTimer != null ? c.ExpirationTimer.Value : 0
-                        };
-                        contactsList.Add(contact);
+                        var newConversations = SignalDBContext.InsertOrUpdateContacts(contactsList);
+                        SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
                     }
-                    var newConversations = SignalDBContext.InsertOrUpdateContacts(contactsList);
-                    SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
                 }
             }
             else if (content.ReadMessage != null)
