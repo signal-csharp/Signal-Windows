@@ -1098,6 +1098,8 @@ namespace Signal_Windows.Storage
                         var dbGroup = ctx.Groups
                             .Where(g => g.ThreadId == receivedGroup.group.ThreadId)
                             .Include(g => g.GroupMemberships)
+                            .Include(g => g.LastMessage)
+                            .ThenInclude(m => m.Content)
                             .SingleOrDefault();
                         if (dbGroup != null)
                         {
@@ -1137,6 +1139,8 @@ namespace Signal_Windows.Storage
                     {
                         var dbContact = ctx.Contacts
                             .Where(c => c.ThreadId == contact.ThreadId)
+                            .Include(c => c.LastMessage)
+                            .ThenInclude(m => m.Content)
                             .SingleOrDefault();
                         if (dbContact != null)
                         {
