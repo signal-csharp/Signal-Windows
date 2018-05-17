@@ -747,6 +747,7 @@ namespace Signal_Windows.Storage
                 using (var ctx = new SignalDBContext())
                 {
                     SaveMessage(ctx, message);
+                    ctx.SaveChanges();
                 }
             }
         }
@@ -815,7 +816,6 @@ namespace Signal_Windows.Storage
                 }
             }
             ctx.Messages.Add(message);
-            ctx.SaveChanges();
             return conversation;
         }
 
@@ -1173,7 +1173,13 @@ namespace Signal_Windows.Storage
                         .ThenInclude(gm => gm.Contact)
                         .Single();
                     dbgroup.GroupMemberships.RemoveAll(gm => gm.Contact.Id == member.Id);
-                    return SaveMessage(ctx, quitMessage);
+                    if (member.ThreadId == SignalLibHandle.Instance.Store.Username)
+                    {
+                        dbgroup.CanReceive = false;
+                    }
+                    var conv = SaveMessage(ctx, quitMessage);
+                    ctx.SaveChanges();
+                    return conv;
                 }
             }
         }

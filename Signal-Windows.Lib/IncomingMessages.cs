@@ -387,7 +387,22 @@ namespace Signal_Windows.Lib
                 SignalGroup group = SignalDBContext.GetOrCreateGroupLocked(groupid, 0);
                 if (isSync)
                 {
-                    //TODO
+                    SignalContact author = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
+                    SignalMessage sm = new SignalMessage()
+                    {
+                        Direction = SignalMessageDirection.Incoming,
+                        Type = SignalMessageType.GroupLeave,
+                        Status = SignalMessageStatus.Received,
+                        Author = author,
+                        Content = new SignalMessageContent() { Content = $"You have left the group." },
+                        ThreadId = groupid,
+                        DeviceId = (uint)envelope.GetSourceDevice(),
+                        Receipts = 0,
+                        ComposedTimestamp = envelope.GetTimestamp(),
+                        ReceivedTimestamp = timestamp,
+                    };
+                    SignalConversation updatedConversation = SignalDBContext.RemoveMemberFromGroup(groupid, author, sm);
+                    SignalLibHandle.Instance.DispatchAddOrUpdateConversation(updatedConversation, sm);
                 }
                 else
                 {
