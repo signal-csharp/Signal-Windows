@@ -1107,7 +1107,7 @@ namespace Signal_Windows.Storage
                         }
                         else
                         {
-                            refreshedContacts.Add(dbContact);
+                            refreshedContacts.Add(contact);
                             ctx.Contacts.Add(contact);
                         }
                     }
