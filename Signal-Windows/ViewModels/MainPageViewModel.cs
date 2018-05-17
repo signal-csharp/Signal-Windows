@@ -99,6 +99,7 @@ namespace Signal_Windows.ViewModels
                     {
                         Author = null,
                         ComposedTimestamp = now,
+                        ExpiresAt = SelectedConversation.ExpiresInSeconds,
                         Content = new SignalMessageContent() { Content = messageText },
                         ThreadId = SelectedThread.ThreadId,
                         ReceivedTimestamp = now,
