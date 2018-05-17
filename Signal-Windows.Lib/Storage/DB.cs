@@ -1120,6 +1120,7 @@ namespace Signal_Windows.Storage
                             });
                         }
                     }
+                    ctx.SaveChanges();
                 }
             }
             return refreshedGroups;
