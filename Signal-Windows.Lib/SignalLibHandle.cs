@@ -714,8 +714,6 @@ namespace Signal_Windows.Lib
                     }).Result;
                     BackgroundDownloader downloader = new BackgroundDownloader();
                     downloader.SetRequestHeader("Content-Type", "application/octet-stream");
-                    downloader.SuccessToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has finished downloading.");
-                    downloader.FailureToastNotification = LibUtils.CreateToastNotification($"{attachment.SentFileName} has failed to download.");
                     // this is the recommended way to call CreateDownload
                     // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
                     DownloadOperation download = downloader.CreateDownload(new Uri(RetrieveAttachmentUrl(attachmentPointer)), tmpDownload);
