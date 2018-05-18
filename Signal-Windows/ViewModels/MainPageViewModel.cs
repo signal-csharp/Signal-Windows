@@ -134,6 +134,7 @@ namespace Signal_Windows.ViewModels
                     int index = Conversations.IndexOf(uiConversation);
                     Logger.LogDebug("RepositionConversation() moving conversation from {0} to {1}", index, i);
                     Conversations.Move(index, i);
+                    SelectedConversation = uiConversation;
                     break;
                 }
             }
@@ -161,12 +162,16 @@ namespace Signal_Windows.ViewModels
         {
             if (e.AddedItems.Count == 1)
             {
-                Logger.LogDebug("ContactsList_SelectionChanged()");
-                WelcomeVisibility = Visibility.Collapsed;
-                ThreadVisibility = Visibility.Visible;
-                SelectedThread = SelectedConversation;
-                View.Thread.Load(SelectedThread);
-                View.SwitchToStyle(View.GetCurrentViewStyle());
+                var conversation = e.AddedItems[0];
+                if (conversation != SelectedThread)
+                {
+                    Logger.LogDebug("ContactsList_SelectionChanged()");
+                    WelcomeVisibility = Visibility.Collapsed;
+                    ThreadVisibility = Visibility.Visible;
+                    SelectedThread = SelectedConversation;
+                    View.Thread.Load(SelectedThread);
+                    View.SwitchToStyle(View.GetCurrentViewStyle());
+                }
             }
         }
 
