@@ -99,7 +99,7 @@ namespace Signal_Windows.ViewModels
                     {
                         Author = null,
                         ComposedTimestamp = now,
-                        ExpiresAt = SelectedConversation.ExpiresInSeconds,
+                        ExpiresAt = SelectedThread.ExpiresInSeconds,
                         Content = new SignalMessageContent() { Content = messageText },
                         ThreadId = SelectedThread.ThreadId,
                         ReceivedTimestamp = now,
@@ -131,10 +131,14 @@ namespace Signal_Windows.ViewModels
                 }
                 if (uiConversation.LastActiveTimestamp > c.LastActiveTimestamp)
                 {
+                    var oldSelectedConversation = SelectedConversation;
                     int index = Conversations.IndexOf(uiConversation);
                     Logger.LogDebug("RepositionConversation() moving conversation from {0} to {1}", index, i);
                     Conversations.Move(index, i);
-                    SelectedConversation = uiConversation;
+                    if (oldSelectedConversation == uiConversation)
+                    {
+                        SelectedConversation = uiConversation;
+                    }
                     break;
                 }
             }
