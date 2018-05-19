@@ -150,6 +150,16 @@ namespace Signal_Windows.ViewModels
             messageTextBox.Focus(FocusState.Programmatic);
         }
 
+        internal void Deselect()
+        {
+            if (SelectedConversation != null)
+            {
+                RequestedConversationId = SelectedConversation.ThreadId;
+            }
+            SelectedConversation = null;
+            SelectedThread = null;
+        }
+
         public void TrySelectConversation(string conversationId)
         {
             if (conversationId != null && ConversationsDictionary.ContainsKey(conversationId))

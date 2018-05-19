@@ -81,7 +81,10 @@ namespace Signal_Windows
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            Vm.RequestedConversationId = e.Parameter as string;
+            if (e.Parameter != null)
+            {
+                Vm.RequestedConversationId = e.Parameter as string;
+            }
             UpdateLayout();
             SwitchToStyle(GetCurrentViewStyle());
             MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
@@ -91,6 +94,7 @@ namespace Signal_Windows
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
+            Vm.Deselect();
             Frame.SizeChanged -= Frame_SizeChanged;
             if (GetCurrentViewStyle() == PageStyle.Narrow)
             {
