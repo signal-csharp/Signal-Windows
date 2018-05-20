@@ -50,14 +50,34 @@ namespace Signal_Windows.Views
             Utils.DisableBackButton(Vm.BackButton_Click);
         }
 
-        private async void ExportUIDebugLog(object sender, RoutedEventArgs e)
+        private void NotificationsButton_Click(object sender, RoutedEventArgs e)
         {
-            await Vm.ExportUIDebugLog();
+            Frame.Navigate(typeof(NotificationSettingsPage));
         }
 
-        private void RequestSync(object sender, RoutedEventArgs e)
+        private void PrivacyButton_Click(object sender, RoutedEventArgs e)
         {
-            App.Handle.RequestSync();
+            Frame.Navigate(typeof(PrivacySettingsPage));
+        }
+
+        private void AppearanceButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(AppearanceSettingsPage));
+        }
+
+        private void ChatsAndMediaButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(ChatsAndMediaSettingsPage));
+        }
+
+        private void AdvancedButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(AdvancedSettingsPage));
+        }
+
+        private void AboutButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(AboutPage));
         }
     }
 }

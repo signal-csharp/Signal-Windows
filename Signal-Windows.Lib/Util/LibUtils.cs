@@ -157,28 +157,6 @@ namespace Signal_Windows.Lib
             return new EventWaitHandle(false, EventResetMode.ManualReset, GlobalEventWaitHandleName, out bool createdNew);
         }
 
-        public static ToastNotification CreateToastNotification(string text)
-        {
-            ToastContent toastContent = new ToastContent()
-            {
-                Visual = new ToastVisual()
-                {
-                    BindingGeneric = new ToastBindingGeneric()
-                    {
-                        Children =
-                        {
-                            new AdaptiveText()
-                            {
-                                Text = text,
-                                HintWrap = true
-                            }
-                        }
-                    }
-                }
-            };
-            return new ToastNotification(toastContent.GetXml());
-        }
-
         public static FileStream CreateTmpFile(string name)
         {
             return File.Open(ApplicationData.Current.LocalCacheFolder.Path + Path.AltDirectorySeparatorChar + name, FileMode.Create, FileAccess.ReadWrite);

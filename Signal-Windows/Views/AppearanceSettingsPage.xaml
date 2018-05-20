@@ -1,0 +1,40 @@
+﻿<Page
+    x:Class="Signal_Windows.Views.AppearanceSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Signal_Windows.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    DataContext="{Binding AppearanceSettingsPageInstance, Source={StaticResource Locator}}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="8*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Appearance" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource TitleTextBlockStyle}"/>
+        <ScrollViewer Grid.Row="1">
+            <Grid Margin="32,0,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <StackPanel Margin="0,8">
+                    <TextBlock Text="Theme" Style="{StaticResource BodyTextBlockStyle}" Margin="0,0,0,4"/>
+                    <ComboBox SelectedIndex="0" Width="300" IsEnabled="False">
+                        <ComboBoxItem Content="Light"/>
+                        <ComboBoxItem Content="Dark"/>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Margin="0,8">
+                    <TextBlock Text="Language" Style="{StaticResource BodyTextBlockStyle}" Margin="0,0,0,4"/>
+                    <ComboBox SelectedIndex="0" Width="300" IsEnabled="False">
+                        <ComboBoxItem Content="English"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Page>

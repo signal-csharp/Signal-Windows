@@ -1,0 +1,76 @@
+﻿<Page
+    x:Class="Signal_Windows.Views.ChatsAndMediaSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Signal_Windows.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    DataContext="{Binding ChatsAndMediaSettingsPageInstance, Source={StaticResource Locator}}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="8*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Chats &amp; Media" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource TitleTextBlockStyle}"/>
+        <ScrollViewer Grid.Row="1">
+            <Grid Margin="32,0,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Media auto-download" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <StackPanel Grid.Row="1" Margin="0,8">
+                        <TextBlock Text="When using mobile data" Style="{StaticResource BodyTextBlockStyle}"/>
+                        <CheckBox Content="Images" IsEnabled="False"/>
+                        <CheckBox Content="Audio" IsEnabled="False"/>
+                        <CheckBox Content="Videos" IsEnabled="False"/>
+                        <CheckBox Content="Documents" IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="2" Margin="0,8">
+                        <TextBlock Text="When using Wi-Fi" Style="{StaticResource BodyTextBlockStyle}"/>
+                        <CheckBox Content="Images" IsEnabled="False"/>
+                        <CheckBox Content="Audio" IsEnabled="False"/>
+                        <CheckBox Content="Videos" IsEnabled="False"/>
+                        <CheckBox Content="Documents" IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="3" Margin="0,8">
+                        <TextBlock Text="When roaming" Style="{StaticResource BodyTextBlockStyle}"/>
+                        <CheckBox Content="Images" IsEnabled="False"/>
+                        <CheckBox Content="Audio" IsEnabled="False"/>
+                        <CheckBox Content="Videos" IsEnabled="False"/>
+                        <CheckBox Content="Documents" IsEnabled="False"/>
+                    </StackPanel>
+                </Grid>
+                <Grid Grid.Row="1" Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Message trimming" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <StackPanel Grid.Row="1" Margin="0,8">
+                        <TextBlock Text="Delete old messages" Style="{StaticResource BodyTextBlockStyle}"/>
+                        <TextBlock Text="Automatically delete older messages once a conversation exceeds a specified length" Style="{StaticResource CaptionTextBlockStyle}"/>
+                        <ToggleSwitch IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="2" Margin="0,8">
+                        <TextBlock Text="Conversation length limit" Style="{StaticResource BodyTextBlockStyle}" Margin="0,0,0,4"/>
+                        <TextBox InputScope="Number" HorizontalAlignment="Left" Width="125" IsEnabled="False"/>
+                    </StackPanel>
+                    <Button Grid.Row="3" Content="Trim all conversations now" Margin="0,8,0,0" IsEnabled="False"/>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Page>

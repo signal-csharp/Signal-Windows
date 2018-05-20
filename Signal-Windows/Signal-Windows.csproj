@@ -174,17 +174,34 @@
     <Compile Include="SignalWindowsFrontend.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ViewModels\AddContactPageViewModel.cs" />
+    <Compile Include="ViewModels\AdvancedSettingsPageViewModel.cs" />
+    <Compile Include="ViewModels\AppearanceSettingsPageViewModel.cs" />
+    <Compile Include="ViewModels\ChatsAndMediaSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\ConversationSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\FinishRegistrationPageViewModel.cs" />
     <Compile Include="ViewModels\GlobalSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\LinkPageViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
+    <Compile Include="ViewModels\NotificationSettingsPageViewModel.cs" />
+    <Compile Include="ViewModels\PrivacySettingsPageViewModel.cs" />
     <Compile Include="ViewModels\RegisterFinalizationPageViewModel.cs" />
     <Compile Include="ViewModels\RegisterPageViewModel.cs" />
     <Compile Include="ViewModels\StartPageViewModel.cs" />
     <Compile Include="ViewModels\ViewModelLocator.cs" />
+    <Compile Include="Views\AboutPage.xaml.cs">
+      <DependentUpon>AboutPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\AddContactPage.xaml.cs">
       <DependentUpon>AddContactPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\AdvancedSettingsPage.xaml.cs">
+      <DependentUpon>AdvancedSettingsPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\AppearanceSettingsPage.xaml.cs">
+      <DependentUpon>AppearanceSettingsPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ChatsAndMediaSettingsPage.xaml.cs">
+      <DependentUpon>ChatsAndMediaSettingsPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ConversationSettingsPage.xaml.cs">
       <DependentUpon>ConversationSettingsPage.xaml</DependentUpon>
@@ -202,6 +219,12 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Views\NotificationSettingsPage.xaml.cs">
+      <DependentUpon>NotificationSettingsPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\PrivacySettingsPage.xaml.cs">
+      <DependentUpon>PrivacySettingsPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\RegisterFinalizationPage.xaml.cs">
       <DependentUpon>RegisterFinalizationPage.xaml</DependentUpon>
     </Compile>
@@ -264,7 +287,23 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\AboutPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\AddContactPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\AdvancedSettingsPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\AppearanceSettingsPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ChatsAndMediaSettingsPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -287,6 +326,14 @@
     <Page Include="Views\MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\NotificationSettingsPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\PrivacySettingsPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\RegisterFinalizationPage.xaml">
       <SubType>Designer</SubType>

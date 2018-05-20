@@ -1,4 +1,5 @@
-﻿using libsignalservice;
+﻿using GalaSoft.MvvmLight;
+using libsignalservice;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
@@ -12,7 +13,7 @@ using Windows.UI.Core;
 
 namespace Signal_Windows.ViewModels
 {
-    public class GlobalSettingsPageViewModel
+    public class GlobalSettingsPageViewModel : ViewModelBase
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<GlobalSettingsPageViewModel>();
         public GlobalSettingsPage View;
@@ -25,25 +26,6 @@ namespace Signal_Windows.ViewModels
 
         public void OnNavigatedTo()
         {
-        }
-
-        public async Task ExportUIDebugLog()
-        {
-            var savePicker = new FileSavePicker();
-            savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
-            savePicker.SuggestedFileName = "Signal-Windows.ui.log";
-            var file = await savePicker.PickSaveFileAsync();
-            if (file != null)
-            {
-                await Task.Run(() =>
-                {
-                    SignalFileLoggerProvider.ExportUILog(file);
-                });
-            }
-            else
-            {
-                Logger.LogTrace("No file was selected");
-            }
         }
     }
 }

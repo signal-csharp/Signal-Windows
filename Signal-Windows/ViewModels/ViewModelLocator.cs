@@ -41,6 +41,11 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<FinishRegistrationPageViewModel>();
             SimpleIoc.Default.Register<ConversationSettingsPageViewModel>();
             SimpleIoc.Default.Register<GlobalSettingsPageViewModel>();
+            SimpleIoc.Default.Register<NotificationSettingsPageViewModel>();
+            SimpleIoc.Default.Register<PrivacySettingsPageViewModel>();
+            SimpleIoc.Default.Register<AppearanceSettingsPageViewModel>();
+            SimpleIoc.Default.Register<ChatsAndMediaSettingsPageViewModel>();
+            SimpleIoc.Default.Register<AdvancedSettingsPageViewModel>();
         }
 
         // <summary>
@@ -110,6 +115,31 @@ namespace Signal_Windows.ViewModels
         public GlobalSettingsPageViewModel GlobalSettingsPageInstance
         {
             get { return ServiceLocator.Current.GetInstance<GlobalSettingsPageViewModel>(Key.ToString()); }
+        }
+
+        public NotificationSettingsPageViewModel NotificationSettingsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<NotificationSettingsPageViewModel>(Key.ToString()); }
+        }
+
+        public PrivacySettingsPageViewModel PrivacySettingsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<PrivacySettingsPageViewModel>(Key.ToString()); }
+        }
+
+        public AppearanceSettingsPageViewModel AppearanceSettingsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<AppearanceSettingsPageViewModel>(Key.ToString()); }
+        }
+
+        public ChatsAndMediaSettingsPageViewModel ChatsAndMediaSettingsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<ChatsAndMediaSettingsPageViewModel>(Key.ToString()); }
+        }
+
+        public AdvancedSettingsPageViewModel AdvancedSettingsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<AdvancedSettingsPageViewModel>(Key.ToString()); }
         }
 
         // <summary>

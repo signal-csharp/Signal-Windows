@@ -199,6 +199,10 @@ namespace Signal_Windows
                 Window.Current.Content = frame;
                 Window.Current.Activate();
                 var currView = ApplicationView.GetForCurrentView();
+                if (GlobalSettingsManager.BlockScreenshotsSetting)
+                {
+                    currView.IsScreenCaptureEnabled = false;
+                }
                 currView.Consolidated += CurrView_Consolidated;
                 newViewId = currView.Id;
                 ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
@@ -267,6 +271,10 @@ namespace Signal_Windows
                 rootFrame.NavigationFailed += OnNavigationFailed;
                 Window.Current.Content = rootFrame;
                 var currView = ApplicationView.GetForCurrentView();
+                if (GlobalSettingsManager.BlockScreenshotsSetting)
+                {
+                    currView.IsScreenCaptureEnabled = false;
+                }
                 var frontend = new SignalWindowsFrontend(Window.Current.Dispatcher, (ViewModelLocator)Resources["Locator"], currView.Id);
                 Views.Add(currView.Id, frontend);
                 MainViewId = currView.Id;

@@ -10,15 +10,63 @@
 
     <Page.Resources>
     </Page.Resources>
-    <StackPanel Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="10 10 10 10">
-        <Grid HorizontalAlignment="Center">
-            <TextBlock FontSize="24" Text="Settings"/>
-        </Grid>
-        <Grid HorizontalAlignment="Center">
-            <Button Click="ExportUIDebugLog">Export debug log</Button>
-        </Grid>
-        <Grid HorizontalAlignment="Center">
-            <Button Click="RequestSync">Request contact and group sync</Button>
-        </Grid>
-    </StackPanel>
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="8*"/>
+        </Grid.RowDefinitions>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="640"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="WrapGrid.MaximumRowsOrColumns" Value="5"/>
+                        <Setter Target="WrapGrid.HorizontalAlignment" Value="Center"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <TextBlock Text="Settings" Style="{StaticResource HeaderTextBlockStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <VariableSizedWrapGrid x:Name="WrapGrid" HorizontalAlignment="Left" MaximumRowsOrColumns="1" VerticalAlignment="Top" Orientation="Horizontal" ItemWidth="250" ItemHeight="80" Grid.Row="1" Margin="32,0,32,0">
+            <Button x:Name="NotificationsButton" Background="{x:Null}" Width="250" HorizontalContentAlignment="Left" Click="NotificationsButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xEA8F;" FontSize="36"/>
+                    <TextBlock Text="Notifications" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="PrivacyButton" Background="{x:Null}" HorizontalContentAlignment="Left" Width="250" Click="PrivacyButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE1F6;" FontSize="36"/>
+                    <TextBlock Text="Privacy" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="AppearanceButton" Background="{x:Null}" HorizontalContentAlignment="Left" Width="250" Click="AppearanceButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE771;" FontSize="36"/>
+                    <TextBlock Text="Appearance" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="ChatsAndMediaButton" Background="{x:Null}" HorizontalContentAlignment="Left" Width="250" Click="ChatsAndMediaButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE25C;" FontSize="36"/>
+                    <TextBlock Text="Chats &amp; Media" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="AdvancedButton" Background="{x:Null}" HorizontalContentAlignment="Left" Width="250" Click="AdvancedButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE15E;" FontSize="36"/>
+                    <TextBlock Text="Advanced" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="AboutButton" Background="{x:Null}" HorizontalContentAlignment="Left" Width="250" Click="AboutButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE783;" FontSize="36"/>
+                    <TextBlock Text="About" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Button>
+        </VariableSizedWrapGrid>
+    </Grid>
+
 </Page>

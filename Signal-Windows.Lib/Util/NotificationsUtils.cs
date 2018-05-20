@@ -70,19 +70,42 @@ namespace Signal_Windows.Lib
         private static IList<AdaptiveText> GetNotificationText(SignalMessage message)
         {
             List<AdaptiveText> text = new List<AdaptiveText>();
-            AdaptiveText title = new AdaptiveText()
+            if (GlobalSettingsManager.ShowNotificationTextSetting == GlobalSettingsManager.ShowNotificationTextSettings.NameAndMessage)
             {
-                Text = message.Author.ThreadDisplayName,
+                text.Add(CreateToastTitle(message.Author.ThreadDisplayName));
+                text.Add(CreateToastBody(message.Content.Content));
+            }
+            else if (GlobalSettingsManager.ShowNotificationTextSetting == GlobalSettingsManager.ShowNotificationTextSettings.NameOnly)
+            {
+                text.Add(CreateToastTitle(message.Author.ThreadDisplayName));
+            }
+            else if (GlobalSettingsManager.ShowNotificationTextSetting == GlobalSettingsManager.ShowNotificationTextSettings.NoNameOrMessage)
+            {
+                text.Add(CreateToastTitle("New message"));
+            }
+            else
+            {
+                text.Add(CreateToastTitle("New message"));
+            }
+            return text;
+        }
+
+        private static AdaptiveText CreateToastTitle(string text)
+        {
+            return new AdaptiveText()
+            {
+                Text = text,
                 HintMaxLines = 1
             };
-            AdaptiveText messageText = new AdaptiveText()
+        }
+
+        private static AdaptiveText CreateToastBody(string text)
+        {
+            return new AdaptiveText()
             {
-                Text = message.Content.Content,
+                Text = text,
                 HintWrap = true
             };
-            text.Add(title);
-            text.Add(messageText);
-            return text;
         }
 
         public static void SendTileNotification(SignalMessage message)
