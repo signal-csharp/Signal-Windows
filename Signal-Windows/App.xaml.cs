@@ -35,11 +35,8 @@ namespace Signal_Windows
     {
         private static App Instance;
         private static ILogger Logger = LibsignalLogging.CreateLogger<App>();
-        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl("https://textsecure-service.whispersystems.org") };
-        public static SignalServiceConfiguration ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null);
         public static StorageFolder LocalCacheFolder = ApplicationData.Current.LocalCacheFolder;
         public static bool MainPageActive = false;
-        public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
         public static ISignalLibHandle Handle = SignalHelper.CreateSignalLibHandle(false);
         private Dictionary<int, SignalWindowsFrontend> Views = new Dictionary<int, SignalWindowsFrontend>();

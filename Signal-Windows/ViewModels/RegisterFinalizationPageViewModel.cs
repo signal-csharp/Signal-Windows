@@ -3,6 +3,7 @@ using libsignal;
 using libsignal.util;
 using libsignalservice;
 using libsignalservice.util;
+using Signal_Windows.Lib;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Signal_Windows.Views;
@@ -80,7 +81,11 @@ namespace Signal_Windows.ViewModels
         private SignalServiceAccountManager InitRegistration(bool voice)
         {
             App.Handle.PurgeAccountData();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber, Password, 1 /*device id isn't actually used*/, App.USER_AGENT);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(SignalLibConstants.ServiceConfiguration,
+                App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber,
+                Password,
+                1, //device id isn't actually used
+                SignalLibConstants.USER_AGENT);
             if (voice)
             {
                 accountManager.RequestVoiceVerificationCode();

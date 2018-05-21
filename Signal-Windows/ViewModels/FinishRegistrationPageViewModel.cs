@@ -52,7 +52,7 @@ namespace Signal_Windows.ViewModels
 
                     /* create prekeys */
                     LibsignalDBContext.RefreshPreKeys(
-                        new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                        new SignalServiceAccountManager(SignalLibConstants.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, SignalLibConstants.USER_AGENT));
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();

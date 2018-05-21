@@ -100,6 +100,10 @@ namespace Signal_Windows
             {
                 Utils.DisableBackButton(Vm.BackButton_Click);
             }
+            if (Vm.SelectedThread != null)
+            {
+                Vm.RequestedConversationId = Vm.SelectedThread.ThreadId;
+            }
         }
 
         private void Frame_SizeChanged(object sender, SizeChangedEventArgs e)

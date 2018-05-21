@@ -1,0 +1,24 @@
+syntax = "proto3";
+package textsecure;
+option csharp_namespace = "Signal_Windows.SignalWebRtc";
+option java_package = "org.thoughtcrime.securesms.webrtc";
+option java_outer_classname = "WebRtcDataProtos";
+
+message Connected  {
+    oneof id_oneof { uint64 id = 1; }
+}
+
+message Hangup  {
+    oneof id_oneof { uint64 id = 1; }
+}
+
+message VideoStreamingStatus   {
+    oneof id_oneof { uint64 id = 1; }
+	oneof enabled_oneof { bool enabled = 2; }
+}
+
+message Data    {
+    oneof connected_oneof { Connected connected = 1; }
+	oneof hangup_oneof { Hangup hangup = 2; }
+	oneof videoStreamingStatus_oneof { VideoStreamingStatus videoStreamingStatus  = 3; }
+}

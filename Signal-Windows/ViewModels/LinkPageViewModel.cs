@@ -82,7 +82,7 @@ namespace Signal_Windows.ViewModels
                 });
 
                 // fetch new device uuid
-                SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, CancelSource.Token, "Signal-Windows");
+                SignalServiceAccountManager accountManager = new SignalServiceAccountManager(SignalLibConstants.ServiceConfiguration, "Signal-Windows");
                 string uuid = await accountManager.GetNewDeviceUuid(CancelSource.Token);
                 string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.EncodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
 
@@ -117,7 +117,7 @@ namespace Signal_Windows.ViewModels
                 App.Handle.Store = store;
 
                 // create prekeys
-                LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(SignalLibConstants.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, SignalLibConstants.USER_AGENT));
 
                 // reload again with prekeys and their offsets
                 App.Handle.Store = LibsignalDBContext.GetSignalStore();

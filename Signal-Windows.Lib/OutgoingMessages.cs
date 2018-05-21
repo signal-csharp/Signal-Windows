@@ -1,4 +1,5 @@
 ﻿using libsignal;
+using libsignal_service_dotnet.messages.calls;
 using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
@@ -33,7 +34,7 @@ namespace Signal_Windows.Lib
             Handle = handle;
         }
 
-        public void SendMessage(List<SignalServiceAddress> recipients, SignalServiceDataMessage message)
+        internal void SendMessage(List<SignalServiceAddress> recipients, SignalServiceDataMessage message)
         {
             lock (this)
             {
@@ -41,7 +42,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        public void SendMessage(SignalServiceAddress recipient, SignalServiceDataMessage message)
+        internal void SendMessage(SignalServiceAddress recipient, SignalServiceDataMessage message)
         {
             lock (this)
             {
@@ -49,7 +50,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        public void SendMessage(SignalServiceAddress recipient, SignalServiceSyncMessage message)
+        internal void SendMessage(SignalServiceSyncMessage message)
         {
             lock (this)
             {
@@ -57,11 +58,11 @@ namespace Signal_Windows.Lib
             }
         }
 
-        public void SendMessage(SignalServiceSyncMessage message)
+        internal void SendMessage(string recipient, SignalServiceCallMessage answer)
         {
             lock (this)
             {
-                MessageSender.SendMessage(message);
+                MessageSender.SendCallMessage(new SignalServiceAddress(recipient), answer);
             }
         }
 

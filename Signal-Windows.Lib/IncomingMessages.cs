@@ -1,4 +1,5 @@
 ﻿using libsignal.messages.multidevice;
+using libsignal_service_dotnet.messages.calls;
 using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
@@ -262,10 +263,36 @@ namespace Signal_Windows.Lib
                 SignalServiceReceiptMessage receiptMessage = content.ReadMessage;
                 Logger.LogTrace("HandleMessage() received ReceiptMessage (type={0}, when={1})", receiptMessage.ReceiptType, receiptMessage.When);
             }
+            else if (content.CallMessage != null)
+            {
+                HandleCallMessage(envelope, content, content.CallMessage, false, timestamp);
+            }
             else
             {
-                //TODO callmessages
+                //TODO read receipts
                 Logger.LogWarning("HandleMessage() received unrecognized message");
+            }
+        }
+
+        private void HandleCallMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceCallMessage callMessage, bool v, long timestamp)
+        {
+            if (callMessage.OfferMessage != null)
+            {
+                Logger.LogTrace("HandleCallMessage() received Offer");
+                SignalLibHandle.Instance.HandleIncomingCallOffer(envelope, content.CallMessage.OfferMessage);
+            }
+            else if (callMessage.IceUpdateMessages != null)
+            {
+                Logger.LogTrace("HandleCallMessage() received IceUpdateMessages");
+                SignalLibHandle.Instance.HandleIncomingIceUpdate(envelope, content.CallMessage.IceUpdateMessages);
+            }
+            else if (callMessage.HangupMessage != null)
+            {
+                Logger.LogInformation("HandleCallMessage() received HangupMessage");
+            }
+            else
+            {
+                Logger.LogError("got unhandled call message");
             }
         }
 

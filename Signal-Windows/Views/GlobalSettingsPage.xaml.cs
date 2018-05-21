@@ -1,9 +1,14 @@
-﻿using Signal_Windows.ViewModels;
+﻿using libsignalservice;
+using Org.WebRtc;
+using Signal_Windows.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -78,6 +83,11 @@ namespace Signal_Windows.Views
         private void AboutButton_Click(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(AboutPage));
+        }
+
+        private async void StartTestCall(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

@@ -46,6 +46,7 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<AppearanceSettingsPageViewModel>();
             SimpleIoc.Default.Register<ChatsAndMediaSettingsPageViewModel>();
             SimpleIoc.Default.Register<AdvancedSettingsPageViewModel>();
+            SimpleIoc.Default.Register<CallPageViewModel>();
         }
 
         // <summary>
@@ -140,6 +141,10 @@ namespace Signal_Windows.ViewModels
         public AdvancedSettingsPageViewModel AdvancedSettingsPageInstance
         {
             get { return ServiceLocator.Current.GetInstance<AdvancedSettingsPageViewModel>(Key.ToString()); }
+        }
+        public CallPageViewModel CallPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<CallPageViewModel>(Key.ToString()); }
         }
 
         // <summary>

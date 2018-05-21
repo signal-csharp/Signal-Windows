@@ -24,9 +24,18 @@ using libsignalservice.push;
 using Strilanc.Value;
 using libsignalservice.messages.multidevice;
 using libsignalservice.crypto;
+using libsignalservice.configuration;
+using libsignal_service_dotnet.messages.calls;
 
 namespace Signal_Windows.Lib
 {
+    public class SignalLibConstants
+    {
+        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl("https://textsecure-service.whispersystems.org") };
+        public static SignalServiceConfiguration ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null);
+        public static string USER_AGENT = "Signal-Windows";
+    }
+
     public class AppendResult
     {
         public long Index { get;  }
@@ -47,6 +56,8 @@ namespace Signal_Windows.Lib
         void ReplaceConversationList(List<SignalConversation> conversations);
         void HandleAuthFailure();
         void HandleAttachmentStatusChanged(SignalAttachment sa);
+        Task HandleCallOfferMessage(SignalServiceEnvelope envelope, OfferMessage offerMessage);
+        Task HandleCallIceUpdatesMessage(SignalServiceEnvelope envelope, List<IceUpdateMessage> iceUpdateMessages);
     }
 
     public interface ISignalLibHandle
@@ -66,6 +77,7 @@ namespace Signal_Windows.Lib
         void Release();
         bool AddFrontend(CoreDispatcher d, ISignalFrontend w);
         void RemoveFrontend(CoreDispatcher d);
+        SignalServiceAccountManager CreateAccountManager();
 
         // Background API
         event EventHandler<SignalMessageEventArgs> SignalMessageEvent;
@@ -75,6 +87,10 @@ namespace Signal_Windows.Lib
         // Attachment API
         void StartAttachmentDownload(SignalAttachment sa);
         //void AbortAttachmentDownload(SignalAttachment sa); TODO
+
+        // Calls API
+        void SendCallResponse(string recipient, ulong id, string description);
+        void SendCallMessage(string v, SignalServiceCallMessage msg);
     }
 
     public static class SignalHelper
@@ -88,6 +104,7 @@ namespace Signal_Windows.Lib
     internal class SignalLibHandle : ISignalLibHandle
     {
         internal static SignalLibHandle Instance;
+
         public SignalStore Store { get; set; }
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalLibHandle>();
         public SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
@@ -333,6 +350,23 @@ namespace Signal_Windows.Lib
             });
         }
 
+        internal void HandleIncomingCallOffer(SignalServiceEnvelope envelope, OfferMessage offerMessage)
+        {
+            Task.Run(async () =>
+            {
+                await DispatchCallOfferMessage(envelope, offerMessage);
+            });
+            
+        }
+
+        internal void HandleIncomingIceUpdate(SignalServiceEnvelope envelope, List<IceUpdateMessage> iceUpdateMessages)
+        {
+            Task.Run(async () =>
+            {
+                await DispatchCallIncomingIceUpdate(envelope, iceUpdateMessages);
+            });
+        }
+
         public void RequestSync()
         {
             Task.Run(() =>
@@ -394,6 +428,11 @@ namespace Signal_Windows.Lib
             SemaphoreSlim.Release();
             Logger.LogTrace("SaveAndDispatchSignalConversation() released");
         }
+
+        public SignalServiceAccountManager CreateAccountManager()
+        {
+            return new SignalServiceAccountManager(SignalLibConstants.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, SignalLibConstants.USER_AGENT);
+        }
         #endregion
 
         #region attachment api
@@ -422,6 +461,28 @@ namespace Signal_Windows.Lib
         }
         #endregion
 
+        #region calls api
+        public void SendCallMessage(string recipient, SignalServiceCallMessage message)
+        {
+            Logger.LogDebug("SendCallMessage()");
+            OutgoingMessages.SendMessage(recipient, message);
+        }
+
+        public void SendCallResponse(string recipient, ulong id, string description)
+        {
+            Logger.LogDebug("SendCallResponse()");
+            var answer = new SignalServiceCallMessage()
+            {
+                AnswerMessage = new AnswerMessage()
+                {
+                    Description = description,
+                    Id = id
+                }
+            };
+            OutgoingMessages.SendMessage(recipient, answer);
+        }
+
+        #endregion
         #region internal api
         internal void DispatchHandleAuthFailure()
         {
@@ -560,6 +621,40 @@ namespace Signal_Windows.Lib
                 operations.Add(dispatcher.RunTaskAsync(() =>
                 {
                     Frames[dispatcher].HandleMessageRead(unreadMarkerIndex, conversation);
+                }));
+            }
+            foreach (var waitHandle in operations)
+            {
+                await waitHandle;
+            }
+            Task.WaitAll(operations.ToArray());
+        }
+
+        private async Task DispatchCallIncomingIceUpdate(SignalServiceEnvelope envelope, List<IceUpdateMessage> iceUpdateMessages)
+        {
+            List<Task> operations = new List<Task>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                operations.Add(dispatcher.RunTaskAsync(() =>
+                {
+                    Frames[dispatcher].HandleCallIceUpdatesMessage(envelope, iceUpdateMessages);
+                }));
+            }
+            foreach (var waitHandle in operations)
+            {
+                await waitHandle;
+            }
+            Task.WaitAll(operations.ToArray());
+        }
+
+        internal async Task DispatchCallOfferMessage(SignalServiceEnvelope envelope, OfferMessage offerMessage)
+        {
+            List<Task> operations = new List<Task>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                operations.Add(dispatcher.RunTaskAsync(() =>
+                {
+                    Frames[dispatcher].HandleCallOfferMessage(envelope, offerMessage);
                 }));
             }
             foreach (var waitHandle in operations)

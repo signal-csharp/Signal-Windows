@@ -22,6 +22,7 @@ using Windows.UI.Xaml.Controls;
 using System.Globalization;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Signal_Windows.Lib;
 
 namespace Signal_Windows.ViewModels
 {
@@ -116,7 +117,7 @@ namespace Signal_Windows.ViewModels
             RefreshingContacts = true;
             Contacts.Clear();
             signalContacts.Clear();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, App.Handle.Store.Username, App.Handle.Store.Password, (int)App.Handle.Store.DeviceId, App.USER_AGENT);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(SignalLibConstants.ServiceConfiguration, App.Handle.Store.Username, App.Handle.Store.Password, (int)App.Handle.Store.DeviceId, SignalLibConstants.USER_AGENT);
             ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
             List<PhoneContact> intermediateContacts = new List<PhoneContact>();
             if (contactStore != null)
@@ -134,7 +135,7 @@ namespace Signal_Windows.ViewModels
                 {
                     contactAnnotationList = contactAnnotationLists[0];
                 }
-                
+
                 foreach (var contact in contacts)
                 {
                     var phones = contact.Phones;
