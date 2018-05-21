@@ -21,11 +21,13 @@
         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Name="ConversationDisplayName" FontSize="15" FontWeight="SemiLight" Text="{x:Bind Model.ThreadDisplayName, Mode=OneWay}" TextTrimming="CharacterEllipsis"/>
-                <TextBlock x:Name="LastActiveTextBlock" Grid.Column="1" Text="{x:Bind LastMessageTimestamp, Mode=OneWay}" FontSize="11" Foreground="#999999" TextTrimming="CharacterEllipsis"/>
+                <FontIcon Glyph="&#xE25B;" FontSize="15" Visibility="{x:Bind BlockedIconVisible, Mode=OneWay}"/>
+                <TextBlock Grid.Column="1" Name="ConversationDisplayName" FontSize="15" FontWeight="SemiLight" Text="{x:Bind Model.ThreadDisplayName, Mode=OneWay}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="LastActiveTextBlock" Grid.Column="2" Text="{x:Bind LastMessageTimestamp, Mode=OneWay}" FontSize="11" Foreground="#999999" TextTrimming="CharacterEllipsis"/>
             </Grid>
             <Grid>
                 <Grid.ColumnDefinitions>

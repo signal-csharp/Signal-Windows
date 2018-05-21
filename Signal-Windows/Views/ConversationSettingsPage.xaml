@@ -81,7 +81,7 @@
                     </Grid>
                 </StackPanel>
                 <Button Grid.Row="4" Content="View safety number" IsEnabled="False" Margin="0,16"/>
-                <Button Grid.Row="5" Content="Block" IsEnabled="False" Margin="0,16" />
+                <Button x:Name="BlockButton" Grid.Row="5" Content="{x:Bind Vm.BlockedText, Mode=OneWay}" Margin="0,16" Background="#FFEF5350" MinWidth="75" MinHeight="32" Click="BlockButton_Click" />
             </Grid>
         </ScrollViewer>
     </Grid>

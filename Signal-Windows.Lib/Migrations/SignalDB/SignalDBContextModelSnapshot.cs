@@ -193,6 +193,8 @@ namespace Signal_Windows.Migrations
                 {
                     b.HasBaseType("Signal_Windows.Models.SignalConversation");
 
+                    b.Property<bool>("Blocked");
+
                     b.Property<string>("Color");
 
                     b.ToTable("SignalContact");

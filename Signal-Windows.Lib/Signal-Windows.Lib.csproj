@@ -109,6 +109,10 @@
     <Compile Include="Events\SignalMessageEventArgs.cs" />
     <Compile Include="GlobalSettingsManager.cs" />
     <Compile Include="IncomingMessages.cs" />
+    <Compile Include="Migrations\SignalDB\20180521001340_m6.cs" />
+    <Compile Include="Migrations\SignalDB\20180521001340_m6.designer.cs">
+      <DependentUpon>20180521001340_m6.cs</DependentUpon>
+    </Compile>
     <Compile Include="Util\LibUtils.cs" />
     <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.cs" />
     <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.Designer.cs">

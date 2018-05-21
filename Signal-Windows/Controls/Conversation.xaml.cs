@@ -93,6 +93,23 @@ namespace Signal_Windows.Controls
             get { return Utils.Blue; }
         }
 
+        private bool blocked;
+        public bool Blocked
+        {
+            get { return blocked; }
+            set
+            {
+                blocked = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Blocked)));
+            }
+        }
+
+        public bool SendMessageVisible
+        {
+            get { return !Blocked; }
+            set { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendMessageVisible))); }
+        }
+
         public Conversation()
         {
             this.InitializeComponent();
@@ -144,6 +161,12 @@ namespace Signal_Windows.Controls
         public void Load(SignalConversation conversation)
         {
             SignalConversation = conversation;
+            if (SignalConversation is SignalContact)
+            {
+                SignalContact contact = (SignalContact)SignalConversation;
+                Blocked = contact.Blocked;
+                SendMessageVisible = !Blocked;
+            }
             LastMarkReadRequest = -1;
             InputTextBox.IsEnabled = false;
             DisposeCurrentThread();
@@ -348,6 +371,18 @@ namespace Signal_Windows.Controls
                         await App.Handle.SetMessageRead(rawBottomIndex, ((SignalMessageContainer) Collection[bottomIndex]).Message, SignalConversation);
                     });
                 }
+            }
+        }
+
+        private void UnblockButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SignalConversation is SignalContact)
+            {
+                var contact = (SignalContact)SignalConversation;
+                contact.Blocked = false;
+                Blocked = false;
+                SendMessageVisible = !Blocked;
+                SignalDBContext.UpdateBlockStatus(contact);
             }
         }
     }

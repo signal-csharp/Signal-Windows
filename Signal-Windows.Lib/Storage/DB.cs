@@ -1411,6 +1411,23 @@ namespace Signal_Windows.Storage
                 }
             }
         }
+
+        public static void UpdateBlockStatus(SignalContact contact)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var c = ctx.Contacts.SingleOrDefault(b => b.ThreadId == contact.ThreadId);
+                    if (c == null)
+                    {
+                        throw new Exception("Could not find contact!");
+                    }
+                    c.Blocked = contact.Blocked;
+                    ctx.SaveChanges();
+                }
+            }
+        }
         #endregion Contacts
     }
 }

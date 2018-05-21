@@ -162,5 +162,10 @@ namespace Signal_Windows.Views
         {
             Vm.UpdateDisplayName(((TextBox)sender).Text);
         }
+
+        private void BlockButton_Click(object sender, RoutedEventArgs e)
+        {
+            Vm.BlockButton_Click();
+        }
     }
 }

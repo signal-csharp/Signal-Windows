@@ -133,6 +133,13 @@ namespace Signal_Windows.Controls
             set { _LastMessageTimestamp = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastMessageTimestamp))); }
         }
 
+        private bool blockedIconVisible;
+        public bool BlockedIconVisible
+        {
+            get { return blockedIconVisible; }
+            set { blockedIconVisible = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BlockedIconVisible))); }
+        }
+
         private void ThreadListItem_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             if (Model != null)
@@ -146,13 +153,21 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
+                if (Model is SignalContact)
+                {
+                    var contact = (SignalContact)Model;
+                    BlockedIconVisible = contact.Blocked;
+                    FillBrush = contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
+                        Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.ThreadDisplayName));
+                }
+                else
+                {
+                    FillBrush = Utils.Blue;
+                }
                 ConversationDisplayName.Text = Model.ThreadDisplayName;
                 UnreadCount = Model.UnreadCount;
                 LastMessage = Model.LastMessage?.Content.Content;
                 Initials = Utils.GetInitials(Model.ThreadDisplayName);
-                FillBrush = Model is SignalContact contact ?
-                    contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
-                        Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.ThreadDisplayName)) : Utils.Blue;
                 LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
             }
         }

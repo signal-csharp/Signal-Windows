@@ -572,6 +572,12 @@ namespace Signal_Windows.Lib
                 author = SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
             }
 
+            if (author != null && author.Blocked)
+            {
+                // Don't save blocked messages
+                return;
+            }
+
             List<SignalAttachment> attachments = new List<SignalAttachment>();
             SignalMessage message = new SignalMessage()
             {

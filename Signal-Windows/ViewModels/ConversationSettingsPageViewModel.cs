@@ -50,6 +50,32 @@ namespace Signal_Windows.ViewModels
         public ObservableCollection<SolidColorBrush> Colors { get; set; }
         public SignalContact Contact { get; set; }
 
+        private bool blocked;
+        public bool Blocked
+        {
+            get { return blocked; }
+            set
+            {
+                blocked = value;
+                RaisePropertyChanged(nameof(Blocked));
+                if (blocked)
+                {
+                    BlockedText = "Unblock";
+                }
+                else
+                {
+                    BlockedText = "Block";
+                }
+            }
+        }
+
+        private string blockedText;
+        public string BlockedText
+        {
+            get { return blockedText; }
+            set { blockedText = value; RaisePropertyChanged(nameof(BlockedText)); }
+        }
+
         public ConversationSettingsPageViewModel()
         {
             Colors = new ObservableCollection<SolidColorBrush>();
@@ -63,6 +89,7 @@ namespace Signal_Windows.ViewModels
 
         public void OnNavigatedTo()
         {
+            Blocked = Contact.Blocked;
             FillBrush = Utils.GetBrushFromColor(Contact.Color);
             Initials = Utils.GetInitials(Contact.ThreadDisplayName);
             DisplayName = Contact.ThreadDisplayName;
@@ -100,6 +127,13 @@ namespace Signal_Windows.ViewModels
         {
             View.Frame.GoBack();
             e.Handled = true;
+        }
+
+        internal void BlockButton_Click()
+        {
+            Contact.Blocked = !Contact.Blocked;
+            Blocked = Contact.Blocked;
+            SignalDBContext.UpdateBlockStatus(Contact);
         }
     }
 }
