@@ -14,9 +14,14 @@ namespace Signal_Windows.ViewModels
 {
     public class AdvancedSettingsPageViewModel : ViewModelBase
     {
-        private readonly ILogger Logger = LibsignalLogging.CreateLogger<AdvancedSettingsPageViewModel>();
+        private static readonly ILogger Logger = LibsignalLogging.CreateLogger<AdvancedSettingsPageViewModel>();
 
-        public async Task ExportUIDebugLog()
+        public async Task _ExportUIDebugLog()
+        {
+            await EportUIDebugLog();
+        }
+
+        public static async Task EportUIDebugLog()
         {
             FileSavePicker savePicker = new FileSavePicker();
             savePicker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
