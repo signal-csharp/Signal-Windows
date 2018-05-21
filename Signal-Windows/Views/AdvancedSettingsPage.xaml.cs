@@ -52,12 +52,19 @@ namespace Signal_Windows.Views
 
         private async void ExportDebugLogButton_Click(object sender, RoutedEventArgs e)
         {
-            await Vm.ExportUIDebugLog();
+            await Vm._ExportUIDebugLog();
         }
 
         private void SyncButton_Click(object sender, RoutedEventArgs e)
         {
             App.Handle.RequestSync();
+        }
+
+        private void TestCrashButton_Click(object sender, RoutedEventArgs e)
+        {
+            int i = 1;
+            i--;
+            i = 5 / i;
         }
     }
 }
