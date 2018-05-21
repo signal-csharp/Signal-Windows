@@ -575,7 +575,7 @@ namespace Signal_Windows.Lib
             if (author != null && author.Blocked)
             {
                 // Don't save blocked messages
-                return;
+                //return;
             }
 
             List<SignalAttachment> attachments = new List<SignalAttachment>();
