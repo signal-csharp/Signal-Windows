@@ -168,6 +168,7 @@ namespace Signal_Windows.ViewModels
         {
             if (conversationId != null && ConversationsDictionary.ContainsKey(conversationId))
             {
+                SelectedThread = null;
                 SelectedConversation = ConversationsDictionary[conversationId];
             }
         }
