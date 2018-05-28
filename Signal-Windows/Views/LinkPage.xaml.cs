@@ -65,6 +65,7 @@ namespace Signal_Windows.Views
             {
                 var frontend = App.CurrentSignalWindowsFrontend(App.MainViewId);
                 await App.Handle.Reacquire();
+                App.Handle.RequestSync();
                 Frame.Navigate(typeof(MainPage));
             }
         }
