@@ -290,7 +290,11 @@ namespace Signal_Windows.Controls
                 if (!SendingMessage)
                 {
                     SendingMessage = true;
-                    await GetMainPageVm().SendMessageButton_Click((TextBox)sender);
+                    bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+                    if (sendMessageResult)
+                    {
+                        InputTextBox.Text = string.Empty;
+                    }
                     SendingMessage = false;
                 }
             }
@@ -307,7 +311,12 @@ namespace Signal_Windows.Controls
 
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
-            await GetMainPageVm().SendMessageButton_Click(InputTextBox);
+            InputTextBox.Focus(FocusState.Programmatic);
+            bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+            if (sendMessageResult)
+            {
+                InputTextBox.Text = string.Empty;
+            }
         }
 
         private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
