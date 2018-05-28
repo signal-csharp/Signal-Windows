@@ -87,13 +87,10 @@ namespace Signal_Windows
             Logger.LogDebug("Suspended");
         }
 
-        private async void OnUnhandledException(object sender, UnhandledExceptionEventArgs ex)
+        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs ex)
         {
             Exception e = ex.Exception;
-            ex.Handled = true;
             Logger.LogError("UnhandledException {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
-            await AdvancedSettingsPageViewModel.EportUIDebugLog();
-            Current.Exit();
         }
 
         protected override async void OnActivated(IActivatedEventArgs args)
