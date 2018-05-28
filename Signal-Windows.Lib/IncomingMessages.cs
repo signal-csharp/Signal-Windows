@@ -61,7 +61,7 @@ namespace Signal_Windows.Lib
         public void OnMessage(SignalServiceMessagePipeMessage message)
         {
             Logger.LogTrace("OnMessage() locking");
-            SignalLibHandle.Instance.SemaphoreSlim.Wait();
+            SignalLibHandle.Instance.SemaphoreSlim.Wait(Token);
             Logger.LogTrace("OnMessage() locked");
             try
             {
