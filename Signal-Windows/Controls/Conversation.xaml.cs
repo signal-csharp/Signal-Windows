@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Storage;
+using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
@@ -29,7 +30,6 @@ namespace Signal_Windows.Controls
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<Conversation>();
         public event PropertyChangedEventHandler PropertyChanged;
-        private bool SendingMessage = false;
         private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
         private Dictionary<long, SignalAttachmentContainer> UnfinishedAttachmentsCache = new Dictionary<long, SignalAttachmentContainer>();
         private SignalConversation SignalConversation;
@@ -161,9 +161,8 @@ namespace Signal_Windows.Controls
         public void Load(SignalConversation conversation)
         {
             SignalConversation = conversation;
-            if (SignalConversation is SignalContact)
+            if (SignalConversation is SignalContact contact)
             {
-                SignalContact contact = (SignalContact)SignalConversation;
                 Blocked = contact.Blocked;
                 SendMessageVisible = !Blocked;
             }
@@ -199,9 +198,7 @@ namespace Signal_Windows.Controls
             var nChildCount = VisualTreeHelper.GetChildrenCount(element);
             for (int i = 0; i < nChildCount; i++)
             {
-                FrameworkElement child = VisualTreeHelper.GetChild(element, i) as FrameworkElement;
-
-                if (child == null)
+                if (!(VisualTreeHelper.GetChild(element, i) is FrameworkElement child))
                     continue;
 
                 if (child is T && child.Name.Equals(sChildName))
@@ -282,20 +279,19 @@ namespace Signal_Windows.Controls
             UnfinishedAttachmentsCache[m.Attachment.Id] = m;
         }
         
-        private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        private async void TextBox_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
+            if (e.Key == VirtualKey.Enter)
             {
-                // this fixes double send by enter repeat
-                if (!SendingMessage)
+                bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
+                if (!shift)
                 {
-                    SendingMessage = true;
-                    bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+                    e.Handled = true;
+                    bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
                     if (sendMessageResult)
                     {
                         InputTextBox.Text = string.Empty;
                     }
-                    SendingMessage = false;
                 }
             }
         }
@@ -312,7 +308,7 @@ namespace Signal_Windows.Controls
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
             InputTextBox.Focus(FocusState.Programmatic);
-            bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+            bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
             if (sendMessageResult)
             {
                 InputTextBox.Text = string.Empty;
@@ -344,8 +340,7 @@ namespace Signal_Windows.Controls
 
         private int GetBottommostIndex()
         {
-            var sourcePanel = ConversationItemsControl.ItemsPanelRoot as ItemsStackPanel;
-            if (sourcePanel != null)
+            if (ConversationItemsControl.ItemsPanelRoot is ItemsStackPanel sourcePanel)
             {
                 return sourcePanel.LastVisibleIndex;
             }
@@ -358,9 +353,9 @@ namespace Signal_Windows.Controls
 
         private void ConversationSettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (SignalConversation is SignalContact)
+            if (SignalConversation is SignalContact contact)
             {
-                App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
+                App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.ConversationSettingsPageInstance.Contact = contact;
                 GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
             }
         }
@@ -385,9 +380,8 @@ namespace Signal_Windows.Controls
 
         private void UnblockButton_Click(object sender, RoutedEventArgs e)
         {
-            if (SignalConversation is SignalContact)
+            if (SignalConversation is SignalContact contact)
             {
-                var contact = (SignalContact)SignalConversation;
                 contact.Blocked = false;
                 Blocked = false;
                 SendMessageVisible = !Blocked;
@@ -405,9 +399,8 @@ namespace Signal_Windows.Controls
         protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
         {
             FrameworkElement element = container as FrameworkElement;
-            if (item is SignalMessageContainer)
+            if (item is SignalMessageContainer smc)
             {
-                SignalMessageContainer smc = (SignalMessageContainer)item;
                 SignalMessage sm = smc.Message;
                 if (sm.Type == SignalMessageType.IdentityKeyChange)
                 {
