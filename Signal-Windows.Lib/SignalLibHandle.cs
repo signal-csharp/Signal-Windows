@@ -47,6 +47,7 @@ namespace Signal_Windows.Lib
         void ReplaceConversationList(List<SignalConversation> conversations);
         void HandleAuthFailure();
         void HandleAttachmentStatusChanged(SignalAttachment sa);
+        void HandleBlockedContacts(List<SignalContact> blockedContacts);
     }
 
     public interface ISignalLibHandle
@@ -56,6 +57,7 @@ namespace Signal_Windows.Lib
 
         void RequestSync();
         Task SendMessage(SignalMessage message, SignalConversation conversation);
+        void SendBlockedMessage();
         Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
         List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count);
@@ -394,6 +396,19 @@ namespace Signal_Windows.Lib
             SemaphoreSlim.Release();
             Logger.LogTrace("SaveAndDispatchSignalConversation() released");
         }
+
+        public void SendBlockedMessage()
+        {
+            List<SignalContact> blockedContacts = SignalDBContext.GetAllContactsLocked().Where(c => c.Blocked).ToList();
+            List<string> blockedNumbers = new List<string>();
+            foreach (var contact in blockedContacts)
+            {
+                blockedNumbers.Add(contact.ThreadId);
+            }
+            var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers));
+            OutgoingMessages.SendMessage(blockMessage);
+            DispatchHandleBlockedContacts(blockedContacts);
+        }
         #endregion
 
         #region attachment api
@@ -608,6 +623,24 @@ namespace Signal_Windows.Lib
             DispatchHandleIdentityKeyChange(messages);
             SemaphoreSlim.Release();
             Logger.LogTrace("HandleOutgoingKeyChange() released");
+        }
+
+        /// <summary>
+        /// This will notify all windows of newly blocked numbers.
+        /// This does not save to the database.
+        /// </summary>
+        /// <param name="blockedContacts">The list of blocked contacts</param>
+        internal void DispatchHandleBlockedContacts(List<SignalContact> blockedContacts)
+        {
+            List<Task> operations = new List<Task>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                operations.Add(dispatcher.RunTaskAsync(() =>
+                {
+                    Frames[dispatcher].HandleBlockedContacts(blockedContacts);
+                }));
+            }
+            Task.WaitAll(operations.ToArray());
         }
         #endregion
 

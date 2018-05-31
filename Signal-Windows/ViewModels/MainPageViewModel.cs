@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
@@ -314,6 +315,41 @@ namespace Signal_Windows.ViewModels
             if (SelectedThread != null && SelectedThread.ThreadId == sa.Message.ThreadId)
             {
                 View.Thread.UpdateAttachment(sa);
+            }
+        }
+
+        public void HandleBlockedContacts(List<SignalContact> blockedContacts)
+        {
+            // Signal sends a list of all blocked contacts, so if a blocked contacted was
+            // unblocked it won't appear in the list anymore. So, unblock any blocked
+            // contacts as well.
+            foreach (var conversation in ConversationsDictionary)
+            {
+                // "as" is more efficient than "is" and a cast because "as" only needs to
+                // type check once
+                var conversationContact = conversation.Value as SignalContact;
+                if (conversationContact != null)
+                {
+                    if (blockedContacts.FirstOrDefault(c => c.ThreadId == conversationContact.ThreadId) != null)
+                    {
+                        // Check if the contact is blocked and if so make sure it's blocked
+                        if (!conversationContact.Blocked)
+                        {
+                            conversationContact.Blocked = true;
+                            conversationContact.UpdateUI();
+                        }
+                    }
+                    else
+                    {
+                        // If the contact is not in the blocked list then check if it's blocked
+                        // and if so, unblock it.
+                        if (conversationContact.Blocked)
+                        {
+                            conversationContact.Blocked = false;
+                            conversationContact.UpdateUI();
+                        }
+                    }
+                }
             }
         }
         #endregion

@@ -82,7 +82,7 @@ namespace Signal_Windows.ViewModels
                 });
 
                 // fetch new device uuid
-                SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, CancelSource.Token, "Signal-Windows");
+                SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, "Signal-Windows");
                 string uuid = await accountManager.GetNewDeviceUuid(CancelSource.Token);
                 string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.EncodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
 

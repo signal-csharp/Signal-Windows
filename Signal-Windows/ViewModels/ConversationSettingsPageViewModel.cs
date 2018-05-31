@@ -129,11 +129,15 @@ namespace Signal_Windows.ViewModels
             e.Handled = true;
         }
 
-        internal void BlockButton_Click()
+        internal async void BlockButton_Click()
         {
             Contact.Blocked = !Contact.Blocked;
             Blocked = Contact.Blocked;
             SignalDBContext.UpdateBlockStatus(Contact);
+            await Task.Run(() =>
+            {
+                App.Handle.SendBlockedMessage();
+            });
         }
     }
 }

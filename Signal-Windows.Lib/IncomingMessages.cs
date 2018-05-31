@@ -184,6 +184,11 @@ namespace Signal_Windows.Lib
                         }
                     }
                 }
+                else if (content.SynchronizeMessage.BlockedList != null)
+                {
+                    List<string> blockedNumbers = content.SynchronizeMessage.BlockedList.Numbers;
+                    HandleBlockedNumbers(blockedNumbers);
+                }
                 else if (content.SynchronizeMessage.Groups != null)
                 {
                     Logger.LogInformation("HandleMessage() handling groups sync message from device {0}", envelope.GetSourceDevice());
@@ -382,6 +387,38 @@ namespace Signal_Windows.Lib
             SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, conversation);
         }
 
+        /// <summary>
+        /// Handles a list of blocked numbers. This will update the database to match the
+        /// blocked numbers list.
+        /// </summary>
+        /// <param name="blockedNumbers">The list of blocked numbers.</param>
+        private void HandleBlockedNumbers(List<string> blockedNumbers)
+        {
+            List<SignalContact> blockedContacts = new List<SignalContact>();
+            List<SignalContact> contacts = SignalDBContext.GetAllContactsLocked();
+            foreach (var contact in contacts)
+            {
+                if (blockedNumbers.Contains(contact.ThreadId))
+                {
+                    if (!contact.Blocked)
+                    {
+                        contact.Blocked = true;
+                        SignalDBContext.UpdateBlockStatus(contact);
+                        blockedContacts.Add(contact);
+                    }
+                }
+                else
+                {
+                    if (contact.Blocked)
+                    {
+                        contact.Blocked = false;
+                        SignalDBContext.UpdateBlockStatus(contact);
+                    }
+                }
+            }
+            SignalLibHandle.Instance.DispatchHandleBlockedContacts(blockedContacts);
+        }
+
         private void HandleGroupLeaveMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
         {
             SignalServiceGroup sentGroup = dataMessage.Group;
@@ -575,7 +612,7 @@ namespace Signal_Windows.Lib
             if (author != null && author.Blocked)
             {
                 // Don't save blocked messages
-                //return;
+                return;
             }
 
             List<SignalAttachment> attachments = new List<SignalAttachment>();

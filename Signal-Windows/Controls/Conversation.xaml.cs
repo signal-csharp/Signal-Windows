@@ -161,10 +161,17 @@ namespace Signal_Windows.Controls
         public void Load(SignalConversation conversation)
         {
             SignalConversation = conversation;
-            if (SignalConversation is SignalContact)
+            var contact = SignalConversation as SignalContact;
+            if (contact != null)
             {
-                SignalContact contact = (SignalContact)SignalConversation;
                 Blocked = contact.Blocked;
+                SendMessageVisible = !Blocked;
+            }
+            else
+            {
+                // Need to make sure to reset the Blocked and SendMessageVisible values in case
+                // a group chat is selected. Group chats can never be blocked.
+                Blocked = false;
                 SendMessageVisible = !Blocked;
             }
             LastMarkReadRequest = -1;
@@ -383,7 +390,7 @@ namespace Signal_Windows.Controls
             }
         }
 
-        private void UnblockButton_Click(object sender, RoutedEventArgs e)
+        private async void UnblockButton_Click(object sender, RoutedEventArgs e)
         {
             if (SignalConversation is SignalContact)
             {
@@ -392,6 +399,10 @@ namespace Signal_Windows.Controls
                 Blocked = false;
                 SendMessageVisible = !Blocked;
                 SignalDBContext.UpdateBlockStatus(contact);
+                await Task.Run(() =>
+                {
+                    App.Handle.SendBlockedMessage();
+                });
             }
         }
     }

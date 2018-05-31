@@ -91,6 +91,11 @@ namespace Signal_Windows
             }
         }
 
+        public void HandleBlockedContacts(List<SignalContact> blockedContacts)
+        {
+            Locator.MainPageInstance.HandleBlockedContacts(blockedContacts);
+        }
+
         private void CheckNotification(SignalConversation conversation)
         {
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
