@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Documents;
 using Windows.UI.Xaml.Media;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
@@ -15,6 +17,9 @@ namespace Signal_Windows.Controls
 {
     public sealed partial class Message : UserControl, INotifyPropertyChanged
     {
+        private const string UrlRegexString = @"(?i)\b((?:https?:(?:/{1,3}|[a-z0-9%])|[a-z0-9.\-]+[.](?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)/)(?:[^\s()<>{}\[\]]+|\([^\s()]*?\([^\s()]+\)[^\s()]*?\)|\([^\s]+?\))+(?:\([^\s()]*?\([^\s()]+\)[^\s()]*?\)|\([^\s]+?\)|[^\s`!()\[\]{};:'"".,<>?«»“”‘’])|(?:(?<!@)[a-z0-9]+(?:[.\-][a-z0-9]+)*[.](?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)\b/?(?!@)))";
+        private static Regex urlRegex = new Regex(UrlRegexString);
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SignalMessageContainer Model
@@ -53,7 +58,7 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                MessageContentTextBlock.Text = Model.Message.Content.Content;
+                UpdateMessageTextBlock();
                 if (Model.Message.Author == null)
                 {
                     MessageAuthor.Visibility = Visibility.Collapsed;
@@ -115,6 +120,62 @@ namespace Signal_Windows.Controls
                 {
                     HasAttachment = true;
                     Attachment = Model.Message.Attachments[0];
+                }
+            }
+        }
+
+        private void UpdateMessageTextBlock()
+        {
+            string messageText = Model.Message.Content.Content;
+            var matches = urlRegex.Matches(messageText);
+            if (matches.Count == 0)
+            {
+                MessageContentTextBlock.Text = messageText;
+            }
+            else
+            {
+                MessageContentTextBlock.Inlines.Clear();
+                int previousIndex = 0;
+                int currentIndex = 0;
+                foreach (Match match in matches)
+                {
+                    // First create a Run of the text before the link
+                    currentIndex = match.Index;
+                    var length = currentIndex - previousIndex;
+                    if (length > 0)
+                    {
+                        Run run = new Run();
+                        run.Text = messageText.Substring(previousIndex, currentIndex - previousIndex);
+                        MessageContentTextBlock.Inlines.Add(run);
+                    }
+
+                    // Now add the hyperlink
+                    string link = match.Value;
+                    Hyperlink hyperlink = new Hyperlink();
+                    Run hyperlinkRun = new Run();
+                    hyperlinkRun.Text = link;
+                    try
+                    {
+                        hyperlink.NavigateUri = new Uri(link);
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                    hyperlink.UnderlineStyle = UnderlineStyle.Single;
+                    hyperlink.Inlines.Add(hyperlinkRun);
+                    MessageContentTextBlock.Inlines.Add(hyperlink);
+                    previousIndex = currentIndex + match.Length;
+                    currentIndex = previousIndex;
+                }
+
+                // Then finish up by adding the rest of the message text to the TextBox
+                var restLength = messageText.Length - currentIndex;
+                if (restLength > 0)
+                {
+                    Run restRun = new Run();
+                    restRun.Text = messageText.Substring(currentIndex, restLength);
+                    MessageContentTextBlock.Inlines.Add(restRun);
                 }
             }
         }
