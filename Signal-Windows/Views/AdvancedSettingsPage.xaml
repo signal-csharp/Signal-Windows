@@ -15,10 +15,10 @@
             <RowDefinition Height="8*"/>
         </Grid.RowDefinitions>
         <TextBlock Text="Advanced" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource TitleTextBlockStyle}"/>
-        <StackPanel Grid.Row="1" Margin="32,0,0,0">
-            <Button x:Name="ExportDebugLogButton" Content="Export debug log" Click="ExportDebugLogButton_Click"/>
-            <Button x:Name="SyncButton" Content="Request contact and group sync" Margin="0,8,0,0" Click="SyncButton_Click"/>
-            <Button x:Name="TestCrashButton" Content="Intentionally crash the app to test its debug log export" Click="TestCrashButton_Click"/>
+        <StackPanel Grid.Row="1" Margin="32,0,0,0" HorizontalAlignment="Center">
+            <Button x:Name="ExportDebugLogButton" Content="Export debug log" Click="ExportDebugLogButton_Click" HorizontalAlignment="Stretch"/>
+            <Button x:Name="SyncButton" Content="Request contact and group sync" Margin="0,8,0,0" Click="SyncButton_Click" HorizontalAlignment="Stretch"/>
+            <Button x:Name="TestCrashButton" Content="Intentionally crash the app to test its debug log export" Click="TestCrashButton_Click" HorizontalAlignment="Stretch"/>
         </StackPanel>
     </Grid>
 </Page>
