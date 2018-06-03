@@ -77,8 +77,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <DataTemplate x:Key="NormalMessageTemplate">
-            <!--x:DataType="models:SignalMessage"-->
+        <DataTemplate x:Key="NormalMessageTemplate" x:DataType="models:SignalMessage">
             <local:Message x:Name="ListBoxItemContent" />
         </DataTemplate>
         <DataTemplate x:Key="UnreadMarkerTemplate">
