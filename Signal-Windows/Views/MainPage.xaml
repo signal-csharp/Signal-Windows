@@ -32,7 +32,9 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="0" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                <Border Grid.Row="0" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+                <Border Grid.Row="0" Background="Black" Opacity="0.25"/>
+                <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -68,7 +70,7 @@
             </Grid>
         </SplitView.Pane>
         <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-            <controls:Welcome Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" />
+            <controls:Welcome Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" VerticalAlignment="Center"/>
             <controls:Conversation Grid.Row="0" Visibility="{x:Bind Vm.ThreadVisibility, Mode=OneWay}" x:Name="ConversationControl" />
         </Grid>
     </SplitView>

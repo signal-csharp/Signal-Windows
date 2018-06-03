@@ -10,6 +10,9 @@
     d:DesignWidth="400">
 
     <Grid>
-        <Image Source="ms-appx:///Assets/logo-idea-2.png" Width="256"/>
+        <StackPanel Orientation="Vertical">
+            <Image Source="ms-appx:///Assets/logo-idea-2.png" Width="256"/>
+            <TextBlock Text="Choose a contact to start chatting" Grid.Row="1" HorizontalAlignment="Center" Style="{StaticResource TitleTextBlockStyle}" Foreground="White" Margin="0,12,0,0"/>
+        </StackPanel>
     </Grid>
 </UserControl>
