@@ -77,7 +77,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <DataTemplate x:Key="NormalMessageTemplate" x:DataType="models:SignalMessage">
+        <DataTemplate x:Key="NormalMessageTemplate">
+            <!--x:DataType="models:SignalMessage"-->
             <local:Message x:Name="ListBoxItemContent" />
         </DataTemplate>
         <DataTemplate x:Key="UnreadMarkerTemplate">
@@ -132,7 +133,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" TextChanged="InputTextBox_TextChanged" InputScope="Chat" Visibility="{x:Bind SendMessageVisible, Mode=OneWay}"/>
+            <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" TextChanged="InputTextBox_TextChanged" InputScope="Chat" Visibility="{x:Bind SendMessageVisible, Mode=OneWay}" Padding="10,15,6,15"/>
             <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" Background="{x:Bind SendButtonBackground}" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50" Visibility="{x:Bind SendMessageVisible, Mode=OneWay}">
                 <SymbolIcon Symbol="Send"/>
             </Button>
