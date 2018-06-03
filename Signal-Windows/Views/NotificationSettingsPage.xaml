@@ -22,12 +22,12 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <StackPanel>
-                    <TextBlock Text="Show..." Style="{StaticResource BaseTextBlockStyle}" Margin="0,0,0,6"/>
+                    <TextBlock Text="Show..." Style="{StaticResource BodyTextBlockStyle}" Margin="0,0,0,6"/>
                     <RadioButton Content="Name and message" Tag="{x:Bind Vm.NameAndMessageTag}" Margin="0,6" IsChecked="{x:Bind Vm.NameAndMessageChecked, Mode=TwoWay}" Checked="ShowNotificationText_Checked"/>
                     <RadioButton Content="Name only" Tag="{x:Bind Vm.NameOnlyTag}" Margin="0,6" IsChecked="{x:Bind Vm.NameOnlyChecked, Mode=TwoWay}" Checked="ShowNotificationText_Checked"/>
                     <RadioButton Content="No name or message" Tag="{x:Bind Vm.NoNameOrMessageTag}" Margin="0,6" IsChecked="{x:Bind Vm.NoNameOrMessageChecked, Mode=TwoWay}" Checked="ShowNotificationText_Checked"/><!--Does this mean that no notif will be shown?-->
                 </StackPanel>
-                <HyperlinkButton Grid.Row="1" Margin="0,16,0,0" NavigateUri="ms-settings:notifications" Content="More notification settings"/>
+                <HyperlinkButton Grid.Row="1" Margin="0,12,0,0" NavigateUri="ms-settings:notifications" Content="More notification settings"/>
             </Grid>
         </ScrollViewer>
         <StackPanel Grid.Row="1">
