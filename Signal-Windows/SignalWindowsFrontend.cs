@@ -56,7 +56,7 @@ namespace Signal_Windows
             Locator.MainPageInstance.ReplaceConversationList(conversations);
         }
 
-        public void HandleAuthFailure()
+        public async Task HandleAuthFailure()
         {
             Logger.LogInformation("HandleAuthFailure() {0}", ViewId);
             if (ViewId == App.MainViewId)
@@ -64,7 +64,7 @@ namespace Signal_Windows
                 Frame f = (Frame)Window.Current.Content;
                 f.Navigate(typeof(StartPage));
                 CoreApplication.GetCurrentView().CoreWindow.Activate();
-                ApplicationViewSwitcher.TryShowAsStandaloneAsync(App.MainViewId);
+                await ApplicationViewSwitcher.TryShowAsStandaloneAsync(App.MainViewId);
             }
             else
             {

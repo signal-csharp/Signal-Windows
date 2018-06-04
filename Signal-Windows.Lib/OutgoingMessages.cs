@@ -65,7 +65,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        public void HandleOutgoingMessages()
+        public async Task HandleOutgoingMessages()
         {
             Logger.LogDebug("HandleOutgoingMessages()");
             while (!Token.IsCancellationRequested)
@@ -92,7 +92,7 @@ namespace Signal_Windows.Lib
                     else
                     {
                         List<SignalServiceAddress> recipients = new List<SignalServiceAddress>();
-                        SignalGroup g = SignalDBContext.GetOrCreateGroupLocked(outgoingSignalMessage.ThreadId, 0);
+                        SignalGroup g = await SignalDBContext.GetOrCreateGroupLocked(outgoingSignalMessage.ThreadId, 0);
                         foreach (GroupMembership sc in g.GroupMemberships)
                         {
                             if (sc.Contact.ThreadId != SignalLibHandle.Instance.Store.Username)
@@ -132,7 +132,7 @@ namespace Signal_Windows.Lib
                     }
                     foreach (UntrustedIdentityException e in identityExceptions)
                     {
-                        Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
+                        await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
                     }
                 }
                 catch (RateLimitException)
@@ -144,7 +144,7 @@ namespace Signal_Windows.Lib
                 {
                     Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Identity;
-                    Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
+                    await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
                 }
                 catch (Exception e)
                 {
@@ -152,7 +152,7 @@ namespace Signal_Windows.Lib
                     Logger.LogError("HandleOutgoingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
                     outgoingSignalMessage.Status = SignalMessageStatus.Failed_Unknown;
                 }
-                Handle.HandleMessageSentLocked(outgoingSignalMessage);
+                await Handle.HandleMessageSentLocked(outgoingSignalMessage);
             }
             Logger.LogInformation("HandleOutgoingMessages() finished");
         }

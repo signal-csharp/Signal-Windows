@@ -43,10 +43,10 @@ namespace Signal_Windows.Views
             Vm.FinishButton_Click();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            Vm.OnNavigatedTo();
+            await Vm.OnNavigatedTo();
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)

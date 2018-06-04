@@ -14,6 +14,7 @@ using Signal_Windows.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Signal_Windows.Storage
 {
@@ -160,8 +161,9 @@ namespace Signal_Windows.Storage
             return messages;
         }
 
-        public static void SaveIdentityLocked(SignalProtocolAddress address, string identity)
+        public static async Task SaveIdentityLocked(SignalProtocolAddress address, string identity)
         {
+            LinkedList<SignalMessage> messages = null;
             lock (DBLock)
             {
                 using (var ctx = new LibsignalDBContext())
@@ -188,11 +190,14 @@ namespace Signal_Windows.Storage
                         var childSessions = ctx.Sessions
                             .Where(s => s.Username == address.Name && s.DeviceId != address.DeviceId);
                         ctx.Sessions.RemoveRange(childSessions);
-                        var messages = InsertIdentityChangedMessages(address.Name);
-                        SignalLibHandle.Instance.DispatchHandleIdentityKeyChange(messages);
+                        messages = InsertIdentityChangedMessages(address.Name);
                     }
                     ctx.SaveChanges();
                 }
+            }
+            if (messages != null)
+            {
+                await SignalLibHandle.Instance.DispatchHandleIdentityKeyChange(messages);
             }
         }
         #endregion Identities
@@ -993,7 +998,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        internal static SignalConversation UpdateMessageRead(ReadMessage readMessage)
+        internal static async Task<SignalConversation> UpdateMessageRead(ReadMessage readMessage)
         {
             SignalConversation conversation;
             lock (DBLock)
@@ -1020,7 +1025,7 @@ namespace Signal_Windows.Storage
                     }
                 }
             }
-            SignalLibHandle.Instance.DispatchAddOrUpdateConversation(conversation, null);
+            await SignalLibHandle.Instance.DispatchAddOrUpdateConversation(conversation, null);
             return conversation;
         }
 
@@ -1086,9 +1091,10 @@ namespace Signal_Windows.Storage
             return dbConversation;
         }
 
-        internal static List<SignalConversation> InsertOrUpdateGroups(IList<(SignalGroup group, IList<string> members)> groups)
+        internal static async Task<List<SignalConversation>> InsertOrUpdateGroups(IList<(SignalGroup group, IList<string> members)> groups)
         {
             List<SignalConversation> refreshedGroups = new List<SignalConversation>();
+            List<SignalContact> newContacts = new List<SignalContact>();
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
@@ -1115,15 +1121,24 @@ namespace Signal_Windows.Storage
                         }
                         foreach (var member in receivedGroup.members)
                         {
+                            (var contact, var notify) = GetOrCreateContact(ctx, member, 0);
                             dbGroup.GroupMemberships.Add(new GroupMembership()
                             {
-                                Contact = GetOrCreateContact(ctx, member, 0),
+                                Contact = contact,
                                 Group = dbGroup
                             });
+                            if (notify)
+                            {
+                                newContacts.Add(contact);
+                            }
                         }
                     }
                     ctx.SaveChanges();
                 }
+            }
+            foreach (var c in newContacts)
+            {
+                await SignalLibHandle.Instance.DispatchAddOrUpdateConversation(c, null);
             }
             return refreshedGroups;
         }
@@ -1189,7 +1204,7 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static SignalGroup GetOrCreateGroupLocked(string groupId, long timestamp, bool notify = true)
+        public static async Task<SignalGroup> GetOrCreateGroupLocked(string groupId, long timestamp, bool notify = true)
         {
             SignalGroup dbgroup;
             bool createdNew = false;
@@ -1222,7 +1237,7 @@ namespace Signal_Windows.Storage
             }
             if (createdNew && notify)
             {
-                SignalLibHandle.Instance.DispatchAddOrUpdateConversation(dbgroup, null);
+                await SignalLibHandle.Instance.DispatchAddOrUpdateConversation(dbgroup, null);
             }
             return dbgroup;
         }
@@ -1326,18 +1341,24 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static SignalContact GetOrCreateContactLocked(string username, long timestamp, bool notify = true)
+        public static async Task<SignalContact> GetOrCreateContactLocked(string username, long timestamp, bool notify = true)
         {
+            SignalContact contact;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    return GetOrCreateContact(ctx, username, timestamp, notify);
+                    (contact, notify) = GetOrCreateContact(ctx, username, timestamp, notify);
                 }
             }
+            if (notify)
+            {
+                await SignalLibHandle.Instance.DispatchAddOrUpdateConversation(contact, null);
+            }
+            return contact;
         }
 
-        private static SignalContact GetOrCreateContact(SignalDBContext ctx, string username, long timestamp, bool notify = true)
+        private static (SignalContact contact, bool notify) GetOrCreateContact(SignalDBContext ctx, string username, long timestamp, bool notify = true)
         {
             bool createdNew = false;
             SignalContact contact = contact = ctx.Contacts
@@ -1357,11 +1378,7 @@ namespace Signal_Windows.Storage
                 ctx.SaveChanges();
                 createdNew = true;
             }
-            if (createdNew && notify)
-            {
-                SignalLibHandle.Instance.DispatchAddOrUpdateConversation(contact, null);
-            }
-            return contact;
+            return (contact, createdNew && notify);
         }
 
         public static void InsertOrUpdateConversationLocked(SignalConversation conversation)

@@ -45,7 +45,7 @@ namespace Signal_Windows.Lib
         void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
-        void HandleAuthFailure();
+        Task HandleAuthFailure();
         void HandleAttachmentStatusChanged(SignalAttachment sa);
         void HandleBlockedContacts(List<SignalContact> blockedContacts);
     }
@@ -57,11 +57,11 @@ namespace Signal_Windows.Lib
 
         void RequestSync();
         Task SendMessage(SignalMessage message, SignalConversation conversation);
-        void SendBlockedMessage();
+        Task SendBlockedMessage();
         Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
         List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count);
-        void SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
+        Task SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
         void PurgeAccountData();
         Task<bool> Acquire(CoreDispatcher d, ISignalFrontend w);
         Task Reacquire();
@@ -316,7 +316,7 @@ namespace Signal_Windows.Lib
 
         public async Task SendMessage(SignalMessage message, SignalConversation conversation)
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 Logger.LogTrace("SendMessage() locking");
                 SemaphoreSlim.Wait(CancelSource.Token);
@@ -324,7 +324,7 @@ namespace Signal_Windows.Lib
                 try
                 {
                     Logger.LogDebug("SendMessage saving message " + message.ComposedTimestamp);
-                    SaveAndDispatchSignalMessage(message, conversation);
+                    await SaveAndDispatchSignalMessage(message, conversation);
                     OutgoingQueue.Add(message);
                 }
                 finally
@@ -370,11 +370,15 @@ namespace Signal_Windows.Lib
                 }));
                 await DispatchMessageRead(index + 1, conversation);
             }
+            catch (Exception e)
+            {
+                Logger.LogError("SetMessageRead() failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
             finally
             {
                 SemaphoreSlim.Release();
-                Logger.LogTrace("SetMessageRead() released");
             }
+            Logger.LogTrace("SetMessageRead() released");
         }
 
         public void ResendMessage(SignalMessage message)
@@ -387,17 +391,27 @@ namespace Signal_Windows.Lib
             return SignalDBContext.GetMessagesLocked(thread, startIndex, count);
         }
 
-        public void SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage)
+        public async Task SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage)
         {
             Logger.LogTrace("SaveAndDispatchSignalConversation() locking");
-            SemaphoreSlim.Wait(CancelSource.Token);
-            SignalDBContext.InsertOrUpdateConversationLocked(updatedConversation);
-            DispatchAddOrUpdateConversation(updatedConversation, updateMessage);
-            SemaphoreSlim.Release();
-            Logger.LogTrace("SaveAndDispatchSignalConversation() released");
+            await SemaphoreSlim.WaitAsync(CancelSource.Token);
+            try
+            {
+                SignalDBContext.InsertOrUpdateConversationLocked(updatedConversation);
+                await DispatchAddOrUpdateConversation(updatedConversation, updateMessage);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("SaveAndDispatchSignalConversation() failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+                Logger.LogTrace("SaveAndDispatchSignalConversation() released");
+            }
         }
 
-        public void SendBlockedMessage()
+        public async Task SendBlockedMessage()
         {
             List<SignalContact> blockedContacts = SignalDBContext.GetAllContactsLocked().Where(c => c.Blocked).ToList();
             List<string> blockedNumbers = new List<string>();
@@ -407,7 +421,7 @@ namespace Signal_Windows.Lib
             }
             var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers));
             OutgoingMessages.SendMessage(blockMessage);
-            DispatchHandleBlockedContacts(blockedContacts);
+            await DispatchHandleBlockedContacts(blockedContacts);
         }
         #endregion
 
@@ -438,27 +452,36 @@ namespace Signal_Windows.Lib
         #endregion
 
         #region internal api
-        internal void DispatchHandleAuthFailure()
+        internal async Task DispatchHandleAuthFailure()
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal,async () =>
                 {
                     try
                     {
-                        Frames[dispatcher].HandleAuthFailure();
+                        await Frames[dispatcher].HandleAuthFailure();
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Logger.LogError("DispatchHandleAuthFailure failed: {0}\n{1}", e.Message, e.StackTrace);
                     }
-                }));
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
-            Task.WaitAll(operations.ToArray());
+            foreach (var t in operations)
+            {
+                await t;
+            }
         }
 
-        internal void SaveAndDispatchSignalMessage(SignalMessage message, SignalConversation conversation)
+        internal async Task SaveAndDispatchSignalMessage(SignalMessage message, SignalConversation conversation)
         {
             conversation.MessagesCount += 1;
             if (message.Direction == SignalMessageDirection.Incoming)
@@ -469,68 +492,127 @@ namespace Signal_Windows.Lib
             {
                 conversation.UnreadCount = 0;
                 conversation.LastSeenMessageIndex = conversation.MessagesCount;
-
             }
             SignalDBContext.SaveMessageLocked(message);
             conversation.LastMessage = message;
             conversation.LastActiveTimestamp = message.ComposedTimestamp;
             //StartAttachmentDownloads(message);
-            DispatchHandleMessage(message, conversation);
+            await DispatchHandleMessage(message, conversation);
         }
 
-        internal void DispatchHandleIdentityKeyChange(LinkedList<SignalMessage> messages)
+        internal async Task DispatchHandleIdentityKeyChange(LinkedList<SignalMessage> messages)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    Frames[dispatcher].HandleIdentitykeyChange(messages);
-                }));
-            }
-            Task.WaitAll(operations.ToArray());
-        }
-
-        internal void DispatchAddOrUpdateConversations(List<SignalConversation> newConversations)
-        {
-            List<Task> operations = new List<Task>();
-            foreach (var dispatcher in Frames.Keys)
-            {
-                operations.Add(dispatcher.RunTaskAsync(() =>
-                {
-                    foreach (var contact in newConversations)
+                    try
                     {
-                        Frames[dispatcher].AddOrUpdateConversation(contact, null);
+                        Frames[dispatcher].HandleIdentitykeyChange(messages);
                     }
-                }));
+                    catch (Exception e)
+                    {
+                        Logger.LogError("DispatchHandleIdentityKeyChange() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
-            Task.WaitAll(operations.ToArray());
+            foreach (var t in operations)
+            {
+                await t;
+            }
         }
 
-        internal void DispatchAddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
+        internal async Task DispatchAddOrUpdateConversations(List<SignalConversation> newConversations)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    Frames[dispatcher].AddOrUpdateConversation(conversation, updateMessage);
-                }));
+                    try
+                    {
+                        foreach (var contact in newConversations)
+                        {
+                            Frames[dispatcher].AddOrUpdateConversation(contact, null);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("DispatchAddOrUpdateConversations() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
-            Task.WaitAll(operations.ToArray());
+            foreach (var t in operations)
+            {
+                await t;
+            }
         }
 
-        internal void DispatchHandleMessage(SignalMessage message, SignalConversation conversation)
+        internal async Task DispatchAddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
         {
-            List<TaskCompletionSource<AppendResult>> operations = new List<TaskCompletionSource<AppendResult>>();
+            List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                TaskCompletionSource<AppendResult> b = new TaskCompletionSource<AppendResult>();
-                var a = dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    b.SetResult(Frames[dispatcher].HandleMessage(message, conversation));
+                    try
+                    {
+                        Frames[dispatcher].AddOrUpdateConversation(conversation, updateMessage);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("DispatchAddOrUpdateConversation() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
                 });
-                operations.Add(b);
+                operations.Add(taskCompletionSource.Task);
+            }
+            foreach (var t in operations)
+            {
+                await t;
+            }
+        }
+
+        internal async Task DispatchHandleMessage(SignalMessage message, SignalConversation conversation)
+        {
+            List<Task<AppendResult>> operations = new List<Task<AppendResult>>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                TaskCompletionSource<AppendResult> taskCompletionSource = new TaskCompletionSource<AppendResult>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    AppendResult ar = null;
+                    try
+                    {
+                        ar = (Frames[dispatcher].HandleMessage(message, conversation));
+                    }
+                    catch(Exception e)
+                    {
+                        Logger.LogError("DispatchHandleMessage() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(ar);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
             SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalMessageType.NormalMessage));
             if (message.Author != null)
@@ -538,33 +620,49 @@ namespace Signal_Windows.Lib
                 bool wasInstantlyRead = false;
                 foreach (var b in operations)
                 {
-                    AppendResult result = b.Task.Result;
+                    AppendResult result = await b;
                     if (result != null)
                     {
                         SignalDBContext.UpdateMessageRead(result.Index, conversation);
-                        DispatchMessageRead(result.Index + 1, conversation).Wait();
+                        await DispatchMessageRead(result.Index + 1, conversation);
                         wasInstantlyRead = true;
                         break;
                     }
                 }
                 if (!wasInstantlyRead)
                 {
-                    DispatchHandleUnreadMessage(message);
+                    await DispatchHandleUnreadMessage(message);
                 }
             }
         }
 
-        internal void DispatchHandleUnreadMessage(SignalMessage message)
+        internal async Task DispatchHandleUnreadMessage(SignalMessage message)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    Frames[dispatcher].HandleUnreadMessage(message);
-                }));
+                    try
+                    {
+                        Frames[dispatcher].HandleUnreadMessage(message);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("DispatchHandleUnreadMessage() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
-            Task.WaitAll(operations.ToArray());
+            foreach (var t in operations)
+            {
+                await t;
+            }
         }
 
         internal async Task DispatchMessageRead(long unreadMarkerIndex, SignalConversation conversation)
@@ -572,16 +670,28 @@ namespace Signal_Windows.Lib
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    Frames[dispatcher].HandleMessageRead(unreadMarkerIndex, conversation);
-                }));
+                    try
+                    {
+                        Frames[dispatcher].HandleMessageRead(unreadMarkerIndex, conversation);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("DispatchMessageRead() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
             foreach (var waitHandle in operations)
             {
                 await waitHandle;
             }
-            Task.WaitAll(operations.ToArray());
         }
 
         internal void DispatchPipeEmptyMessage()
@@ -589,39 +699,65 @@ namespace Signal_Windows.Lib
             SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(null, Events.SignalMessageType.PipeEmptyMessage));
         }
 
-        internal void HandleMessageSentLocked(SignalMessage msg)
+        internal async Task HandleMessageSentLocked(SignalMessage msg)
         {
             Logger.LogTrace("HandleMessageSentLocked() locking");
-            SemaphoreSlim.Wait(CancelSource.Token);
+            await SemaphoreSlim.WaitAsync(CancelSource.Token);
             Logger.LogTrace("HandleMessageSentLocked() locked");
             var updated = SignalDBContext.UpdateMessageStatus(msg);
-            DispatchMessageUpdate(updated);
+            await DispatchMessageUpdate(updated);
             SemaphoreSlim.Release();
             Logger.LogTrace("HandleMessageSentLocked() released");
         }
 
-        internal void DispatchMessageUpdate(SignalMessage msg)
+        internal async Task DispatchMessageUpdate(SignalMessage msg)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    Frames[dispatcher].HandleMessageUpdate(msg);
-                }));
+                    try
+                    {
+                        Frames[dispatcher].HandleMessageUpdate(msg);
+                    }
+                    catch(Exception e)
+                    {
+                        Logger.LogError("DispatchMessageUpdate() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
-            Task.WaitAll(operations.ToArray());
+            foreach (var t in operations)
+            {
+                await t;
+            }
         }
 
-        internal void HandleOutgoingKeyChangeLocked(string user, string identity)
+        internal async Task HandleOutgoingKeyChangeLocked(string user, string identity)
         {
             Logger.LogTrace("HandleOutgoingKeyChange() locking");
-            SemaphoreSlim.Wait(CancelSource.Token);
-            Logger.LogTrace("HandleOutgoingKeyChange() locked");
-            var messages = LibsignalDBContext.InsertIdentityChangedMessagesLocked(user);
-            LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(user, 1), identity);
-            DispatchHandleIdentityKeyChange(messages);
-            SemaphoreSlim.Release();
+            await SemaphoreSlim.WaitAsync(CancelSource.Token);
+            try
+            {
+                Logger.LogTrace("HandleOutgoingKeyChange() locked");
+                var messages = LibsignalDBContext.InsertIdentityChangedMessagesLocked(user);
+                await LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(user, 1), identity);
+                await DispatchHandleIdentityKeyChange(messages);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("HandleOutgoingKeyChangeLocked() failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+            }
             Logger.LogTrace("HandleOutgoingKeyChange() released");
         }
 
@@ -630,17 +766,33 @@ namespace Signal_Windows.Lib
         /// This does not save to the database.
         /// </summary>
         /// <param name="blockedContacts">The list of blocked contacts</param>
-        internal void DispatchHandleBlockedContacts(List<SignalContact> blockedContacts)
+        internal async Task DispatchHandleBlockedContacts(List<SignalContact> blockedContacts)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
             {
-                operations.Add(dispatcher.RunTaskAsync(() =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    Frames[dispatcher].HandleBlockedContacts(blockedContacts);
-                }));
+                    try
+                    {
+                        Frames[dispatcher].HandleBlockedContacts(blockedContacts);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("DispatchHandleBlockedContacts() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
             }
-            Task.WaitAll(operations.ToArray());
+            foreach (var t in operations)
+            {
+                await t;
+            }
         }
         #endregion
 
@@ -699,9 +851,9 @@ namespace Signal_Windows.Lib
                 MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT, null);
                 Pipe = MessageReceiver.CreateMessagePipe();
                 MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
-                IncomingMessagesTask = Task.Factory.StartNew(() => new IncomingMessages(CancelSource.Token, Pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
+                IncomingMessagesTask = Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, Pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
                 OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
-                OutgoingMessagesTask = Task.Factory.StartNew(() => OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
+                OutgoingMessagesTask = Task.Factory.StartNew(async () => await OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
             }
             catch(Exception e)
             {
@@ -713,7 +865,7 @@ namespace Signal_Windows.Lib
         /// <summary>
         /// Dispatches the auth failure to all frontends and resets the frontend dict. Must not be called on a UI thread. Must not be called on a task which holds the handle lock.
         /// </summary>
-        private void HandleAuthFailure()
+        private async Task HandleAuthFailure()
         {
             Logger.LogTrace("HandleAuthFailure() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
@@ -722,7 +874,7 @@ namespace Signal_Windows.Lib
                 LikelyHasValidStore = false;
                 Running = false;
                 CancelSource.Cancel();
-                DispatchHandleAuthFailure();
+                await DispatchHandleAuthFailure();
                 Frames.Clear();
                 Frames.Add(MainWindowDispatcher, MainWindow);
             }
@@ -779,7 +931,7 @@ namespace Signal_Windows.Lib
                 await tmpDownload.DeleteAsync();
                 attachment.Status = SignalAttachmentStatus.Finished;
                 SignalDBContext.UpdateAttachmentStatus(attachment);
-                DispatchAttachmentStatusChanged(download, attachment);
+                await DispatchAttachmentStatusChanged(download, attachment);
             }
             catch(Exception e)
             {
@@ -845,19 +997,35 @@ namespace Signal_Windows.Lib
             }
         }
 
-        private void DispatchAttachmentStatusChanged(DownloadOperation op, SignalAttachment attachment)
+        private async Task DispatchAttachmentStatusChanged(DownloadOperation op, SignalAttachment attachment)
         {
             try
             {
                 List<Task> operations = new List<Task>();
                 foreach (var dispatcher in Frames.Keys)
                 {
-                    operations.Add(dispatcher.RunTaskAsync(() =>
+                    var taskCompletionSource = new TaskCompletionSource<bool>();
+                    await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
-                        Frames[dispatcher].HandleAttachmentStatusChanged(attachment);
-                    }));
+                        try
+                        {
+                            Frames[dispatcher].HandleAttachmentStatusChanged(attachment);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError("DispatchAttachmentStatusChanged() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                        }
+                        finally
+                        {
+                            taskCompletionSource.SetResult(false);
+                        }
+                    });
+                    operations.Add(taskCompletionSource.Task);
                 }
-                Task.WaitAll(operations.ToArray());
+                foreach (var t in operations)
+                {
+                    await t;
+                }
             }
             catch(Exception e)
             {
