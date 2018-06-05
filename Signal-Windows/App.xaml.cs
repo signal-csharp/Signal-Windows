@@ -258,23 +258,7 @@ namespace Signal_Windows
             if (success)
             {
                 Views.Add(newViewId, frontend);
-                var taskCompletionSource = new TaskCompletionSource<bool>();
-                await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-                {
-                    try
-                    {
-                        await switcher.ShowAsStandaloneAsync(newViewId);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogError("CreateSecondaryWindowOrShowMain() ShowAsStandaloneAsync() failed: {0}\n{1}", e.Message, e.StackTrace);
-                    }
-                    finally
-                    {
-                        taskCompletionSource.SetResult(false);
-                    }
-                });
-                await taskCompletionSource.Task;
+                await switcher.ShowAsStandaloneAsync(newViewId);
                 Logger.LogInformation("CreateSecondaryWindow() added view {0}", newViewId);
             }
             else
