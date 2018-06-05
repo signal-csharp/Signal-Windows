@@ -32,19 +32,22 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
+                <Border Grid.Row="0" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+                <Border Grid.Row="0" Background="Black" Opacity="0.25"/>
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock HorizontalAlignment="Center" Grid.Column="0" Text="Signal" FontSize="34" FontWeight="Light" Margin="0,16" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
-                    <Button Grid.Column="1" x:Name="AddContactButton" Background="{x:Null}" Click="AddContactButton_Click">
-                        <SymbolIcon Symbol="AddFriend" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
-                    </Button>
-                    <Button Grid.Column="2" x:Name="GlobalSettingsButton" Background="{x:Null}" Click="GlobalSettingsButton_Click">
-                        <SymbolIcon Symbol="Setting" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
-                    </Button>
+                    <TextBlock Grid.Column="0" Text="Signal" FontSize="34" FontWeight="Light" Margin="6,16" Foreground="White" HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" Grid.Column="1">
+                        <Button x:Name="AddContactButton" Background="{x:Null}" Click="AddContactButton_Click">
+                            <SymbolIcon Symbol="AddFriend" Foreground="White" />
+                        </Button>
+                        <Button x:Name="GlobalSettingsButton" Background="{x:Null}" Click="GlobalSettingsButton_Click">
+                            <SymbolIcon Symbol="Setting" Foreground="White" />
+                        </Button>
+                    </StackPanel>
                 </Grid>
                 <AutoSuggestBox Grid.Row="1" Margin="16"/>
                 <ListView Grid.Row="2" Name="ContactsList" ItemsSource="{x:Bind Vm.Conversations, Mode=TwoWay}" SelectionMode="Single" SelectionChanged="Vm.ConversationsList_SelectionChanged" SelectedItem="{x:Bind Vm.SelectedConversation, Mode=TwoWay}">
@@ -67,7 +70,7 @@
             </Grid>
         </SplitView.Pane>
         <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-            <controls:Welcome Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" />
+            <controls:Welcome Grid.Row="0" Visibility="{x:Bind Vm.WelcomeVisibility, Mode=OneWay}" VerticalAlignment="Center"/>
             <controls:Conversation Grid.Row="0" Visibility="{x:Bind Vm.ThreadVisibility, Mode=OneWay}" x:Name="ConversationControl" />
         </Grid>
     </SplitView>

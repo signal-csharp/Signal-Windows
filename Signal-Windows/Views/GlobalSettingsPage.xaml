@@ -5,6 +5,7 @@
     xmlns:local="using:Signal_Windows.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:animations="using:Microsoft.Toolkit.Uwp.UI.Animations"
     mc:Ignorable="d"
     DataContext="{Binding GlobalSettingsPageInstance, Source={StaticResource Locator}}">
 
@@ -29,7 +30,7 @@
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <TextBlock Text="Settings" Style="{StaticResource HeaderTextBlockStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        <VariableSizedWrapGrid x:Name="WrapGrid" HorizontalAlignment="Left" MaximumRowsOrColumns="1" VerticalAlignment="Top" Orientation="Horizontal" ItemWidth="250" ItemHeight="80" Grid.Row="1" Margin="32,0,32,0">
+        <VariableSizedWrapGrid x:Name="WrapGrid" HorizontalAlignment="Left" MaximumRowsOrColumns="1" VerticalAlignment="Top" Orientation="Horizontal" ItemWidth="250" ItemHeight="80" Grid.Row="1" Margin="32,0,32,0" animations:ReorderGridAnimation.Duration="300">
             <Button x:Name="NotificationsButton" Background="{x:Null}" Width="250" HorizontalContentAlignment="Left" Click="NotificationsButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <FontIcon Glyph="&#xEA8F;" FontSize="36"/>
