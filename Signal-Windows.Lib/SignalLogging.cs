@@ -99,7 +99,7 @@ namespace Signal_Windows.Storage
         private readonly string Filename;
         private readonly string OldFilename;
         private readonly string Prefix;
-        private const int MaxLogSize = 64 * 1024;
+        private const int MaxLogSize = 256 * 1024;
         private static object Lock = new object();
 
         public SignalFileLoggerProvider(string filename, string prefix)
