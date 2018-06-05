@@ -322,8 +322,7 @@ namespace Signal_Windows.Storage
             lock (DBLock)
             {
                 string index = GetSessionCacheIndex(address.Name, address.DeviceId);
-                SessionRecord record;
-                if (SessionsCache.TryGetValue(index, out record))
+                if (SessionsCache.TryGetValue(index, out SessionRecord record))
                 {
                     return record;
                 }
@@ -1100,10 +1099,10 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    foreach (var receivedGroup in groups)
+                    foreach (var (group, members) in groups)
                     {
                         var dbGroup = ctx.Groups
-                            .Where(g => g.ThreadId == receivedGroup.group.ThreadId)
+                            .Where(g => g.ThreadId == group.ThreadId)
                             .Include(g => g.GroupMemberships)
                             .Include(g => g.LastMessage)
                             .ThenInclude(m => m.Content)
@@ -1111,16 +1110,16 @@ namespace Signal_Windows.Storage
                         if (dbGroup != null)
                         {
                             dbGroup.GroupMemberships.Clear();
-                            dbGroup.ThreadDisplayName = receivedGroup.group.ThreadDisplayName;
-                            dbGroup.CanReceive = receivedGroup.group.CanReceive;
-                            dbGroup.ExpiresInSeconds = receivedGroup.group.ExpiresInSeconds;
+                            dbGroup.ThreadDisplayName = group.ThreadDisplayName;
+                            dbGroup.CanReceive = group.CanReceive;
+                            dbGroup.ExpiresInSeconds = group.ExpiresInSeconds;
                         }
                         else
                         {
-                            dbGroup = receivedGroup.group;
+                            dbGroup = group;
                             ctx.Groups.Add(dbGroup);
                         }
-                        foreach (var member in receivedGroup.members)
+                        foreach (var member in members)
                         {
                             (var contact, var notify) = GetOrCreateContact(ctx, member, 0);
                             dbGroup.GroupMemberships.Add(new GroupMembership()

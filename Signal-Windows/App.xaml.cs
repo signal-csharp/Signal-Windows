@@ -159,10 +159,12 @@ namespace Signal_Windows
                     }
                 }
 
-                var builder = new BackgroundTaskBuilder();
-                builder.Name = taskName;
-                builder.TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask";
-                builder.IsNetworkRequested = true;
+                var builder = new BackgroundTaskBuilder
+                {
+                    Name = taskName,
+                    TaskEntryPoint = "Signal_Windows.RC.SignalBackgroundTask",
+                    IsNetworkRequested = true
+                };
                 builder.SetTrigger(new TimeTrigger(15, false));
                 builder.AddCondition(new SystemCondition(SystemConditionType.InternetAvailable));
                 var requestStatus = await BackgroundExecutionManager.RequestAccessAsync();
@@ -302,8 +304,7 @@ namespace Signal_Windows
 
         private async Task<bool> CreateMainWindow(string conversationId)
         {
-            Frame rootFrame = Window.Current.Content as Frame;
-            if (rootFrame == null)
+            if (!(Window.Current.Content is Frame rootFrame))
             {
                 rootFrame = new Frame();
                 rootFrame.NavigationFailed += OnNavigationFailed;
