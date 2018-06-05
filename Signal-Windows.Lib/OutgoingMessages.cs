@@ -33,27 +33,21 @@ namespace Signal_Windows.Lib
             Handle = handle;
         }
 
-        public void SendMessage(List<SignalServiceAddress> recipients, SignalServiceDataMessage message)
+        public async Task SendMessage(List<SignalServiceAddress> recipients, SignalServiceDataMessage message)
         {
-            lock (this)
-            {
-                MessageSender.SendMessage(recipients, message);
-            }
+            await MessageSender.SendMessage(Token, recipients, message);
         }
 
-        public void SendMessage(SignalServiceAddress recipient, SignalServiceDataMessage message)
+        public async Task SendMessage(SignalServiceAddress recipient, SignalServiceDataMessage message)
         {
-            lock (this)
-            {
-                MessageSender.SendMessage(recipient, message);
-            }
+            await MessageSender.SendMessage(Token, recipient, message);
         }
 
         public void SendMessage(SignalServiceAddress recipient, SignalServiceSyncMessage message)
         {
             lock (this)
             {
-                MessageSender.SendMessage(message);
+                MessageSender.SendMessage(Token, message);
             }
         }
 
@@ -61,7 +55,7 @@ namespace Signal_Windows.Lib
         {
             lock (this)
             {
-                MessageSender.SendMessage(message);
+                MessageSender.SendMessage(Token, message);
             }
         }
 
@@ -85,7 +79,7 @@ namespace Signal_Windows.Lib
                     {
                         if (!Token.IsCancellationRequested)
                         {
-                            MessageSender.SendMessage(new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
+                            await MessageSender.SendMessage(Token, new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
@@ -107,7 +101,7 @@ namespace Signal_Windows.Lib
                         };
                         if (!Token.IsCancellationRequested)
                         {
-                            SendMessage(recipients, message);
+                            await SendMessage(recipients, message);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }

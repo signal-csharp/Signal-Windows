@@ -53,7 +53,7 @@ namespace Signal_Windows.Views
 
         private void searchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            Vm.searchBox_TextChanged(sender, args);
+            Vm.SearchBox_TextChanged(sender, args);
         }
 
         private void ContactNameTextBox_TextChanged(object sender, TextChangedEventArgs e)

@@ -203,9 +203,9 @@ namespace Signal_Windows.Lib
                 {
                     LikelyHasValidStore = true;
                 }
-                var initNetwork = Task.Run(() =>
+                var initNetwork = Task.Run(async () =>
                 {
-                    InitNetwork();
+                    await InitNetwork();
                 });
                 var recoverDownloadsTask = Task.Run(() =>
                 {
@@ -246,19 +246,35 @@ namespace Signal_Windows.Lib
                 GlobalResetEvent.Reset();
                 LibsignalDBContext.ClearSessionCache();
                 Instance = this;
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     List<Task> tasks = new List<Task>();
                     foreach (var f in Frames)
                     {
                         var conversations = GetConversations();
-                        tasks.Add(f.Key.RunTaskAsync(() =>
+                        var taskCompletionSource = new TaskCompletionSource<bool>();
+                        await f.Key.RunAsync(CoreDispatcherPriority.Normal, () =>
                         {
-                            f.Value.ReplaceConversationList(conversations);
-                        }));
+                            try
+                            {
+                                f.Value.ReplaceConversationList(conversations);
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.LogError("Reacquire() ReplaceConversationList() failed: {0}\n{1}", e.Message, e.StackTrace);
+                            }
+                            finally
+                            {
+                                taskCompletionSource.SetResult(false);
+                            }
+                        });
+                        tasks.Add(taskCompletionSource.Task);
                     }
-                    Task.WaitAll(tasks.ToArray());
-                    RecoverDownloads().Wait();
+                    foreach (var t in tasks)
+                    {
+                        await t;
+                    }
+                    await RecoverDownloads();
                     Store = LibsignalDBContext.GetSignalStore();
                     if (Store != null)
                     {
@@ -267,9 +283,9 @@ namespace Signal_Windows.Lib
                 });
                 if (LikelyHasValidStore)
                 {
-                    var initNetworkTask = Task.Run(() =>
+                    var initNetworkTask = Task.Run(async () =>
                     {
-                        InitNetwork();
+                        await InitNetwork();
                     });
                 }
                 Running = true;
@@ -429,14 +445,14 @@ namespace Signal_Windows.Lib
         public void StartAttachmentDownload(SignalAttachment sa)
         {
             //TODO lock, check if already downloading, start a new download if not exists
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 try
                 {
                     Logger.LogTrace("StartAttachmentDownload() locking");
                     SemaphoreSlim.Wait(CancelSource.Token);
                     Logger.LogTrace("StartAttachmentDownload() locked");
-                    TryScheduleAttachmentDownload(sa);
+                    await TryScheduleAttachmentDownload(sa);
                 }
                 catch(Exception e)
                 {
@@ -844,12 +860,12 @@ namespace Signal_Windows.Lib
         /// <summary>
         /// Initializes the websocket connection handling. Must not not be called on a UI thread. Must not be called on a task which holds the handle lock.
         /// </summary>
-        private void InitNetwork()
+        private async Task InitNetwork()
         {
             try
             {
-                MessageReceiver = new SignalServiceMessageReceiver(CancelSource.Token, LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT, null);
-                Pipe = MessageReceiver.CreateMessagePipe();
+                MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT, null);
+                Pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token);
                 MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
                 IncomingMessagesTask = Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, Pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
                 OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
@@ -858,7 +874,7 @@ namespace Signal_Windows.Lib
             catch(Exception e)
             {
                 Logger.LogError("InitNetwork failed: {0}\n{1}", e.Message, e.StackTrace);
-                HandleAuthFailure();
+                await HandleAuthFailure();
             }
         }
 
@@ -885,7 +901,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        private void TryScheduleAttachmentDownload(SignalAttachment attachment)
+        private async Task TryScheduleAttachmentDownload(SignalAttachment attachment)
         {
             if (Downloads.Count < 100)
             {
@@ -893,19 +909,19 @@ namespace Signal_Windows.Lib
                 {
                     SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
                     IStorageFolder localFolder = ApplicationData.Current.LocalFolder;
-                    IStorageFile tmpDownload = Task.Run(async () =>
+                    IStorageFile tmpDownload = await Task.Run(async () =>
                     {
                         return await ApplicationData.Current.LocalCacheFolder.CreateFileAsync(@"Attachments\" + attachment.Id + ".cipher", CreationCollisionOption.ReplaceExisting);
-                    }).Result;
+                    });
                     BackgroundDownloader downloader = new BackgroundDownloader();
                     downloader.SetRequestHeader("Content-Type", "application/octet-stream");
                     // this is the recommended way to call CreateDownload
                     // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
-                    DownloadOperation download = downloader.CreateDownload(new Uri(RetrieveAttachmentUrl(attachmentPointer)), tmpDownload);
+                    DownloadOperation download = downloader.CreateDownload(new Uri(await MessageReceiver.RetrieveAttachmentDownloadUrl(CancelSource.Token, attachmentPointer)), tmpDownload);
                     attachment.Guid = download.Guid.ToString();
                     SignalDBContext.UpdateAttachmentGuid(attachment);
                     Downloads.Add(attachment.Id, download);
-                    Task.Run(async () =>
+                    var downloadSuccessfulHandler = Task.Run(async () =>
                     {
                         Logger.LogInformation("Waiting for download {0}({1})", attachment.SentFileName, attachment.Id);
                         var t = await download.StartAsync();
@@ -945,11 +961,6 @@ namespace Signal_Windows.Lib
                 }
                 SemaphoreSlim.Release();
             }
-        }
-
-        private string RetrieveAttachmentUrl(SignalServiceAttachmentPointer pointer)
-        {
-            return MessageReceiver.RetrieveAttachmentDownloadUrl(pointer);
         }
 
         private void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream ciphertextFileStream, Stream plaintextFileStream)

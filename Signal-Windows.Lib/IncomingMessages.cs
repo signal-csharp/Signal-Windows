@@ -197,7 +197,7 @@ namespace Signal_Windows.Lib
                     var groups = content.SynchronizeMessage.Groups;
                     using (var tmpFile = LibUtils.CreateTmpFile("groups_sync"))
                     {
-                        var plaintextStream = MessageReceiver.RetrieveAttachment(groups.AsPointer(), tmpFile, 10000, null);
+                        var plaintextStream = await MessageReceiver.RetrieveAttachment(Token, groups.AsPointer(), tmpFile, 10000, null);
                         var deviceGroupsStream = new DeviceGroupsInputStream(plaintextStream);
                         var groupsList = new List<(SignalGroup, IList<string>)>();
                         DeviceGroup g;
@@ -233,7 +233,7 @@ namespace Signal_Windows.Lib
                     ContactsMessage contacts = content.SynchronizeMessage.Contacts;
                     using (var tmpFile = LibUtils.CreateTmpFile("contacts_sync"))
                     {
-                        var plaintextStream = MessageReceiver.RetrieveAttachment(contacts.Contacts.AsPointer(), tmpFile, 10000, null);
+                        var plaintextStream = await MessageReceiver.RetrieveAttachment(Token, contacts.Contacts.AsPointer(), tmpFile, 10000, null);
                         var deviceContactsStream = new DeviceContactsInputStream(plaintextStream);
                         List<SignalContact> contactsList = new List<SignalContact>();
                         DeviceContact c;
@@ -577,7 +577,7 @@ namespace Signal_Windows.Lib
                         Group = group,
                         Timestamp = Util.CurrentTimeMillis()
                     };
-                    SignalLibHandle.Instance.OutgoingMessages.SendMessage(envelope.GetSourceAddress(), requestInfoMessage);
+                    await SignalLibHandle.Instance.OutgoingMessages.SendMessage(envelope.GetSourceAddress(), requestInfoMessage);
                 }
                 composedTimestamp = envelope.GetTimestamp();
             }

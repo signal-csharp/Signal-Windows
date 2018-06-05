@@ -14,6 +14,7 @@ using Signal_Windows.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Signal_Windows.Storage
@@ -597,11 +598,11 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void RefreshPreKeys(SignalServiceAccountManager accountManager) //TODO wrap in extra lock? enforce reload?
+        public static async Task RefreshPreKeys(CancellationToken token, SignalServiceAccountManager accountManager) //TODO wrap in extra lock? enforce reload?
         {
             List<PreKeyRecord> oneTimePreKeys = GeneratePreKeys();
-            SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(GetIdentityKeyPair());
-            accountManager.SetPreKeys(GetIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+            SignedPreKeyRecord signedPreKeyRecord = GenerateSignedPreKey(GetIdentityKeyPair());
+            await accountManager.SetPreKeys(token, GetIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
         }
 
         private static List<PreKeyRecord> GeneratePreKeys()
@@ -620,7 +621,7 @@ namespace Signal_Windows.Storage
             return records;
         }
 
-        private static PreKeyRecord getOrGenerateLastResortPreKey()
+        private static PreKeyRecord GetOrGenerateLastResortPreKey()
         {
             if (ContainsPreKey(Medium.MAX_VALUE))
             {
@@ -639,7 +640,7 @@ namespace Signal_Windows.Storage
             return record;
         }
 
-        private static SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair)
+        private static SignedPreKeyRecord GenerateSignedPreKey(IdentityKeyPair identityKeyPair)
         {
             try
             {

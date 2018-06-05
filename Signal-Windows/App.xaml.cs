@@ -108,11 +108,24 @@ namespace Signal_Windows
                         int currentId = toastArgs.CurrentlyShownApplicationViewId;
                         if (viewSwitcherProvider.ViewSwitcher.IsViewPresentedOnActivationVirtualDesktop(toastArgs.CurrentlyShownApplicationViewId))
                         {
-                            await Views[currentId].Dispatcher.RunTaskAsync(() =>
+                            var taskCompletionSource = new TaskCompletionSource<bool>();
+                            await Views[currentId].Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                             {
-                                Logger.LogInformation("OnActivated() selecting conversation");
-                                Views[currentId].Locator.MainPageInstance.TrySelectConversation(requestedConversation);
+                                try
+                                {
+                                    Logger.LogInformation("OnActivated() selecting conversation");
+                                    Views[currentId].Locator.MainPageInstance.TrySelectConversation(requestedConversation);
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.LogError("OnActivated() TrySelectConversation() failed: {0}\n{1}", e.Message, e.StackTrace);
+                                }
+                                finally
+                                {
+                                    taskCompletionSource.SetResult(false);
+                                }
                             });
+                            await taskCompletionSource.Task;
                             await viewSwitcherProvider.ViewSwitcher.ShowAsStandaloneAsync(currentId);
                         }
                         else
@@ -192,35 +205,76 @@ namespace Signal_Windows
             Logger.LogInformation("CreateSecondaryWindow()");
             CoreApplicationView newView = CoreApplication.CreateNewView();
             int newViewId = 0;
-            SignalWindowsFrontend frontend = await newView.Dispatcher.RunTaskAsync(async () =>
+            var frontendCreationCompletionSource = new TaskCompletionSource<SignalWindowsFrontend>();
+            await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                Frame frame = new Frame();
-                frame.Navigate(typeof(MainPage), conversationId);
-                Window.Current.Content = frame;
-                Window.Current.Activate();
-                var currView = ApplicationView.GetForCurrentView();
-                if (GlobalSettingsManager.BlockScreenshotsSetting)
+                SignalWindowsFrontend swf = null;
+                try
                 {
-                    currView.IsScreenCaptureEnabled = false;
+                    Frame frame = new Frame();
+                    frame.Navigate(typeof(MainPage), conversationId);
+                    Window.Current.Content = frame;
+                    Window.Current.Activate();
+                    var currView = ApplicationView.GetForCurrentView();
+                    if (GlobalSettingsManager.BlockScreenshotsSetting)
+                    {
+                        currView.IsScreenCaptureEnabled = false;
+                    }
+                    currView.Consolidated += CurrView_Consolidated;
+                    newViewId = currView.Id;
+                    ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
+                    SetupTopBar();
+                    swf = new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);
                 }
-                currView.Consolidated += CurrView_Consolidated;
-                newViewId = currView.Id;
-                ViewModelLocator newVML = (ViewModelLocator)Resources["Locator"];
-                SetupTopBar();
-                return new SignalWindowsFrontend(newView.Dispatcher, newVML, newViewId);
+                catch (Exception e)
+                {
+                    Logger.LogError("CreateSecondaryWindowOrShowMain() SignalWindowsFrontend creation failed: {0}\n{1}", e.Message, e.StackTrace);
+                }
+                finally
+                {
+                    frontendCreationCompletionSource.SetResult(swf);
+                }
             });
-            bool success = await newView.Dispatcher.RunTaskAsync(async () =>
+            var frontend = await frontendCreationCompletionSource.Task;
+            var addFrontendCompletionSource = new TaskCompletionSource<bool>();
+            await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                //AddFrontend blocks for the handle lock, but the new window is not yet registered, so nothing will be invoked
-                return Handle.AddFrontend(frontend.Dispatcher, frontend);
+                bool addFrontendResult = false;
+                try
+                {
+                    //AddFrontend blocks for the handle lock, but the new window is not yet registered, so nothing will be invoked
+                    addFrontendResult = Handle.AddFrontend(frontend.Dispatcher, frontend);
+                }
+                catch(Exception e)
+                {
+                    Logger.LogError("CreateSecondaryWindowOrShowMain() AddFrontend() failed: {0}\n{1}", e.Message, e.StackTrace);
+                }
+                finally
+                {
+                    addFrontendCompletionSource.SetResult(addFrontendResult);
+                }
             });
+            var success = await addFrontendCompletionSource.Task;
             if (success)
             {
                 Views.Add(newViewId, frontend);
-                await newView.Dispatcher.RunTaskAsync(async () =>
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
                 {
-                    await switcher.ShowAsStandaloneAsync(newViewId);
+                    try
+                    {
+                        await switcher.ShowAsStandaloneAsync(newViewId);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("CreateSecondaryWindowOrShowMain() ShowAsStandaloneAsync() failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
                 });
+                await taskCompletionSource.Task;
                 Logger.LogInformation("CreateSecondaryWindow() added view {0}", newViewId);
             }
             else

@@ -19,7 +19,7 @@ namespace Signal_Windows.Storage
 
         public bool SaveIdentity(SignalProtocolAddress address, IdentityKey identityKey)
         {
-            LibsignalDBContext.SaveIdentityLocked(address, Base64.EncodeBytes(identityKey.serialize()));
+            LibsignalDBContext.SaveIdentityLocked(address, Base64.EncodeBytes(identityKey.serialize())).Wait(); //TODO wait is bad
             return true;
         }
 

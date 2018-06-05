@@ -117,7 +117,7 @@ namespace Signal_Windows.ViewModels
                 App.Handle.Store = store;
 
                 // create prekeys
-                LibsignalDBContext.RefreshPreKeys(new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
+                await LibsignalDBContext.RefreshPreKeys(CancelSource.Token, new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
 
                 // reload again with prekeys and their offsets
                 App.Handle.Store = LibsignalDBContext.GetSignalStore();

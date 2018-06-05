@@ -77,17 +77,17 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        private SignalServiceAccountManager InitRegistration(bool voice)
+        private async Task<SignalServiceAccountManager> InitRegistration(bool voice)
         {
             App.Handle.PurgeAccountData();
             SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber, Password, 1 /*device id isn't actually used*/, App.USER_AGENT);
             if (voice)
             {
-                accountManager.RequestVoiceVerificationCode();
+                await accountManager.RequestVoiceVerificationCode(CancelSource.Token);
             }
             else
             {
-                accountManager.RequestSmsVerificationCode();
+                await accountManager.RequestSmsVerificationCode(CancelSource.Token);
             }
             return accountManager;
         }

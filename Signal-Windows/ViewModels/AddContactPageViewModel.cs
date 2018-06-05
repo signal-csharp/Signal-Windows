@@ -113,6 +113,7 @@ namespace Signal_Windows.ViewModels
 
         public async Task RefreshContacts(CancellationToken? cancellationToken = null)
         {
+            CancellationTokenSource cancelSource = new CancellationTokenSource();
             RefreshingContacts = true;
             Contacts.Clear();
             signalContacts.Clear();
@@ -190,17 +191,19 @@ namespace Signal_Windows.ViewModels
                     }
                 }
 
-                var signalContactDetails = accountManager.GetContacts(intermediateContacts.Select(c => c.PhoneNumber).ToList());
+                var signalContactDetails = await accountManager.GetContacts(cancelSource.Token, intermediateContacts.Select(c => c.PhoneNumber).ToList());
                 foreach (var contact in intermediateContacts)
                 {
                     var foundContact = signalContactDetails.FirstOrDefault(c => c.Number == contact.PhoneNumber);
                     if (foundContact != null)
                     {
                         contact.OnSignal = true;
-                        ContactAnnotation contactAnnotation = new ContactAnnotation();
-                        contactAnnotation.ContactId = contact.Id;
-                        contactAnnotation.RemoteId = contact.PhoneNumber;
-                        contactAnnotation.SupportedOperations = ContactAnnotationOperations.Message | ContactAnnotationOperations.ContactProfile;
+                        ContactAnnotation contactAnnotation = new ContactAnnotation
+                        {
+                            ContactId = contact.Id,
+                            RemoteId = contact.PhoneNumber,
+                            SupportedOperations = ContactAnnotationOperations.Message | ContactAnnotationOperations.ContactProfile
+                        };
                         await contactAnnotationList.TrySaveAnnotationAsync(contactAnnotation);
                         signalContacts.Add(contact);
                     }
@@ -228,7 +231,7 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        internal void searchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        internal void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {

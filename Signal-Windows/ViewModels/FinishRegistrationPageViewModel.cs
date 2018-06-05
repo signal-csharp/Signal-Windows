@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
 using libsignalservice;
@@ -25,10 +26,12 @@ namespace Signal_Windows.ViewModels
         {
             try
             {
-                await Task.Run(() =>
+                CancellationTokenSource cancelSource = new CancellationTokenSource();
+                await Task.Run(async () =>
                 {
                     string SignalingKey = Base64.EncodeBytes(Util.GetSecretBytes(52));
-                    App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.VerifyAccountWithCode(
+                    await App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.VerifyAccountWithCode(
+                        cancelSource.Token,
                         App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
                             SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
                             true, null);
@@ -51,7 +54,8 @@ namespace Signal_Windows.ViewModels
                     }).AsTask().Wait();
 
                     /* create prekeys */
-                    LibsignalDBContext.RefreshPreKeys(
+                    await LibsignalDBContext.RefreshPreKeys(
+                        cancelSource.Token,
                         new SignalServiceAccountManager(App.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, App.USER_AGENT));
 
                     /* reload again with prekeys and their offsets */
