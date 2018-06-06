@@ -51,7 +51,7 @@ namespace Signal_Windows.Views
             Frame.Navigate(typeof(MainPage));
         }
 
-        private void searchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             Vm.SearchBox_TextChanged(sender, args);
         }

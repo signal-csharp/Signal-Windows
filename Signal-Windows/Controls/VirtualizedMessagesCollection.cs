@@ -196,9 +196,8 @@ namespace Signal_Windows.Controls
 
         public int IndexOf(object value)
         {
-            if (value is SignalMessageContainer)
+            if (value is SignalMessageContainer smc)
             {
-                SignalMessageContainer smc = (SignalMessageContainer) value;
                 return GetVirtualIndex(smc.Index);
             }
             else if (value is SignalUnreadMarker)

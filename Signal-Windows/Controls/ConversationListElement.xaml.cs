@@ -153,9 +153,8 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                if (Model is SignalContact)
+                if (Model is SignalContact contact)
                 {
-                    var contact = (SignalContact)Model;
                     BlockedIconVisible = contact.Blocked;
                     FillBrush = contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
                         Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.ThreadDisplayName));

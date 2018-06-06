@@ -327,8 +327,7 @@ namespace Signal_Windows.ViewModels
             {
                 // "as" is more efficient than "is" and a cast because "as" only needs to
                 // type check once
-                var conversationContact = conversation.Value as SignalContact;
-                if (conversationContact != null)
+                if (conversation.Value is SignalContact conversationContact)
                 {
                     if (blockedContacts.FirstOrDefault(c => c.ThreadId == conversationContact.ThreadId) != null)
                     {

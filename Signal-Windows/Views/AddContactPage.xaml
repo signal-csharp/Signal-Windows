@@ -37,7 +37,7 @@
             <TextBlock Text="Number" Margin="0,16,0,0" />
             <TextBox x:Name="ContactNumberTextBox" Text="{x:Bind Vm.ContactNumber, Mode=TwoWay}" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}" Margin="0,4,0,0" TextChanged="ContactNumberTextBox_TextChanged" InputScope="TelephoneNumber" />
             <Button x:Name="AddButton" Content="Add" IsEnabled="{x:Bind Vm.AddEnabled, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,16" Click="AddButton_Click" />
-            <AutoSuggestBox x:Name="searchBox" VerticalAlignment="Stretch" QueryIcon="Find" TextChanged="searchBox_TextChanged" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
+            <AutoSuggestBox x:Name="searchBox" VerticalAlignment="Stretch" QueryIcon="Find" TextChanged="SearchBox_TextChanged" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"/>
         </StackPanel>
         <Grid Grid.Row="1" Visibility="{x:Bind Vm.ContactsVisible, Mode=OneWay}">
             <toolbox:PullToRefreshListView x:Name="ContactsList" ItemClick="ContactsList_ItemClick" ItemsSource="{x:Bind Vm.Contacts, Mode=OneWay}" IsItemClickEnabled="True" HorizontalAlignment="Center" IsEnabled="{x:Bind Vm.UIEnabled, Mode=OneWay}"

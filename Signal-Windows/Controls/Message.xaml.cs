@@ -146,16 +146,20 @@ namespace Signal_Windows.Controls
                     var length = currentIndex - previousIndex;
                     if (length > 0)
                     {
-                        Run run = new Run();
-                        run.Text = messageText.Substring(previousIndex, currentIndex - previousIndex);
+                        Run run = new Run
+                        {
+                            Text = messageText.Substring(previousIndex, currentIndex - previousIndex)
+                        };
                         MessageContentTextBlock.Inlines.Add(run);
                     }
 
                     // Now add the hyperlink
                     string link = match.Value;
                     Hyperlink hyperlink = new Hyperlink();
-                    Run hyperlinkRun = new Run();
-                    hyperlinkRun.Text = link;
+                    Run hyperlinkRun = new Run
+                    {
+                        Text = link
+                    };
                     try
                     {
                         hyperlink.NavigateUri = new Uri(link);
@@ -175,8 +179,10 @@ namespace Signal_Windows.Controls
                 var restLength = messageText.Length - currentIndex;
                 if (restLength > 0)
                 {
-                    Run restRun = new Run();
-                    restRun.Text = messageText.Substring(currentIndex, restLength);
+                    Run restRun = new Run
+                    {
+                        Text = messageText.Substring(currentIndex, restLength)
+                    };
                     MessageContentTextBlock.Inlines.Add(restRun);
                 }
             }
