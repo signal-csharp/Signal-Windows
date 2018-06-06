@@ -161,8 +161,7 @@ namespace Signal_Windows.Controls
         public void Load(SignalConversation conversation)
         {
             SignalConversation = conversation;
-            var contact = SignalConversation as SignalContact;
-            if (contact != null)
+            if (SignalConversation is SignalContact contact)
             {
                 Blocked = contact.Blocked;
                 SendMessageVisible = !Blocked;
@@ -206,9 +205,7 @@ namespace Signal_Windows.Controls
             var nChildCount = VisualTreeHelper.GetChildrenCount(element);
             for (int i = 0; i < nChildCount; i++)
             {
-                FrameworkElement child = VisualTreeHelper.GetChild(element, i) as FrameworkElement;
-
-                if (child == null)
+                if (!(VisualTreeHelper.GetChild(element, i) is FrameworkElement child))
                     continue;
 
                 if (child is T && child.Name.Equals(sChildName))
@@ -351,8 +348,7 @@ namespace Signal_Windows.Controls
 
         private int GetBottommostIndex()
         {
-            var sourcePanel = ConversationItemsControl.ItemsPanelRoot as ItemsStackPanel;
-            if (sourcePanel != null)
+            if (ConversationItemsControl.ItemsPanelRoot is ItemsStackPanel sourcePanel)
             {
                 return sourcePanel.LastVisibleIndex;
             }
@@ -392,9 +388,8 @@ namespace Signal_Windows.Controls
 
         private async void UnblockButton_Click(object sender, RoutedEventArgs e)
         {
-            if (SignalConversation is SignalContact)
+            if (SignalConversation is SignalContact contact)
             {
-                var contact = (SignalContact)SignalConversation;
                 contact.Blocked = false;
                 Blocked = false;
                 SendMessageVisible = !Blocked;
@@ -416,9 +411,8 @@ namespace Signal_Windows.Controls
         protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
         {
             FrameworkElement element = container as FrameworkElement;
-            if (item is SignalMessageContainer)
+            if (item is SignalMessageContainer smc)
             {
-                SignalMessageContainer smc = (SignalMessageContainer)item;
                 SignalMessage sm = smc.Message;
                 if (sm.Type == SignalMessageType.IdentityKeyChange)
                 {
