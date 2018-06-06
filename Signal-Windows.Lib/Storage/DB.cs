@@ -774,14 +774,10 @@ namespace Signal_Windows.Storage
                     message.Status = SignalMessageStatus.Received;
                 }
             }
+            timestamp = message.ComposedTimestamp;
             if (message.Author != null)
             {
-                timestamp = message.ReceivedTimestamp;
                 message.Author = ctx.Contacts.Where(a => a.Id == message.Author.Id).Single();
-            }
-            else
-            {
-                timestamp = message.ComposedTimestamp;
             }
             if (!message.ThreadId.EndsWith("="))
             {
