@@ -95,12 +95,12 @@ namespace Signal_Windows.Storage
 
     public class SignalFileLoggerProvider : ILoggerProvider
     {
-        private static string UILog = ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log";
+        private static readonly string UILog = ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log";
         private readonly string Filename;
         private readonly string OldFilename;
         private readonly string Prefix;
         private const int MaxLogSize = 256 * 1024;
-        private static object Lock = new object();
+        private static readonly object Lock = new object();
 
         public SignalFileLoggerProvider(string filename, string prefix)
         {
