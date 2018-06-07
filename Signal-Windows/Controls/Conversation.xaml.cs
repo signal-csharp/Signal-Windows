@@ -135,6 +135,7 @@ namespace Signal_Windows.Controls
         {
             Logger.LogTrace("HandleWindowActivated() new activation state {0}", e.WindowActivationState);
             ActivationState = e.WindowActivationState;
+            MarkBottommostMessageRead();
         }
 
         public MainPageViewModel GetMainPageVm()
@@ -383,6 +384,14 @@ namespace Signal_Windows.Controls
         {
             if (ActivationState != CoreWindowActivationState.Deactivated)
             {
+                MarkBottommostMessageRead();
+            }
+        }
+
+        private void MarkBottommostMessageRead()
+        {
+            if (Collection != null)
+            {
                 int bottomIndex = GetBottommostIndex();
                 int rawBottomIndex = Collection.GetRawIndex(bottomIndex);
                 long lastSeenIndex = SignalConversation.LastSeenMessageIndex;
@@ -391,7 +400,7 @@ namespace Signal_Windows.Controls
                     LastMarkReadRequest = rawBottomIndex;
                     Task.Run(async () =>
                     {
-                        await App.Handle.SetMessageRead(rawBottomIndex, ((SignalMessageContainer) Collection[bottomIndex]).Message, SignalConversation);
+                        await App.Handle.SetMessageRead(rawBottomIndex, ((SignalMessageContainer)Collection[bottomIndex]).Message, SignalConversation);
                     });
                 }
             }
