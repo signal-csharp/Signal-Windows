@@ -117,6 +117,17 @@ namespace Signal_Windows.Controls
             Separator.Foreground = Utils.ForegroundIncoming;
             Username.Foreground = Utils.ForegroundIncoming;
             SendButtonEnabled = false;
+            Loaded += Conversation_Loaded;
+            Unloaded += Conversation_Unloaded;
+        }
+
+        private void Conversation_Unloaded(object sender, RoutedEventArgs e)
+        {
+            Window.Current.Activated -= HandleWindowActivated;
+        }
+
+        private void Conversation_Loaded(object sender, RoutedEventArgs e)
+        {
             Window.Current.Activated += HandleWindowActivated;
         }
 
