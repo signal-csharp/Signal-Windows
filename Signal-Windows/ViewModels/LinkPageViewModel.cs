@@ -82,8 +82,8 @@ namespace Signal_Windows.ViewModels
                 });
 
                 // fetch new device uuid
-                SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, "Signal-Windows");
-                string uuid = await accountManager.GetNewDeviceUuid(CancelSource.Token);
+                SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, "Signal-Windows", new SignalWebSocketFactory());
+                string uuid = await accountManager.GetNewDeviceUuid(CancelSource.Token, new SignalWebSocketFactory());
                 string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.EncodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
 
                 View.SetQR(tsdevice); //TODO generate qrcode in worker task

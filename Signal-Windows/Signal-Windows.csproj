@@ -369,6 +369,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\libsignal-service-dotnet\libsignal-service-dotnet\libsignal-service-dotnet.csproj">
+      <Project>{8e739573-5bb3-4487-b7cd-7c0d6d8be4a0}</Project>
+      <Name>libsignal-service-dotnet</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Signal-Windows.Lib\Signal-Windows.Lib.csproj">
       <Project>{1934fd82-a5ea-4b71-b915-a1826593cb6e}</Project>
       <Name>Signal-Windows.Lib</Name>

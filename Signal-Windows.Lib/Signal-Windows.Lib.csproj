@@ -113,6 +113,7 @@
     <Compile Include="Migrations\SignalDB\20180521001340_m6.designer.cs">
       <DependentUpon>20180521001340_m6.cs</DependentUpon>
     </Compile>
+    <Compile Include="SignalWebSocket.cs" />
     <Compile Include="Util\LibUtils.cs" />
     <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.cs" />
     <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.Designer.cs">
@@ -165,9 +166,6 @@
     <EmbeddedResource Include="Properties\Signal_Windows.Lib.rd.xml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="libsignal-service-dotnet">
-      <Version>2.7.5.11</Version>
-    </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore">
       <Version>1.1.4</Version>
     </PackageReference>
@@ -194,6 +192,12 @@
     <SDKReference Include="WindowsMobile, Version=10.0.16299.0">
       <Name>Windows Mobile Extensions for the UWP</Name>
     </SDKReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\libsignal-service-dotnet\libsignal-service-dotnet\libsignal-service-dotnet.csproj">
+      <Project>{8e739573-5bb3-4487-b7cd-7c0d6d8be4a0}</Project>
+      <Name>libsignal-service-dotnet</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
