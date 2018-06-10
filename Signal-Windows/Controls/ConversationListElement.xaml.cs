@@ -1,4 +1,5 @@
 using Signal_Windows.Models;
+using Signal_Windows.Views;
 using System.ComponentModel;
 using System.Diagnostics;
 using Windows.UI.Xaml;
@@ -95,6 +96,25 @@ namespace Signal_Windows.Controls
             {
                 _LastMessage = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastMessage)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastMessageVisibility)));
+            }
+        }
+
+        public Visibility LastMessageVisibility
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(LastMessage))
+                {
+                    return Visibility.Collapsed;
+                }
+                else
+                {
+                    return Visibility.Visible;
+                }
+            }
+            set
+            {
             }
         }
 
@@ -144,8 +164,20 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                UpdateConversationDisplay();
-                Model.UpdateUI = UpdateConversationDisplay;
+                var frame = Window.Current.Content as Frame;
+                if (frame != null)
+                {
+                    if (frame.CurrentSourcePageType == typeof(BlockedContactsPage))
+                    {
+                        UpdateBlockedContactElement();
+                        Model.UpdateUI = UpdateBlockedContactElement;
+                    }
+                    else if (frame.CurrentSourcePageType == typeof(MainPage))
+                    {
+                        UpdateConversationDisplay();
+                        Model.UpdateUI = UpdateConversationDisplay;
+                    }
+                }
             }
         }
 
@@ -168,6 +200,19 @@ namespace Signal_Windows.Controls
                 LastMessage = Model.LastMessage?.Content.Content;
                 Initials = Utils.GetInitials(Model.ThreadDisplayName);
                 LastMessageTimestamp = Utils.GetTimestamp(Model.LastActiveTimestamp);
+            }
+        }
+
+        public void UpdateBlockedContactElement()
+        {
+            if (Model != null)
+            {
+                SignalContact contact = (SignalContact)Model;
+                FillBrush = contact.Color != null ? Utils.GetBrushFromColor((contact.Color)) :
+                    Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.ThreadDisplayName));
+                ConversationDisplayName.Text = Model.ThreadDisplayName;
+                Initials = Utils.GetInitials(Model.ThreadDisplayName);
+                LastMessage = null;
             }
         }
     }

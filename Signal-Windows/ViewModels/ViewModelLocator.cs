@@ -46,6 +46,7 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<AppearanceSettingsPageViewModel>();
             SimpleIoc.Default.Register<ChatsAndMediaSettingsPageViewModel>();
             SimpleIoc.Default.Register<AdvancedSettingsPageViewModel>();
+            SimpleIoc.Default.Register<BlockedContactsPageViewModel>();
         }
 
         // <summary>
@@ -140,6 +141,11 @@ namespace Signal_Windows.ViewModels
         public AdvancedSettingsPageViewModel AdvancedSettingsPageInstance
         {
             get { return ServiceLocator.Current.GetInstance<AdvancedSettingsPageViewModel>(Key.ToString()); }
+        }
+
+        public BlockedContactsPageViewModel BlockedContactsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<BlockedContactsPageViewModel>(Key.ToString()); }
         }
 
         // <summary>

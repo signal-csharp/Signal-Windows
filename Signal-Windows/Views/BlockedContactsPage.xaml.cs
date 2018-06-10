@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using Signal_Windows.Lib;
 using Signal_Windows.Models;
-using Signal_Windows.Storage;
 using Signal_Windows.ViewModels;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -27,16 +24,16 @@ namespace Signal_Windows.Views
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class PrivacySettingsPage : Page
+    public sealed partial class BlockedContactsPage : Page
     {
-        public PrivacySettingsPage()
+        public BlockedContactsPage()
         {
             this.InitializeComponent();
         }
 
-        public PrivacySettingsPageViewModel Vm
+        public BlockedContactsPageViewModel Vm
         {
-            get { return (PrivacySettingsPageViewModel)DataContext; }
+            get { return (BlockedContactsPageViewModel)DataContext; }
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -56,21 +53,14 @@ namespace Signal_Windows.Views
             e.Handled = true;
         }
 
-        private void BlockScreenshotsToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+        private void BlockedContactsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var toggleSwitch = sender as ToggleSwitch;
-            Vm.BlockScreenshotsToggleSwitch_Toggled(toggleSwitch.IsOn);
-        }
-
-        private void ReadReceiptsToggleSwitch_Toggled(object sender, RoutedEventArgs e)
-        {
-            var toggleSwitch = sender as ToggleSwitch;
-            Vm.ReadReceiptsToggleSwitch_Toggled(toggleSwitch.IsOn);
-        }
-
-        private void BlockedContactsButton_Click(object sender, RoutedEventArgs e)
-        {
-            Frame.Navigate(typeof(BlockedContactsPage));
+            if (e.AddedItems.Count == 1)
+            {
+                var contact = e.AddedItems[0] as SignalContact;
+                App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.ConversationSettingsPageInstance.Contact = contact;
+                Frame.Navigate(typeof(ConversationSettingsPage));
+            }
         }
     }
 }

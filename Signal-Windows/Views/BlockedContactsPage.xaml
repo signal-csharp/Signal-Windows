@@ -1,0 +1,28 @@
+﻿<Page
+    x:Class="Signal_Windows.Views.BlockedContactsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Signal_Windows.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Signal_Windows.Controls"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    DataContext="{Binding BlockedContactsPageInstance, Source={StaticResource Locator}}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="8*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Blocked Contacts" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="1" Text="No blocked contacts" Visibility="{x:Bind Vm.NoBlockedContacts, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <ListView Grid.Row="1" x:Name="BlockedContactsListView" SelectionMode="Single" ItemsSource="{x:Bind Vm.BlockedContacts, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="32,0" SelectionChanged="BlockedContactsListView_SelectionChanged">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <controls:ConversationListElement/>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>

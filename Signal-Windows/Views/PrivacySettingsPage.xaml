@@ -32,7 +32,7 @@
                     <TextBlock Text="If read receipts are disabled you won't be able to see read receipts from others." Style="{StaticResource CaptionTextBlockStyle}"/>
                     <ToggleSwitch x:Name="ReadReceiptsToggleSwitch" Toggled="ReadReceiptsToggleSwitch_Toggled" IsEnabled="False" IsOn="{x:Bind Vm.ReadReceipts, Mode=TwoWay}"/>
                 </StackPanel>
-                <Button Grid.Row="2" Content="Blocked contacts" Margin="0,8,0,8" IsEnabled="False"/>
+                <Button x:Name="BlockedContactsButton" Grid.Row="2" Content="Blocked contacts" Margin="0,8,0,8" Click="BlockedContactsButton_Click" />
             </Grid>
         </ScrollViewer>
     </Grid>
