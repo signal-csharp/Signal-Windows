@@ -90,7 +90,6 @@ namespace Signal_Windows.ViewModels
 
         private async Task<bool> SendMessage(string messageText)
         {
-            Debug.WriteLine("starting sendmessage");
             try
             {
                 if (!string.IsNullOrEmpty(messageText))
