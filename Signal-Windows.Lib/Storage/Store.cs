@@ -64,7 +64,7 @@ namespace Signal_Windows.Storage
 
         public SessionRecord LoadSession(SignalProtocolAddress address)
         {
-            return LibsignalDBContext.LoadSession(address);
+            return LibsignalDBContext.LoadSessionLocked(address);
         }
 
         public List<uint> GetSubDeviceSessions(string name)

@@ -188,9 +188,16 @@ namespace Signal_Windows.Storage
                             old.VerifiedStatus = VerifiedStatus.Unverified;
                         }
                         old.IdentityKey = identity;
-                        var childSessions = ctx.Sessions
-                            .Where(s => s.Username == address.Name && s.DeviceId != address.DeviceId);
-                        ctx.Sessions.RemoveRange(childSessions);
+                        var oldSession = ctx.Sessions
+                            .Where(s => s.Username == address.Name && s.DeviceId == 1)
+                            .SingleOrDefault();
+                        if (oldSession != null)
+                        {
+                            SessionRecord sessionRecord = new SessionRecord(Base64.Decode(oldSession.Session));
+                            sessionRecord.archiveCurrentState();
+                            oldSession.Session = Base64.EncodeBytes(sessionRecord.serialize());
+                            SessionsCache[address.Name] = sessionRecord;
+                        }
                         messages = InsertIdentityChangedMessages(address.Name);
                     }
                     ctx.SaveChanges();
@@ -317,7 +324,7 @@ namespace Signal_Windows.Storage
 
         private static Dictionary<string, SessionRecord> SessionsCache = new Dictionary<string, SessionRecord>();
 
-        public static SessionRecord LoadSession(SignalProtocolAddress address)
+        public static SessionRecord LoadSessionLocked(SignalProtocolAddress address)
         {
             lock (DBLock)
             {
@@ -407,7 +414,12 @@ namespace Signal_Windows.Storage
                     var session = ctx.Sessions
                         .Where(s => s.Username == address.Name && s.DeviceId == address.DeviceId)
                         .SingleOrDefault();
-                    return session != null;
+                    if (session == null)
+                        return false;
+
+                    SessionRecord sessionRecord = new SessionRecord(Base64.Decode(session.Session));
+                    return sessionRecord.getSessionState().hasSenderChain() &&
+                        sessionRecord.getSessionState().getSessionVersion() == libsignal.protocol.CiphertextMessage.CURRENT_VERSION;
                 }
             }
         }

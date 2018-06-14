@@ -113,6 +113,7 @@
     <Compile Include="Migrations\SignalDB\20180521001340_m6.designer.cs">
       <DependentUpon>20180521001340_m6.cs</DependentUpon>
     </Compile>
+    <Compile Include="SignalWebSocket.cs" />
     <Compile Include="Util\LibUtils.cs" />
     <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.cs" />
     <Compile Include="Migrations\LibsignalDB\20170806145530_ls1.Designer.cs">
@@ -166,7 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="libsignal-service-dotnet">
-      <Version>2.7.5.11</Version>
+      <Version>2.7.5.12</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore">
       <Version>1.1.4</Version>
