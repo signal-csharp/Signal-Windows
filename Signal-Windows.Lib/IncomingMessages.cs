@@ -489,7 +489,7 @@ namespace Signal_Windows.Lib
                 {
                     foreach (var member in group.Members)
                     {
-                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, SignalDBContext.GetOrCreateContactLocked(member, 0).Id);
+                        SignalDBContext.InsertOrUpdateGroupMembershipLocked(dbgroup.Id, (await SignalDBContext.GetOrCreateContactLocked(member, 0)).Id);
                     }
                 }
 

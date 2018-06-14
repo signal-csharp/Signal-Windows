@@ -1109,36 +1109,43 @@ namespace Signal_Windows.Storage
                 {
                     foreach (var (group, members) in groups)
                     {
-                        var dbGroup = ctx.Groups
+                        try
+                        {
+                            var dbGroup = ctx.Groups
                             .Where(g => g.ThreadId == group.ThreadId)
                             .Include(g => g.GroupMemberships)
                             .Include(g => g.LastMessage)
                             .ThenInclude(m => m.Content)
                             .SingleOrDefault();
-                        if (dbGroup != null)
-                        {
-                            dbGroup.GroupMemberships.Clear();
-                            dbGroup.ThreadDisplayName = group.ThreadDisplayName;
-                            dbGroup.CanReceive = group.CanReceive;
-                            dbGroup.ExpiresInSeconds = group.ExpiresInSeconds;
-                        }
-                        else
-                        {
-                            dbGroup = group;
-                            ctx.Groups.Add(dbGroup);
-                        }
-                        foreach (var member in members)
-                        {
-                            (var contact, var notify) = GetOrCreateContact(ctx, member, 0);
-                            dbGroup.GroupMemberships.Add(new GroupMembership()
+                            if (dbGroup != null)
                             {
-                                Contact = contact,
-                                Group = dbGroup
-                            });
-                            if (notify)
-                            {
-                                newContacts.Add(contact);
+                                dbGroup.GroupMemberships.Clear();
+                                dbGroup.ThreadDisplayName = group.ThreadDisplayName;
+                                dbGroup.CanReceive = group.CanReceive;
+                                dbGroup.ExpiresInSeconds = group.ExpiresInSeconds;
                             }
+                            else
+                            {
+                                dbGroup = group;
+                                ctx.Groups.Add(dbGroup);
+                            }
+                            foreach (var member in members)
+                            {
+                                (var contact, var notify) = GetOrCreateContact(ctx, member, 0);
+                                dbGroup.GroupMemberships.Add(new GroupMembership()
+                                {
+                                    Contact = contact,
+                                    Group = dbGroup
+                                });
+                                if (notify)
+                                {
+                                    newContacts.Add(contact);
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError("InsertOrUpdateGroups failed: {0}\n{1}", e.Message, e.StackTrace);
                         }
                     }
                     ctx.SaveChanges();
