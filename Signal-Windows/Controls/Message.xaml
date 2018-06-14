@@ -17,7 +17,7 @@
     <Border Name="MessageBoxBorder" BorderBrush="#00000000" BorderThickness="1,1,1,1" CornerRadius="4,4,4,4" Padding="10 5 10 5" Margin="4">
         <ItemsControl>
             <local:Attachment Name="Attachment" DataContext="{x:Bind Attachment, Mode=OneWay}" Visibility="{x:Bind HasAttachment, Mode=OneWay}"/>
-            <TextBlock Name="MessageAuthor" FontWeight="Bold" />
+            <TextBlock Name="MessageAuthor" IsTextSelectionEnabled="True" FontWeight="Bold" />
             <TextBlock Name="MessageContentTextBlock" TextWrapping="Wrap" MaxWidth="300" IsTextSelectionEnabled="True" FontSize="14" Foreground="Black" HorizontalAlignment="Left" />
             <Grid Name="FooterPanel" MaxWidth="300">
                 <Grid.ColumnDefinitions>
@@ -27,7 +27,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Name="ResendTextBlock"  Margin="0 0 5 0" Foreground="Red" FontWeight="SemiBold" Tapped="ResendTextBlock_Tapped" Visibility="Collapsed">Send again</TextBlock>
-                <TextBlock Name="FancyTimestampBlock" Grid.Column="1" Margin="0 0 5 0" FontSize="12" />
+                <TextBlock Name="FancyTimestampBlock" IsTextSelectionEnabled="True" Grid.Column="1" Margin="0 0 5 0" FontSize="12" />
                 <Image Grid.Column="2" Name="CheckImage" Source="{StaticResource Check}" Width="16" Height="16" Visibility="Collapsed"/>
                 <Image Grid.Column="3" Name="DoubleCheckImage" Source="{StaticResource DoubleCheck}" Width="16" Height="16" Visibility="Collapsed"/>
             </Grid>
