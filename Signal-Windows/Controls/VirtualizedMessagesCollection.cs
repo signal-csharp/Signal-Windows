@@ -30,7 +30,7 @@ namespace Signal_Windows.Controls
         private Dictionary<long, Message> DbIdToMessageMap = new Dictionary<long, Message>();
         public SignalConversation Conversation;
         Conversation ConversationView;
-        private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
+        private UnreadMarker UnreadMarker = new UnreadMarker();
         public int UnreadMarkerIndex = -1;
 
         public VirtualizedCollection(SignalConversation c, Conversation conversationView)
@@ -40,7 +40,7 @@ namespace Signal_Windows.Controls
             if (Conversation.LastSeenMessageIndex > 0 && Conversation.LastSeenMessageIndex < Conversation.MessagesCount )
             {
                 UnreadMarkerIndex = (int) Conversation.LastSeenMessageIndex;
-                UnreadMarker.Text = Conversation.UnreadCount > 1 ? $"{Conversation.UnreadCount} new messages" : "1 new message";
+                UnreadMarker.SetText(Conversation.UnreadCount > 1 ? $"{Conversation.UnreadCount} new messages" : "1 new message");
             }
             else
             {
