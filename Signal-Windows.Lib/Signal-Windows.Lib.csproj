@@ -159,7 +159,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SignalLibHandle.cs" />
     <Compile Include="SignalLogging.cs" />
-    <Compile Include="SignalMessageContainer.cs" />
     <Compile Include="Storage\DB.cs" />
     <Compile Include="Storage\Store.cs" />
     <Compile Include="Util\NotificationsUtils.cs" />

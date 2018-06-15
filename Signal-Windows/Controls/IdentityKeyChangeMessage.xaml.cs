@@ -26,11 +26,11 @@ namespace Signal_Windows.Controls
             this.InitializeComponent();
             DataContextChanged += IdentityKeyChangeMessage_DataContextChanged;
         }
-        public SignalMessageContainer Model
+        public Message Model
         {
             get
             {
-                return this.DataContext as SignalMessageContainer;
+                return this.DataContext as Message;
             }
             set
             {
@@ -42,7 +42,7 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                MessageTextBlock.Text = Model.Message.Content.Content;
+                MessageTextBlock.Text = Model.Model.Content.Content;
             }
             else
             {

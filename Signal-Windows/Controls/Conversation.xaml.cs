@@ -30,8 +30,6 @@ namespace Signal_Windows.Controls
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<Conversation>();
         public event PropertyChangedEventHandler PropertyChanged;
         private bool SendingMessage = false;
-        private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
-        private Dictionary<long, SignalAttachmentContainer> UnfinishedAttachmentsCache = new Dictionary<long, SignalAttachmentContainer>();
         private SignalConversation SignalConversation;
         public VirtualizedCollection Collection;
         private CoreWindowActivationState ActivationState = CoreWindowActivationState.Deactivated;
@@ -207,8 +205,7 @@ namespace Signal_Windows.Controls
 
         public void DisposeCurrentThread()
         {
-            OutgoingCache.Clear();
-            UnfinishedAttachmentsCache.Clear();
+            Collection?.Dispose();
         }
 
         public T FindElementByName<T>(FrameworkElement element, string sChildName) where T : FrameworkElement
@@ -236,66 +233,45 @@ namespace Signal_Windows.Controls
 
         public void UpdateMessageBox(SignalMessage updatedMessage)
         {
-            if (OutgoingCache.ContainsKey(updatedMessage.Id))
+            if (Collection != null)
             {
-                var m = OutgoingCache[updatedMessage.Id];
-                var item = (ListViewItem) ConversationItemsControl.ContainerFromIndex(Collection.GetVirtualIndex(m.Index));
-                if (item != null)
+                Message m = Collection.GetMessageByDbId(updatedMessage.Id);
+                if (m != null)
                 {
-                    var message = FindElementByName<Message>(item, "ListBoxItemContent");
-                    bool retain = message.HandleUpdate(updatedMessage);
-                    if (!retain)
-                    {
-                        OutgoingCache.Remove(m.Index);
-                    }
+                    var attachment = FindElementByName<Attachment>(m, "Attachment");
+                    m.HandleUpdate(updatedMessage);
                 }
             }
         }
 
         public void UpdateAttachment(SignalAttachment sa)
         {
-            if (UnfinishedAttachmentsCache.ContainsKey(sa.Id))
+            if (Collection != null)
             {
-                var a = UnfinishedAttachmentsCache[sa.Id];
-                var messageItem = (ListViewItem)ConversationItemsControl.ContainerFromIndex(Collection.GetVirtualIndex(a.MessageIndex));
-                if (messageItem != null)
+                Message m = Collection.GetMessageByDbId(sa.Message.Id);
+                if (m != null)
                 {
-                    var message = FindElementByName<Message>(messageItem, "ListBoxItemContent");
-                    var attachment = FindElementByName<Attachment>(message, "Attachment");
-                    bool retain = attachment.HandleUpdate(sa);
-                    if (!retain)
-                    {
-                        OutgoingCache.Remove(sa.Id);
-                    }
+                    var attachment = FindElementByName<Attachment>(m, "Attachment");
+                    attachment.HandleUpdate(sa);
                 }
             }
         }
 
-        public AppendResult Append(SignalMessageContainer sm)
+        public AppendResult Append(Message sm)
         {
             AppendResult result = null;
             bool bottom = GetBottommostIndex() == Collection.Count - 2; // -2 because we already incremented Count
-            Collection.Add(sm, sm.Message.Author == null);
+            Collection.Add(sm, sm.Model.Author == null);
             if (bottom)
             {
                 UpdateLayout();
                 ScrollToBottom();
                 if (ActivationState != CoreWindowActivationState.Deactivated)
                 {
-                    result = new AppendResult(sm.Index);
+                    result = new AppendResult(GetBottommostIndex()); //TODO correct?
                 }
             }
             return result;
-        }
-
-        public void AddToOutgoingMessagesCache(SignalMessageContainer m)
-        {
-            OutgoingCache[m.Message.Id] = m;
-        }
-
-        public void AddToUnfinishedAttachmentsCache(SignalAttachmentContainer m)
-        {
-            UnfinishedAttachmentsCache[m.Attachment.Id] = m;
         }
         
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -398,9 +374,10 @@ namespace Signal_Windows.Controls
                 if (lastSeenIndex <= rawBottomIndex && LastMarkReadRequest < rawBottomIndex)
                 {
                     LastMarkReadRequest = rawBottomIndex;
+                    var msg = ((Message)Collection[bottomIndex]).Model;
                     Task.Run(async () =>
                     {
-                        await App.Handle.SetMessageRead(rawBottomIndex, ((SignalMessageContainer)Collection[bottomIndex]).Message, SignalConversation);
+                        await App.Handle.SetMessageRead(rawBottomIndex, msg, SignalConversation);
                     });
                 }
             }
@@ -419,32 +396,6 @@ namespace Signal_Windows.Controls
                     App.Handle.SendBlockedMessage();
                 });
             }
-        }
-    }
-
-    public class MessageTemplateSelector : DataTemplateSelector
-    {
-        public DataTemplate NormalMessage { get; set; }
-        public DataTemplate UnreadMarker { get; set; }
-        public DataTemplate IdentityKeyChangeMessage { get; set; }
-
-        protected override DataTemplate SelectTemplateCore(object item, DependencyObject container)
-        {
-            FrameworkElement element = container as FrameworkElement;
-            if (item is SignalMessageContainer smc)
-            {
-                SignalMessage sm = smc.Message;
-                if (sm.Type == SignalMessageType.IdentityKeyChange)
-                {
-                    return IdentityKeyChangeMessage;
-                }
-                return NormalMessage;
-            }
-            if (item is SignalUnreadMarker)
-            {
-                return UnreadMarker;
-            }
-            return null;
         }
     }
 }
