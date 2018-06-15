@@ -147,7 +147,7 @@ namespace Signal_Windows.Controls
                 LoadPage(pageIndex);
             }
             var cacheLine = MessageStorage[pageIndex];
-            cacheLine.Add(message);
+            cacheLine.Insert(inpageIndex, message); // If the page was loaded by LoadPage before, it already contains our message
             int virtualIndex = GetVirtualIndex(inConversationIndex);
             Logger.LogTrace("Add() Index={0} VirtualIndex={1}", inConversationIndex, virtualIndex);
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, message, virtualIndex));
