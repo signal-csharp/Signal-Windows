@@ -77,16 +77,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <DataTemplate x:Key="NormalMessageTemplate" x:DataType="models:SignalMessage">
-            <local:Message x:Name="ListBoxItemContent" />
-        </DataTemplate>
-        <DataTemplate x:Key="UnreadMarkerTemplate">
-            <local:UnreadMarker />
-        </DataTemplate>
-        <DataTemplate x:Key="IdentityKeyChangeTemplate">
-            <local:IdentityKeyChangeMessage />
-        </DataTemplate>
-        <local:MessageTemplateSelector  x:Key="MessageDataTemplateSelector" NormalMessage="{StaticResource NormalMessageTemplate}" UnreadMarker="{StaticResource UnreadMarkerTemplate}" IdentityKeyChangeMessage="{StaticResource IdentityKeyChangeTemplate}" />
     </Control.Resources>
     <Grid Background="White">
         <Grid.RowDefinitions>
@@ -120,7 +110,7 @@
                 </Button>
             </Grid>
         </Border>
-        <ListView Style="{StaticResource ConversationStyle}" Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" ItemTemplateSelector="{StaticResource MessageDataTemplateSelector}" SelectionMode="None">
+        <ListView Style="{StaticResource ConversationStyle}" Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" SelectionMode="None">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />

@@ -24,11 +24,11 @@ namespace Signal_Windows.Controls
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public SignalMessageContainer Model
+        public SignalMessage Model
         {
             get
             {
-                return DataContext as SignalMessageContainer;
+                return DataContext as SignalMessage;
             }
             set
             {
@@ -61,7 +61,7 @@ namespace Signal_Windows.Controls
             if (Model != null)
             {
                 UpdateMessageTextBlock();
-                if (Model.Message.Author == null)
+                if (Model.Author == null)
                 {
                     MessageAuthor.Visibility = Visibility.Collapsed;
                     MessageBoxBorder.Background = Utils.BackgroundOutgoing;
@@ -69,19 +69,19 @@ namespace Signal_Windows.Controls
                     FancyTimestampBlock.Foreground = Utils.GetSolidColorBrush(127, "#454545");
                     HorizontalAlignment = HorizontalAlignment.Right;
                     FooterPanel.HorizontalAlignment = HorizontalAlignment.Right;
-                    if (Model.Message.Status == SignalMessageStatus.Pending)
+                    if (Model.Status == SignalMessageStatus.Pending)
                     {
                         CheckImage.Visibility = Visibility.Collapsed;
                         DoubleCheckImage.Visibility = Visibility.Collapsed;
                         ResendTextBlock.Visibility = Visibility.Collapsed;
                     }
-                    else if (Model.Message.Status == SignalMessageStatus.Confirmed)
+                    else if (Model.Status == SignalMessageStatus.Confirmed)
                     {
                         CheckImage.Visibility = Visibility.Visible;
                         DoubleCheckImage.Visibility = Visibility.Collapsed;
                         ResendTextBlock.Visibility = Visibility.Collapsed;
                     }
-                    else if (Model.Message.Status == SignalMessageStatus.Received)
+                    else if (Model.Status == SignalMessageStatus.Received)
                     {
                         CheckImage.Visibility = Visibility.Collapsed;
                         DoubleCheckImage.Visibility = Visibility.Visible;
@@ -99,36 +99,36 @@ namespace Signal_Windows.Controls
                     CheckImage.Visibility = Visibility.Collapsed;
                     DoubleCheckImage.Visibility = Visibility.Collapsed;
                     ResendTextBlock.Visibility = Visibility.Collapsed;
-                    if (Model.Message.ThreadId.EndsWith("="))
+                    if (Model.ThreadId.EndsWith("="))
                     {
                         MessageAuthor.Visibility = Visibility.Visible;
-                        MessageAuthor.Text = Model.Message.Author.ThreadDisplayName;
+                        MessageAuthor.Text = Model.Author.ThreadDisplayName;
                     }
                     else
                     {
                         MessageAuthor.Visibility = Visibility.Collapsed;
                     }
-                    MessageBoxBorder.Background = Model.Message.Author.Color != null ? Utils.GetBrushFromColor(Model.Message.Author.Color) : Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.Message.Author.ThreadDisplayName));
+                    MessageBoxBorder.Background = Model.Author.Color != null ? Utils.GetBrushFromColor(Model.Author.Color) : Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Model.Author.ThreadDisplayName));
                     MessageAuthor.Foreground = Utils.GetSolidColorBrush(204, "#ffffff");
                     MessageContentTextBlock.Foreground = Utils.ForegroundIncoming;
                     FancyTimestampBlock.Foreground = Utils.GetSolidColorBrush(127, "#ffffff");
                     HorizontalAlignment = HorizontalAlignment.Left;
                     FooterPanel.HorizontalAlignment = HorizontalAlignment.Left;
                 }
-                FancyTimestampBlock.Text = Utils.GetTimestamp(Model.Message.ComposedTimestamp);
+                FancyTimestampBlock.Text = Utils.GetTimestamp(Model.ComposedTimestamp);
 
                 HasAttachment = false;
-                if (Model.Message.Attachments?.Count > 0)
+                if (Model.Attachments?.Count > 0)
                 {
                     HasAttachment = true;
-                    Attachment = Model.Message.Attachments[0];
+                    Attachment = Model.Attachments[0];
                 }
             }
         }
 
         private void UpdateMessageTextBlock()
         {
-            string messageText = Model.Message.Content.Content;
+            string messageText = Model.Content.Content;
             var matches = urlRegex.Matches(messageText);
             if (matches.Count == 0)
             {
@@ -195,12 +195,12 @@ namespace Signal_Windows.Controls
 
         private void ResendTextBlock_Tapped(object sender, Windows.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            App.Handle.ResendMessage(Model.Message);
+            App.Handle.ResendMessage(Model);
         }
 
         internal bool HandleUpdate(SignalMessage updatedMessage)
         {
-            Model.Message.Status = updatedMessage.Status;
+            Model.Status = updatedMessage.Status;
             UpdateUI();
             return updatedMessage.Status != SignalMessageStatus.Received;
         }

@@ -832,7 +832,7 @@ namespace Signal_Windows.Storage
             return conversation;
         }
 
-        public static List<SignalMessageContainer> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
+        public static IEnumerable<SignalMessage> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
         {
             Logger.LogTrace("GetMessagesLocked() skip {0} take {1}", startIndex, count);
             lock (DBLock)
@@ -846,15 +846,10 @@ namespace Signal_Windows.Storage
                         .Include(m => m.Attachments)
                         .OrderBy(m => m.Id)
                         .Skip(startIndex)
-                        .Take(count);
-
-                    var containers = new List<SignalMessageContainer>(count);
-                    foreach (var message in messages)
-                    {
-                        containers.Add(new SignalMessageContainer(message, startIndex));
-                        startIndex++;
-                    }
-                    return containers;
+                        .AsNoTracking()
+                        .Take(count)
+                        .ToList();
+                    return messages;
                 }
             }
         }

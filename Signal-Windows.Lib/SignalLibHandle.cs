@@ -60,7 +60,7 @@ namespace Signal_Windows.Lib
         Task SendBlockedMessage();
         Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
-        List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count);
+        IEnumerable<SignalMessage> GetMessages(SignalConversation thread, int startIndex, int count);
         Task SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
         void PurgeAccountData();
         Task<bool> Acquire(CoreDispatcher d, ISignalFrontend w);
@@ -402,7 +402,7 @@ namespace Signal_Windows.Lib
             OutgoingQueue.Add(message);
         }
 
-        public List<SignalMessageContainer> GetMessages(SignalConversation thread, int startIndex, int count)
+        public IEnumerable<SignalMessage> GetMessages(SignalConversation thread, int startIndex, int count)
         {
             return SignalDBContext.GetMessagesLocked(thread, startIndex, count);
         }

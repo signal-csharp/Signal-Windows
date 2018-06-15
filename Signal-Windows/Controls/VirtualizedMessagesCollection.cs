@@ -26,7 +26,8 @@ namespace Signal_Windows.Controls
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<VirtualizedCollection>();
         private const int PAGE_SIZE = 50;
         public event NotifyCollectionChangedEventHandler CollectionChanged;
-        private Dictionary<int, IList<SignalMessageContainer>> Cache = new Dictionary<int, IList<SignalMessageContainer>>();
+        private Dictionary<int, IList<Message>> MessageStorage = new Dictionary<int, IList<Message>>();
+        private Dictionary<long, Message> DbIdToMessageMap = new Dictionary<long, Message>();
         public SignalConversation Conversation;
         Conversation ConversationView;
         private SignalUnreadMarker UnreadMarker = new SignalUnreadMarker();
@@ -45,6 +46,12 @@ namespace Signal_Windows.Controls
             {
                 UnreadMarkerIndex = -1;
             }
+        }
+
+        public Message GetMessageByDbId(long dbid)
+        {
+            DbIdToMessageMap.TryGetValue(dbid, out Message m);
+            return m;
         }
 
         private static int GetPageIndex(int itemIndex)
@@ -80,16 +87,16 @@ namespace Signal_Windows.Controls
             set => throw new NotImplementedException();
         }
 
-        private SignalMessageContainer Get(int index)
+        private Message Get(int index)
         {
             int inpageIndex = index % PAGE_SIZE;
             int pageIndex = GetPageIndex(index);
-            if (!Cache.ContainsKey(pageIndex))
+            if (!MessageStorage.ContainsKey(pageIndex))
             {
                 Logger.LogTrace("Get() cache miss ({0})", pageIndex);
                 LoadPage(pageIndex);
             }
-            var page = Cache[pageIndex];
+            var page = MessageStorage[pageIndex];
             var item = page[inpageIndex];
             return page[inpageIndex];
         }
@@ -132,46 +139,39 @@ namespace Signal_Windows.Controls
                 UnreadMarkerIndex = -1;
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, UnreadMarker, old));
             }
-            var message = value as SignalMessageContainer;
-            int inpageIndex = message.Index % PAGE_SIZE;
-            int pageIndex = GetPageIndex(message.Index);
-            Logger.LogTrace("Add() Id={0} Index={1} PageIndex={2} InpageIndex={3}", message.Message.Id, message.Index, pageIndex, inpageIndex);
-            if (!Cache.ContainsKey(pageIndex))
+            var message = value as Message;
+            var inConversationIndex = (int)Conversation.MessagesCount - 1;
+            int inpageIndex = inConversationIndex % PAGE_SIZE;
+            int pageIndex = GetPageIndex(inConversationIndex);
+            Logger.LogTrace("Add() Id={0} InConversationIndex={1} PageIndex={2} InpageIndex={3}", message.Model.Id, inConversationIndex, pageIndex, inpageIndex);
+            if (!MessageStorage.ContainsKey(pageIndex))
             {
                 LoadPage(pageIndex);
             }
-            Cache[pageIndex].Insert(inpageIndex, message);
-            int virtualIndex = GetVirtualIndex(message.Index);
-            Logger.LogTrace("Add() Index={0} VirtualIndex={1}", message.Index, virtualIndex);
+            var cacheLine = MessageStorage[pageIndex];
+            cacheLine.Add(message);
+            int virtualIndex = GetVirtualIndex(inConversationIndex);
+            Logger.LogTrace("Add() Index={0} VirtualIndex={1}", inConversationIndex, virtualIndex);
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, message, virtualIndex));
-            FillUpdateCaches(message);
-            return message.Index;
+            AddMessageToMap(message);
+            return inConversationIndex;
         }
 
         private void LoadPage(int pageIndex)
         {
-            Cache[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE);
-            foreach (var msg in Cache[pageIndex])
+            MessageStorage[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE)
+                .Select(m => new Message() {
+                    Model = m
+                }).ToList();
+            foreach (var msg in MessageStorage[pageIndex])
             {
-                FillUpdateCaches(msg);
+                AddMessageToMap(msg);
             }
         }
 
-        private void FillUpdateCaches(SignalMessageContainer msg)
+        private void AddMessageToMap(Message msg)
         {
-            if (msg.Message.Author == null)
-            {
-                ConversationView.AddToOutgoingMessagesCache(msg);
-            }
-            int attachmentIndex = 0;
-            foreach (var attachment in msg.Message.Attachments)
-            {
-                if (attachment.Status != SignalAttachmentStatus.Finished && attachment.Status != SignalAttachmentStatus.Failed_Permanently)
-                {
-                    ConversationView.AddToUnfinishedAttachmentsCache(new SignalAttachmentContainer(attachment, attachmentIndex, msg.Index));
-                }
-                attachmentIndex++;
-            }
+            DbIdToMessageMap[msg.Model.Id] = msg;
         }
 
         public void Clear()
@@ -196,18 +196,19 @@ namespace Signal_Windows.Controls
 
         public int IndexOf(object value)
         {
-            if (value is SignalMessageContainer smc)
-            {
-                return GetVirtualIndex(smc.Index);
-            }
-            else if (value is SignalUnreadMarker)
-            {
+            if (value == UnreadMarker)
                 return UnreadMarkerIndex;
-            }
-            else
+            else if (value == this[Count-1])
             {
-                return -1;
+                return Count - 1;
             }
+            throw new InvalidOperationException();
+        }
+
+        internal void Dispose()
+        {
+            MessageStorage.Clear();
+            DbIdToMessageMap.Clear();
         }
 
         internal int GetVirtualIndex(int rawIndex)
