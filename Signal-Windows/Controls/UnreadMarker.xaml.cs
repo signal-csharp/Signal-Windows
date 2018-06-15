@@ -23,23 +23,6 @@ namespace Signal_Windows.Controls
         public UnreadMarker()
         {
             this.InitializeComponent();
-            DataContextChanged += UnreadMarker_DataContextChanged;
-        }
-
-        public SignalUnreadMarker Model
-        {
-            get
-            {
-                return this.DataContext as SignalUnreadMarker;
-            }
-        }
-
-        private void UnreadMarker_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
-        {
-            if (Model != null)
-            {
-                UnreadText.Text = Model.Text;
-            }
         }
 
         public void SetText(string text)
