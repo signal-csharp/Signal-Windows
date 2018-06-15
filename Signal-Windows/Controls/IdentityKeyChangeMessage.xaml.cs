@@ -19,18 +19,20 @@ using Windows.UI.Xaml.Navigation;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class IdentityKeyChangeMessage : UserControl
+    public sealed partial class IdentityKeyChangeMessage : UserControl, IMessageView
     {
-        public IdentityKeyChangeMessage()
+        public IdentityKeyChangeMessage(SignalMessage model)
         {
             this.InitializeComponent();
-            DataContextChanged += IdentityKeyChangeMessage_DataContextChanged;
+            this.DataContextChanged += IdentityKeyChangeMessage_DataContextChanged;
+            Model = model;
         }
-        public Message Model
+
+        public SignalMessage Model
         {
             get
             {
-                return this.DataContext as Message;
+                return this.DataContext as SignalMessage;
             }
             set
             {
@@ -38,16 +40,26 @@ namespace Signal_Windows.Controls
             }
         }
 
+        public void HandleUpdate(SignalMessage m)
+        {
+            throw new NotImplementedException();
+        }
+
         private void IdentityKeyChangeMessage_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             if (Model != null)
             {
-                MessageTextBlock.Text = Model.Model.Content.Content;
+                MessageTextBlock.Text = Model.Content.Content;
             }
             else
             {
                 MessageTextBlock.Text = "null";
             }
+        }
+
+        public FrameworkElement AsFrameworkElement()
+        {
+            return this;
         }
     }
 }

@@ -15,7 +15,7 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows.Controls
 {
-    public sealed partial class Message : UserControl, INotifyPropertyChanged
+    public sealed partial class Message : UserControl, IMessageView, INotifyPropertyChanged
     {
         // This is taken from https://gist.github.com/gruber/8891611
         // This is public domain: https://daringfireball.net/2010/07/improved_regex_for_matching_urls
@@ -50,10 +50,11 @@ namespace Signal_Windows.Controls
             set { attachment = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Attachment))); }
         }
 
-        public Message()
+        public Message(SignalMessage model)
         {
             this.InitializeComponent();
             this.DataContextChanged += MessageBox_DataContextChanged;
+            Model = model;
         }
 
         private void UpdateUI()
@@ -198,11 +199,15 @@ namespace Signal_Windows.Controls
             App.Handle.ResendMessage(Model);
         }
 
-        internal bool HandleUpdate(SignalMessage updatedMessage)
+        public void HandleUpdate(SignalMessage m)
         {
-            Model.Status = updatedMessage.Status;
+            Model.Status = m.Status;
             UpdateUI();
-            return updatedMessage.Status != SignalMessageStatus.Received;
+        }
+
+        public FrameworkElement AsFrameworkElement()
+        {
+            return this;
         }
     }
 }

@@ -25,6 +25,13 @@ using Windows.UI.Xaml.Media;
 
 namespace Signal_Windows.Controls
 {
+    public interface IMessageView
+    {
+        SignalMessage Model { get; set; }
+        void HandleUpdate(SignalMessage m);
+        FrameworkElement AsFrameworkElement();
+    }
+
     public sealed partial class Conversation : UserControl, INotifyPropertyChanged
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<Conversation>();
@@ -196,7 +203,7 @@ namespace Signal_Windows.Controls
              */
             ConversationItemsControl.ItemsSource = new List<object>();
             UpdateLayout();
-            Collection =  new VirtualizedCollection(conversation, this);
+            Collection =  new VirtualizedCollection(conversation);
             ConversationItemsControl.ItemsSource = Collection;
             UpdateLayout();
             InputTextBox.IsEnabled = conversation.CanReceive;
@@ -235,10 +242,10 @@ namespace Signal_Windows.Controls
         {
             if (Collection != null)
             {
-                Message m = Collection.GetMessageByDbId(updatedMessage.Id);
+                IMessageView m = Collection.GetMessageByDbId(updatedMessage.Id);
                 if (m != null)
                 {
-                    var attachment = FindElementByName<Attachment>(m, "Attachment");
+                    var attachment = FindElementByName<Attachment>(m.AsFrameworkElement(), "Attachment");
                     m.HandleUpdate(updatedMessage);
                 }
             }
@@ -248,10 +255,10 @@ namespace Signal_Windows.Controls
         {
             if (Collection != null)
             {
-                Message m = Collection.GetMessageByDbId(sa.Message.Id);
+                IMessageView m = Collection.GetMessageByDbId(sa.Message.Id);
                 if (m != null)
                 {
-                    var attachment = FindElementByName<Attachment>(m, "Attachment");
+                    var attachment = FindElementByName<Attachment>(m.AsFrameworkElement(), "Attachment");
                     attachment.HandleUpdate(sa);
                 }
             }

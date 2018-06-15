@@ -26,17 +26,15 @@ namespace Signal_Windows.Controls
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<VirtualizedCollection>();
         private const int PAGE_SIZE = 50;
         public event NotifyCollectionChangedEventHandler CollectionChanged;
-        private Dictionary<int, IList<Message>> MessageStorage = new Dictionary<int, IList<Message>>();
-        private Dictionary<long, Message> DbIdToMessageMap = new Dictionary<long, Message>();
+        private Dictionary<int, IList<IMessageView>> MessageStorage = new Dictionary<int, IList<IMessageView>>();
+        private Dictionary<long, IMessageView> DbIdToMessageMap = new Dictionary<long, IMessageView>();
         public SignalConversation Conversation;
-        Conversation ConversationView;
         private UnreadMarker UnreadMarker = new UnreadMarker();
         public int UnreadMarkerIndex = -1;
 
-        public VirtualizedCollection(SignalConversation c, Conversation conversationView)
+        public VirtualizedCollection(SignalConversation c)
         {
             Conversation = c;
-            ConversationView = conversationView;
             if (Conversation.LastSeenMessageIndex > 0 && Conversation.LastSeenMessageIndex < Conversation.MessagesCount )
             {
                 UnreadMarkerIndex = (int) Conversation.LastSeenMessageIndex;
@@ -48,9 +46,9 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public Message GetMessageByDbId(long dbid)
+        public IMessageView GetMessageByDbId(long dbid)
         {
-            DbIdToMessageMap.TryGetValue(dbid, out Message m);
+            DbIdToMessageMap.TryGetValue(dbid, out IMessageView m);
             return m;
         }
 
@@ -87,7 +85,7 @@ namespace Signal_Windows.Controls
             set => throw new NotImplementedException();
         }
 
-        private Message Get(int index)
+        private IMessageView Get(int index)
         {
             int inpageIndex = index % PAGE_SIZE;
             int pageIndex = GetPageIndex(index);
@@ -139,7 +137,7 @@ namespace Signal_Windows.Controls
                 UnreadMarkerIndex = -1;
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, UnreadMarker, old));
             }
-            var message = value as Message;
+            var message = value as IMessageView;
             var inConversationIndex = (int)Conversation.MessagesCount - 1;
             int inpageIndex = inConversationIndex % PAGE_SIZE;
             int pageIndex = GetPageIndex(inConversationIndex);
@@ -160,8 +158,11 @@ namespace Signal_Windows.Controls
         private void LoadPage(int pageIndex)
         {
             MessageStorage[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE)
-                .Select(m => new Message() {
-                    Model = m
+                .Select(m =>
+                {
+                    if (m.Type == SignalMessageType.IdentityKeyChange)
+                        return new IdentityKeyChangeMessage(m) as IMessageView;
+                    return new Message(m) as IMessageView;
                 }).ToList();
             foreach (var msg in MessageStorage[pageIndex])
             {
@@ -169,7 +170,7 @@ namespace Signal_Windows.Controls
             }
         }
 
-        private void AddMessageToMap(Message msg)
+        private void AddMessageToMap(IMessageView msg)
         {
             DbIdToMessageMap[msg.Model.Id] = msg;
         }
