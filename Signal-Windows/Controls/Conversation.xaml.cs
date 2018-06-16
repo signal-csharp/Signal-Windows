@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Storage;
+using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
@@ -29,7 +30,6 @@ namespace Signal_Windows.Controls
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<Conversation>();
         public event PropertyChangedEventHandler PropertyChanged;
-        private bool SendingMessage = false;
         private Dictionary<long, SignalMessageContainer> OutgoingCache = new Dictionary<long, SignalMessageContainer>();
         private Dictionary<long, SignalAttachmentContainer> UnfinishedAttachmentsCache = new Dictionary<long, SignalAttachmentContainer>();
         private SignalConversation SignalConversation;
@@ -298,20 +298,19 @@ namespace Signal_Windows.Controls
             UnfinishedAttachmentsCache[m.Attachment.Id] = m;
         }
         
-        private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        private async void TextBox_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
+            if (e.Key == VirtualKey.Enter)
             {
-                // this fixes double send by enter repeat
-                if (!SendingMessage)
+                bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
+                if (!shift)
                 {
-                    SendingMessage = true;
-                    bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+                    e.Handled = true;
+                    bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
                     if (sendMessageResult)
                     {
                         InputTextBox.Text = string.Empty;
                     }
-                    SendingMessage = false;
                 }
             }
         }
@@ -328,7 +327,7 @@ namespace Signal_Windows.Controls
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
             InputTextBox.Focus(FocusState.Programmatic);
-            bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+            bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
             if (sendMessageResult)
             {
                 InputTextBox.Text = string.Empty;
@@ -373,9 +372,9 @@ namespace Signal_Windows.Controls
 
         private void ConversationSettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (SignalConversation is SignalContact)
+            if (SignalConversation is SignalContact contact)
             {
-                App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.ConversationSettingsPageInstance.Contact = (SignalContact)SignalConversation;
+                App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.ConversationSettingsPageInstance.Contact = contact;
                 GetMainPageVm().View.Frame.Navigate(typeof(ConversationSettingsPage));
             }
         }

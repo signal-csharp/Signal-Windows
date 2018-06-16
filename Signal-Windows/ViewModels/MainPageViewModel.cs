@@ -88,13 +88,14 @@ namespace Signal_Windows.ViewModels
             set { _ThreadListAlignRight = value; RaisePropertyChanged(nameof(ThreadListAlignRight)); }
         }
 
-        private async Task<bool> SendMessage(string messageText)
+        internal async Task<bool> SendMessage(string messageText)
         {
             try
             {
                 if (!string.IsNullOrEmpty(messageText))
                 {
                     var now = Util.CurrentTimeMillis();
+                    messageText = messageText.Replace("\r", "\r\n");
                     SignalMessage message = new SignalMessage()
                     {
                         Author = null,
@@ -142,11 +143,6 @@ namespace Signal_Windows.ViewModels
                     break;
                 }
             }
-        }
-
-        internal async Task<bool> SendMessageButton_Click(string text)
-        {
-            return await SendMessage(text.Replace("\r", "\r\n"));
         }
 
         internal void Deselect()
