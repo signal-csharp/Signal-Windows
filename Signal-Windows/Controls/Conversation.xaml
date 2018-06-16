@@ -126,7 +126,7 @@
             <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" Background="{x:Bind SendButtonBackground}" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50" Visibility="{x:Bind SendMessageVisible, Mode=OneWay}">
                 <SymbolIcon Symbol="Send"/>
             </Button>
-            <Button x:Name="UnblockButton" Content="Unblock" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan="2" Height="50" Visibility="{x:Bind Blocked, Mode=OneWay}" Click="UnblockButton_Click"/>
+            <Button x:Name="UnblockButton" Content="Unblock" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan="2" Height="50" Visibility="{x:Bind Blocked, Mode=OneWay}" Click="UnblockButton_Click" AllowFocusOnInteraction="False"/>
         </Grid>
     </Grid>
 </UserControl>

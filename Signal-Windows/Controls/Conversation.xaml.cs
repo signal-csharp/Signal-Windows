@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Storage;
+using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
@@ -36,7 +37,6 @@ namespace Signal_Windows.Controls
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<Conversation>();
         public event PropertyChangedEventHandler PropertyChanged;
-        private bool SendingMessage = false;
         private SignalConversation SignalConversation;
         public VirtualizedCollection Collection;
         private CoreWindowActivationState ActivationState = CoreWindowActivationState.Deactivated;
@@ -283,18 +283,23 @@ namespace Signal_Windows.Controls
         
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
+            if (e.Key == VirtualKey.Enter)
             {
-                // this fixes double send by enter repeat
-                if (!SendingMessage)
+                e.Handled = true; // Prevent KeyDown from firing twice on W10 CU
+                bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
+                if (shift)
                 {
-                    SendingMessage = true;
-                    bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+                    InputTextBox.Text += "\r";
+                    InputTextBox.SelectionStart = InputTextBox.Text.Length;
+                    InputTextBox.SelectionLength = 0;
+                }
+                else
+                {
+                    bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
                     if (sendMessageResult)
                     {
                         InputTextBox.Text = string.Empty;
                     }
-                    SendingMessage = false;
                 }
             }
         }
@@ -310,8 +315,7 @@ namespace Signal_Windows.Controls
 
         private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
-            InputTextBox.Focus(FocusState.Programmatic);
-            bool sendMessageResult = await GetMainPageVm().SendMessageButton_Click(InputTextBox.Text);
+            bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
             if (sendMessageResult)
             {
                 InputTextBox.Text = string.Empty;
