@@ -22,7 +22,7 @@ namespace Signal_Windows.Lib
     class SignalWebSocket : ISignalWebSocket
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalWebSocket>();
-        private readonly MessageWebSocket WebSocket;
+        private MessageWebSocket WebSocket;
         private readonly SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
         private readonly Uri SignalWSUri;
         private readonly CancellationToken Token;
@@ -31,11 +31,16 @@ namespace Signal_Windows.Lib
 
         public SignalWebSocket(CancellationToken token, Uri uri)
         {
+            CreateMessageWebSocket();
+            Token = token;
+            SignalWSUri = uri;
+        }
+
+        private void CreateMessageWebSocket()
+        {
             WebSocket = new MessageWebSocket();
             WebSocket.MessageReceived += WebSocket_MessageReceived;
             WebSocket.Closed += WebSocket_Closed;
-            Token = token;
-            SignalWSUri = uri;
         }
 
         private void WebSocket_Closed(IWebSocket sender, WebSocketClosedEventArgs args)
@@ -79,6 +84,7 @@ namespace Signal_Windows.Lib
                 {
                     try
                     {
+                        CreateMessageWebSocket();
                         await WebSocket.ConnectAsync(SignalWSUri).AsTask(Token);
                         SemaphoreSlim.Release();
                         break;
