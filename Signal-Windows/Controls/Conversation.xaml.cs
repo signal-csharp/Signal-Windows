@@ -324,6 +324,31 @@ namespace Signal_Windows.Controls
             SendButtonEnabled = t.Text != string.Empty;
         }
 
+        private static ScrollViewer GetScrollViewer(DependencyObject element)
+        {
+            if (element is ScrollViewer)
+            {
+                return (ScrollViewer)element;
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                var child = VisualTreeHelper.GetChild(element, i);
+
+                var result = GetScrollViewer(child);
+                if (result == null)
+                {
+                    continue;
+                }
+                else
+                {
+                    return result;
+                }
+            }
+
+            return null;
+        }
+
         private void ScrollToUnread()
         {
             if (Collection.Count > 0)
@@ -402,6 +427,19 @@ namespace Signal_Windows.Controls
                 {
                     App.Handle.SendBlockedMessage();
                 });
+            }
+        }
+
+        private void ConversationItemsControl_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            var scrollbar = GetScrollViewer(this);
+            if (scrollbar != null)
+            {
+                var verticalDelta = e.PreviousSize.Height - e.NewSize.Height;
+                if (verticalDelta > 0)
+                {
+                    scrollbar.ChangeView(null, scrollbar.VerticalOffset + verticalDelta, null);
+                }
             }
         }
     }

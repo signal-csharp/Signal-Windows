@@ -110,7 +110,7 @@
                 </Button>
             </Grid>
         </Border>
-        <ListView Style="{StaticResource ConversationStyle}" Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" SelectionMode="None">
+        <ListView Style="{StaticResource ConversationStyle}" Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" SelectionMode="None" SizeChanged="ConversationItemsControl_SizeChanged">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
