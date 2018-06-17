@@ -1177,7 +1177,7 @@ namespace Signal_Windows.Storage
             return dbgroup;
         }
 
-        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, bool canReceive, uint expiresInSeconds, long timestamp)
+        public static SignalGroup InsertOrUpdateGroupLocked(string groupId, string displayname, string avatarfile, bool canReceive, long timestamp)
         {
             SignalGroup dbgroup;
             lock (DBLock)
@@ -1199,7 +1199,7 @@ namespace Signal_Windows.Storage
                             AvatarFile = avatarfile,
                             UnreadCount = 0,
                             CanReceive = canReceive,
-                            ExpiresInSeconds = expiresInSeconds,
+                            ExpiresInSeconds = 0,
                             GroupMemberships = new List<GroupMembership>()
                         };
                         ctx.Add(dbgroup);
@@ -1209,7 +1209,6 @@ namespace Signal_Windows.Storage
                         dbgroup.ThreadDisplayName = displayname;
                         dbgroup.LastActiveTimestamp = timestamp;
                         dbgroup.AvatarFile = avatarfile;
-                        dbgroup.ExpiresInSeconds = expiresInSeconds;
                         dbgroup.CanReceive = true;
                     }
                     ctx.SaveChanges();
