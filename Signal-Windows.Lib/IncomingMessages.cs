@@ -221,8 +221,8 @@ namespace Signal_Windows.Lib
                             };
                             groupsList.Add((group, g.Members));
                         }
-                        List<SignalConversation> newConversations = await SignalDBContext.InsertOrUpdateGroups(groupsList);
-                        await SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
+                        List<SignalConversation> dbGroups = await SignalDBContext.InsertOrUpdateGroups(groupsList);
+                        await SignalLibHandle.Instance.DispatchAddOrUpdateConversations(dbGroups);
                     }
                 }
                 else if (content.SynchronizeMessage.Contacts != null && content.SynchronizeMessage.Contacts.Complete) //TODO incomplete updates
@@ -257,8 +257,8 @@ namespace Signal_Windows.Lib
                             };
                             contactsList.Add(contact);
                         }
-                        var newConversations = SignalDBContext.InsertOrUpdateContacts(contactsList);
-                        await SignalLibHandle.Instance.DispatchAddOrUpdateConversations(newConversations);
+                        var dbContacts = SignalDBContext.InsertOrUpdateContacts(contactsList);
+                        await SignalLibHandle.Instance.DispatchAddOrUpdateConversations(dbContacts);
                     }
                 }
             }

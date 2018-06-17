@@ -545,7 +545,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        internal async Task DispatchAddOrUpdateConversations(List<SignalConversation> newConversations)
+        internal async Task DispatchAddOrUpdateConversations(IList<SignalConversation> newConversations)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)

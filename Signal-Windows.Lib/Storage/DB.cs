@@ -1124,15 +1124,16 @@ namespace Signal_Windows.Storage
                                 dbGroup = group;
                                 ctx.Groups.Add(dbGroup);
                             }
+                            refreshedGroups.Add(dbGroup);
                             foreach (var member in members)
                             {
-                                (var contact, var notify) = GetOrCreateContact(ctx, member, 0);
+                                (var contact, var createdNew) = GetOrCreateContact(ctx, member, 0);
                                 dbGroup.GroupMemberships.Add(new GroupMembership()
                                 {
                                     Contact = contact,
                                     Group = dbGroup
                                 });
-                                if (notify)
+                                if (createdNew)
                                 {
                                     newContacts.Add(contact);
                                 }
@@ -1153,7 +1154,7 @@ namespace Signal_Windows.Storage
             return refreshedGroups;
         }
 
-        internal static List<SignalConversation> InsertOrUpdateContacts(IList<SignalContact> contacts)
+        internal static IList<SignalConversation> InsertOrUpdateContacts(IList<SignalContact> contacts)
         {
             List<SignalConversation> refreshedContacts = new List<SignalConversation>();
             lock (DBLock)
@@ -1351,24 +1352,25 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static async Task<SignalContact> GetOrCreateContactLocked(string username, long timestamp, bool notify = true)
+        public static async Task<SignalContact> GetOrCreateContactLocked(string username, long timestamp)
         {
             SignalContact contact;
+            bool createdNew;
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    (contact, notify) = GetOrCreateContact(ctx, username, timestamp, notify);
+                    (contact, createdNew) = GetOrCreateContact(ctx, username, timestamp);
                 }
             }
-            if (notify)
+            if (createdNew)
             {
                 await SignalLibHandle.Instance.DispatchAddOrUpdateConversation(contact, null);
             }
             return contact;
         }
 
-        private static (SignalContact contact, bool notify) GetOrCreateContact(SignalDBContext ctx, string username, long timestamp, bool notify = true)
+        private static (SignalContact contact, bool createdNew) GetOrCreateContact(SignalDBContext ctx, string username, long timestamp)
         {
             bool createdNew = false;
             SignalContact contact = contact = ctx.Contacts
@@ -1382,13 +1384,13 @@ namespace Signal_Windows.Storage
                     ThreadDisplayName = username,
                     CanReceive = true,
                     LastActiveTimestamp = timestamp,
-                    Color = null //Utils.CalculateDefaultColor(username)
+                    Color = null
                 };
                 ctx.Contacts.Add(contact);
                 ctx.SaveChanges();
                 createdNew = true;
             }
-            return (contact, createdNew && notify);
+            return (contact, createdNew);
         }
 
         public static void InsertOrUpdateConversationLocked(SignalConversation conversation)
