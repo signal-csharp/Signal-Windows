@@ -385,7 +385,7 @@ namespace Signal_Windows.Controls
                 if (lastSeenIndex <= rawBottomIndex && LastMarkReadRequest < rawBottomIndex)
                 {
                     LastMarkReadRequest = rawBottomIndex;
-                    var msg = ((Message)Collection[bottomIndex]).Model;
+                    var msg = ((IMessageView)Collection[bottomIndex]).Model;
                     Task.Run(async () =>
                     {
                         await App.Handle.SetMessageRead(rawBottomIndex, msg, SignalConversation);
