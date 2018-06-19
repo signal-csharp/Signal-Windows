@@ -621,7 +621,7 @@ namespace Signal_Windows.Lib
                 Direction = type,
                 Status = status,
                 Author = author,
-                Content = new SignalMessageContent() { Content = body },
+                Content = new SignalMessageContent() { Content = body.Truncate(2000) },
                 ThreadId = conversation.ThreadId,
                 DeviceId = (uint)envelope.GetSourceDevice(),
                 Receipts = 0,

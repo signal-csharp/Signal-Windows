@@ -115,4 +115,13 @@ namespace Signal_Windows.Lib
             return File.Open(ApplicationData.Current.LocalCacheFolder.Path + Path.AltDirectorySeparatorChar + name, FileMode.Create, FileAccess.ReadWrite);
         }
     }
+
+    public static class StringExt
+    {
+        public static string Truncate(this string value, int maxLength) // thanks to https://stackoverflow.com/a/2776689/1569755
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            return value.Length <= maxLength ? value : value.Substring(0, maxLength);
+        }
+    }
 }
