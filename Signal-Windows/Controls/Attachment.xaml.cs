@@ -65,7 +65,7 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                if (Model.Status == SignalAttachmentStatus.Finished)
+                if (Model.Status == SignalAttachmentStatus.Finished || Model.Message.Direction == SignalMessageDirection.Outgoing)
                 {
                     AttachmentImage.Visibility = Visibility.Visible;
                     AttachmentDownloadIcon.Visibility = Visibility.Collapsed;

@@ -1,0 +1,22 @@
+﻿<UserControl
+    x:Class="Signal_Windows.Controls.AddedAttachment"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Signal_Windows.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="60"
+    d:DesignWidth="150">
+
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="1 1 1 1" BorderBrush="Gray" Margin="2 2 2 2">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0" x:Name="AddedAttachmentFilename" Text="Test.txt" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10 0 10 0"/>
+        <Button Grid.Column="1" x:Name="CancelAttachmentButton" Click="CancelAttachmentButton_Click">
+            <SymbolIcon Symbol="Cancel" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+        </Button>
+    </Grid>
+</UserControl>

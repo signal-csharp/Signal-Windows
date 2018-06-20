@@ -12,10 +12,12 @@ using Signal_Windows.Storage;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Storage;
 
 namespace Signal_Windows.Lib
 {
@@ -68,11 +70,29 @@ namespace Signal_Windows.Lib
                 try
                 {
                     outgoingSignalMessage = Handle.OutgoingQueue.Take(Token);
+                    List<SignalServiceAttachment> outgoingAttachmentsList = null;
+                    if (outgoingSignalMessage.Attachments != null && outgoingSignalMessage.Attachments.Count > 0)
+                    {
+                        outgoingAttachmentsList = new List<SignalServiceAttachment>();
+                        foreach (var attachment in outgoingSignalMessage.Attachments)
+                        {
+                            var file = await ApplicationData.Current.LocalCacheFolder.GetFileAsync(@"Attachments\" + attachment.Id + ".plain");
+                            var stream = await file.OpenStreamForReadAsync();
+                            outgoingAttachmentsList.Add(SignalServiceAttachment.NewStreamBuilder()
+                                .WithContentType(attachment.ContentType)
+                                .WithStream(stream)
+                                .WithLength(stream.Length)
+                                .WithFileName(attachment.SentFileName)
+                                .Build());
+                        }
+                    }
+
                     SignalServiceDataMessage message = new SignalServiceDataMessage()
                     {
                         Body = outgoingSignalMessage.Content.Content,
                         Timestamp = outgoingSignalMessage.ComposedTimestamp,
-                        ExpiresInSeconds = (int)outgoingSignalMessage.ExpiresAt
+                        ExpiresInSeconds = (int)outgoingSignalMessage.ExpiresAt,
+                        Attachments = outgoingAttachmentsList
                     };
 
                     if (!outgoingSignalMessage.ThreadId.EndsWith("="))

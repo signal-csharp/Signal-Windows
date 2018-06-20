@@ -78,7 +78,7 @@
             </Setter>
         </Style>
     </Control.Resources>
-    <Grid Background="White">
+    <Grid Background="White" KeyDown="Grid_KeyDown" AllowDrop="True" DragOver="Grid_DragOver" Drop="Grid_Drop">
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />
             <RowDefinition Height="*" />
@@ -110,23 +110,24 @@
                 </Button>
             </Grid>
         </Border>
-        <ListView Style="{StaticResource ConversationStyle}" Grid.Row="1" Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" SelectionMode="None">
+        <ListView Style="{StaticResource ConversationStyle}" Grid.Row="1" x:Name="ConversationItemsControl" VirtualizingStackPanel.VirtualizationMode="Recycling" Background="White" ScrollViewer.VerticalScrollBarVisibility="Visible" Padding="0 0 15 0" SelectionMode="None">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 </Style>
             </ListView.ItemContainerStyle>
         </ListView>
-        <Grid Grid.Row="2" BorderBrush="{ThemeResource TextBoxBorderThemeBrush}" BorderThickness="0,1,0,0">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Name="InputTextBox" VerticalAlignment="Center" KeyDown="TextBox_KeyDown" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" TextChanged="InputTextBox_TextChanged" InputScope="Chat" Visibility="{x:Bind SendMessageVisible, Mode=OneWay}" MaxLength="2000"/>
-            <Button x:Name="SendMessageButton" Grid.Column="1" Click="SendMessageButton_Click" IsEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" Background="{x:Bind SendButtonBackground}" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50" Visibility="{x:Bind SendMessageVisible, Mode=OneWay}">
-                <SymbolIcon Symbol="Send"/>
-            </Button>
-            <Button x:Name="UnblockButton" Content="Unblock" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan="2" Height="50" Visibility="{x:Bind Blocked, Mode=OneWay}" Click="UnblockButton_Click" AllowFocusOnInteraction="False"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <local:AddedAttachment Grid.Row="0" Grid.ColumnSpan="2" x:Name="AddedAttachmentDisplay" AllowFocusOnInteraction="False" OnCancelAttachmentButtonClicked="AddedAttachmentDisplay_OnCancelAttachmentButtonClicked"/>
+            <local:UserInput Grid.Row="1" x:Name="UserInputBar" SendMessageVisibility="{x:Bind SendMessageVisible, Mode=OneWay}" BlockedVisibility="{x:Bind Blocked, Mode=OneWay}" SendButtonEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" OnSendMessageButtonClicked="UserInputBar_OnSendMessageButtonClicked" OnEnterKeyPressed="UserInputBar_OnEnterKeyPressed" OnUnblockButtonClicked="UserInputBar_OnUnblockButtonClicked" OnInputTextBoxTextChanged="UpdateSendButtonIcon"/>
         </Grid>
     </Grid>
 </UserControl>
