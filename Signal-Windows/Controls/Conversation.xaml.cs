@@ -11,9 +11,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
@@ -41,6 +45,7 @@ namespace Signal_Windows.Controls
         public VirtualizedCollection Collection;
         private CoreWindowActivationState ActivationState = CoreWindowActivationState.Deactivated;
         private int LastMarkReadRequest;
+        private StorageFile SelectedFile;
 
         private string _ThreadDisplayName;
 
@@ -74,14 +79,6 @@ namespace Signal_Windows.Controls
             set { _SeparatorVisiblity = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SeparatorVisibility))); }
         }
 
-        private Brush _HeaderBackground;
-
-        public Brush HeaderBackground
-        {
-            get { return _HeaderBackground; }
-            set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
-        }
-
         private bool _SendButtonEnabled;
         public bool SendButtonEnabled
         {
@@ -91,6 +88,14 @@ namespace Signal_Windows.Controls
                 _SendButtonEnabled = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendButtonEnabled)));
             }
+        }
+
+        private Brush _HeaderBackground;
+
+        public Brush HeaderBackground
+        {
+            get { return _HeaderBackground; }
+            set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
         }
 
         public Brush SendButtonBackground
@@ -191,7 +196,9 @@ namespace Signal_Windows.Controls
                 SendMessageVisible = !Blocked;
             }
             LastMarkReadRequest = -1;
-            InputTextBox.IsEnabled = false;
+            SendButtonEnabled = false;
+            ResetInput();
+            UserInputBar.FocusTextBox();
             DisposeCurrentThread();
             UpdateHeader(conversation);
 
@@ -206,7 +213,7 @@ namespace Signal_Windows.Controls
             Collection =  new VirtualizedCollection(conversation);
             ConversationItemsControl.ItemsSource = Collection;
             UpdateLayout();
-            InputTextBox.IsEnabled = conversation.CanReceive;
+            SendButtonEnabled = conversation.CanReceive;
             ScrollToUnread();
         }
 
@@ -280,26 +287,20 @@ namespace Signal_Windows.Controls
             }
             return result;
         }
-        
-        private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+
+        private async void UserInputBar_OnEnterKeyPressed()
         {
-            if (e.Key == VirtualKey.Enter)
+            bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
+            if (shift)
             {
-                e.Handled = true; // Prevent KeyDown from firing twice on W10 CU
-                bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-                if (shift)
+                UserInputBar.AddLinefeed();
+            }
+            else
+            {
+                bool sendMessageResult = await GetMainPageVm().SendMessage(UserInputBar.InputText, SelectedFile);
+                if (sendMessageResult)
                 {
-                    InputTextBox.Text += "\r";
-                    InputTextBox.SelectionStart = InputTextBox.Text.Length;
-                    InputTextBox.SelectionLength = 0;
-                }
-                else
-                {
-                    bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
-                    if (sendMessageResult)
-                    {
-                        InputTextBox.Text = string.Empty;
-                    }
+                    ResetInput();
                 }
             }
         }
@@ -313,19 +314,33 @@ namespace Signal_Windows.Controls
             }
         }
 
-        private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
-        {
-            bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
-            if (sendMessageResult)
-            {
-                InputTextBox.Text = string.Empty;
-            }
-        }
 
-        private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private async void UserInputBar_OnSendMessageButtonClicked()
         {
-            TextBox t = sender as TextBox;
-            SendButtonEnabled = t.Text != string.Empty;
+            if (string.IsNullOrEmpty(UserInputBar.InputText) && SelectedFile == null)
+            {
+                var filePicker = new FileOpenPicker();
+                filePicker.FileTypeFilter.Add("*"); // Without this the file picker throws an exception, this is not documented
+                SelectedFile = await filePicker.PickSingleFileAsync();
+                if (SelectedFile != null)
+                {
+                    AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                    UpdateSendButtonIcon();
+                    UserInputBar.FocusTextBox();
+                }
+                else
+                {
+                    AddedAttachmentDisplay.HideAttachment();
+                }
+            }
+            else
+            {
+                bool sendMessageResult = await GetMainPageVm().SendMessage(UserInputBar.InputText, SelectedFile);
+                if (sendMessageResult)
+                {
+                    ResetInput();
+                }
+            }
         }
 
         private void ScrollToUnread()
@@ -394,7 +409,7 @@ namespace Signal_Windows.Controls
             }
         }
 
-        private async void UnblockButton_Click(object sender, RoutedEventArgs e)
+        private async void UserInputBar_OnUnblockButtonClicked()
         {
             if (SignalConversation is SignalContact contact)
             {
@@ -406,6 +421,95 @@ namespace Signal_Windows.Controls
                 {
                     App.Handle.SendBlockedMessage();
                 });
+            }
+        }
+
+        private void AddedAttachmentDisplay_OnCancelAttachmentButtonClicked()
+        {
+            AddedAttachmentDisplay.HideAttachment();
+            SelectedFile = null;
+            UpdateSendButtonIcon();
+        }
+
+        private void UpdateSendButtonIcon()
+        {
+            if (UserInputBar.InputText != string.Empty || SelectedFile != null)
+            {
+                UserInputBar.SetSendButtonIcon(Symbol.Send);
+            }
+            else
+            {
+                UserInputBar.SetSendButtonIcon(Symbol.Attach);
+            }
+        }
+
+        private void ResetInput()
+        {
+            SelectedFile = null;
+            UserInputBar.InputText = string.Empty;
+            UpdateSendButtonIcon();
+            AddedAttachmentDisplay.HideAttachment();
+        }
+
+        private async void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.V)
+            {
+                bool ctrl = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
+                if (ctrl)
+                {
+                    var dataPackageView = Clipboard.GetContent();
+                    if (dataPackageView.Contains(StandardDataFormats.StorageItems))
+                    {
+                        var pastedFiles = await dataPackageView.GetStorageItemsAsync();
+                        var pastedFile = pastedFiles[0];
+                        SelectedFile = pastedFile as StorageFile;
+                        AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                        UpdateSendButtonIcon();
+                    }
+                    else if (dataPackageView.Contains(StandardDataFormats.Bitmap))
+                    {
+                        RandomAccessStreamReference pastedBitmap = await dataPackageView.GetBitmapAsync();
+                        var pastedBitmapStream = await pastedBitmap.OpenReadAsync();
+                        StorageFile tmpFile = await StorageFile.CreateStreamedFileAsync("Signal-Windows-tmpbitmap.bmp", async (fileStream) =>
+                        {
+                            byte[] buffer = new byte[8192];
+                            var read = await pastedBitmapStream.ReadAsync(buffer.AsBuffer(), (uint) buffer.Length, InputStreamOptions.None);
+                            while (read.Length > 0)
+                            {
+                                await fileStream.WriteAsync(read);
+                                read = await pastedBitmapStream.ReadAsync(buffer.AsBuffer(), (uint) buffer.Length, InputStreamOptions.None);
+                            }
+                            await fileStream.FlushAsync();
+                            fileStream.Dispose();
+                        }, null);
+                        SelectedFile = tmpFile;
+                        AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                        UpdateSendButtonIcon();
+                    }
+                }
+            }
+        }
+
+        private void Grid_DragOver(object sender, DragEventArgs e)
+        {
+            e.AcceptedOperation = DataPackageOperation.Copy;
+            e.DragUIOverride.IsCaptionVisible = false;
+            e.DragUIOverride.IsGlyphVisible = false;
+        }
+
+        private async void Grid_Drop(object sender, DragEventArgs e)
+        {
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                var storageItems = await e.DataView.GetStorageItemsAsync();
+                var storageItem = storageItems[0];
+                SelectedFile = storageItem as StorageFile;
+                if (SelectedFile != null)
+                {
+                    AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                    UpdateSendButtonIcon();
+                }
             }
         }
     }

@@ -336,7 +336,7 @@ namespace Signal_Windows.Lib
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
             };
-            await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, conversation);
+            await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, null, conversation);
         }
 
         private async Task HandleSessionResetMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage dataMessage, bool isSync, long timestamp)
@@ -384,7 +384,7 @@ namespace Signal_Windows.Lib
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
             };
-            await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, conversation);
+            await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(sm, null, conversation);
         }
 
         /// <summary>
@@ -654,7 +654,7 @@ namespace Signal_Windows.Lib
                 // Make sure to update attachments count
                 message.AttachmentsCount = (uint)attachments.Count;
             }
-            await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(message, conversation);
+            await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(message, null, conversation);
         }
     }
 }

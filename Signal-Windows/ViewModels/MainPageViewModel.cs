@@ -88,27 +88,14 @@ namespace Signal_Windows.ViewModels
             set { _ThreadListAlignRight = value; RaisePropertyChanged(nameof(ThreadListAlignRight)); }
         }
 
-        internal async Task<bool> SendMessage(string messageText)
+        internal async Task<bool> SendMessage(string messageText, StorageFile attachment)
         {
             try
             {
-                if (!string.IsNullOrEmpty(messageText))
+                if (messageText != string.Empty || attachment != null)
                 {
-                    var now = Util.CurrentTimeMillis();
                     messageText = messageText.Replace("\r", "\r\n");
-                    SignalMessage message = new SignalMessage()
-                    {
-                        Author = null,
-                        ComposedTimestamp = now,
-                        ExpiresAt = SelectedThread.ExpiresInSeconds,
-                        Content = new SignalMessageContent() { Content = messageText },
-                        ThreadId = SelectedThread.ThreadId,
-                        ReceivedTimestamp = now,
-                        Direction = SignalMessageDirection.Outgoing,
-                        Read = true,
-                        Type = SignalMessageType.Normal
-                    };
-                    await App.Handle.SendMessage(message, SelectedThread);
+                    await App.Handle.SendMessage(messageText, attachment, SelectedThread);
                 }
                 return true;
             }

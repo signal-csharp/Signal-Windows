@@ -56,7 +56,7 @@ namespace Signal_Windows.Lib
         SignalStore Store { get; set; }
 
         void RequestSync();
-        Task SendMessage(SignalMessage message, SignalConversation conversation);
+        Task SendMessage(string messageText, StorageFile attachment, SignalConversation conversation);
         Task SendBlockedMessage();
         Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation);
         void ResendMessage(SignalMessage message);
@@ -330,7 +330,7 @@ namespace Signal_Windows.Lib
             Instance = null;
         }
 
-        public async Task SendMessage(SignalMessage message, SignalConversation conversation)
+        public async Task SendMessage(string messageText, StorageFile attachmentStorageFile, SignalConversation conversation)
         {
             await Task.Run(async () =>
             {
@@ -339,8 +339,32 @@ namespace Signal_Windows.Lib
                 Logger.LogTrace("SendMessage() locked");
                 try
                 {
-                    Logger.LogDebug("SendMessage saving message " + message.ComposedTimestamp);
-                    await SaveAndDispatchSignalMessage(message, conversation);
+                    var now = Util.CurrentTimeMillis();
+                    var attachmentsList = new List<SignalAttachment>();
+                    if (attachmentStorageFile != null)
+                    {
+                        attachmentsList.Add(new SignalAttachment()
+                        {
+                            ContentType = attachmentStorageFile.ContentType,
+                            SentFileName = attachmentStorageFile.Name
+                        });
+                    }
+
+                    SignalMessage message = new SignalMessage()
+                    {
+                        Author = null,
+                        ComposedTimestamp = now,
+                        ExpiresAt = conversation.ExpiresInSeconds,
+                        Content = new SignalMessageContent() { Content = messageText },
+                        ThreadId = conversation.ThreadId,
+                        ReceivedTimestamp = now,
+                        Direction = SignalMessageDirection.Outgoing,
+                        Read = true,
+                        Type = SignalMessageType.Normal,
+                        Attachments = attachmentsList,
+                        AttachmentsCount = (uint) attachmentsList.Count()
+                    };
+                    await SaveAndDispatchSignalMessage(message, attachmentStorageFile, conversation);
                     OutgoingQueue.Add(message);
                 }
                 finally
@@ -497,7 +521,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        internal async Task SaveAndDispatchSignalMessage(SignalMessage message, SignalConversation conversation)
+        internal async Task SaveAndDispatchSignalMessage(SignalMessage message, StorageFile attachmentStorageFile, SignalConversation conversation)
         {
             conversation.MessagesCount += 1;
             if (message.Direction == SignalMessageDirection.Incoming)
@@ -512,7 +536,15 @@ namespace Signal_Windows.Lib
             SignalDBContext.SaveMessageLocked(message);
             conversation.LastMessage = message;
             conversation.LastActiveTimestamp = message.ComposedTimestamp;
-            //StartAttachmentDownloads(message);
+            if (attachmentStorageFile != null)
+            {
+                StorageFolder plaintextFile = await ApplicationData.Current.LocalCacheFolder.GetFolderAsync(@"Attachments\");
+                foreach (var attachment in message.Attachments)
+                {
+                    Logger.LogTrace(@"Copying attachment to \Attachments\{0}.plain", attachment.Id.ToString());
+                    await attachmentStorageFile.CopyAsync(plaintextFile, attachment.Id.ToString() + ".plain", NameCollisionOption.ReplaceExisting);
+                }
+            }
             await DispatchHandleMessage(message, conversation);
         }
 
@@ -630,7 +662,7 @@ namespace Signal_Windows.Lib
                 });
                 operations.Add(taskCompletionSource.Task);
             }
-            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalMessageType.NormalMessage));
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalPipeMessageType.NormalMessage));
             if (message.Author != null)
             {
                 bool wasInstantlyRead = false;
@@ -712,7 +744,7 @@ namespace Signal_Windows.Lib
 
         internal void DispatchPipeEmptyMessage()
         {
-            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(null, Events.SignalMessageType.PipeEmptyMessage));
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(null, Events.SignalPipeMessageType.PipeEmptyMessage));
         }
 
         internal async Task HandleMessageSentLocked(SignalMessage msg)

@@ -7,7 +7,7 @@ using Signal_Windows.Models;
 
 namespace Signal_Windows.Lib.Events
 {
-    public enum SignalMessageType
+    public enum SignalPipeMessageType
     {
         NormalMessage,
         PipeEmptyMessage
@@ -15,9 +15,9 @@ namespace Signal_Windows.Lib.Events
     public class SignalMessageEventArgs : EventArgs
     {
         public SignalMessage Message { get; private set; }
-        public SignalMessageType MessageType { get; private set; }
+        public SignalPipeMessageType MessageType { get; private set; }
 
-        public SignalMessageEventArgs(SignalMessage message, SignalMessageType type)
+        public SignalMessageEventArgs(SignalMessage message, SignalPipeMessageType type)
         {
             Message = message;
             MessageType = type;
