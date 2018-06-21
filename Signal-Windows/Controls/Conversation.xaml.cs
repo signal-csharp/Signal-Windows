@@ -280,6 +280,11 @@ namespace Signal_Windows.Controls
             }
             return result;
         }
+
+        public void HandleDeleteMesage(SignalMessage message)
+        {
+            Collection.Remove(message);
+        }
         
         private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {

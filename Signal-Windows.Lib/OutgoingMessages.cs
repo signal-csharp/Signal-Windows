@@ -80,6 +80,8 @@ namespace Signal_Windows.Lib
                         if (!Token.IsCancellationRequested)
                         {
                             await MessageSender.SendMessage(Token, new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
+                            UpdateExpiresAt(outgoingSignalMessage);
+                            DisappearingMessagesManager.AddMessage(outgoingSignalMessage);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
@@ -102,6 +104,8 @@ namespace Signal_Windows.Lib
                         if (!Token.IsCancellationRequested)
                         {
                             await SendMessage(recipients, message);
+                            UpdateExpiresAt(outgoingSignalMessage);
+                            DisappearingMessagesManager.AddMessage(outgoingSignalMessage);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
@@ -149,6 +153,25 @@ namespace Signal_Windows.Lib
                 await Handle.HandleMessageSentLocked(outgoingSignalMessage);
             }
             Logger.LogInformation("HandleOutgoingMessages() finished");
+        }
+
+        /// <summary>
+        /// Updates a message ExpiresAt to be a timestamp instead of a relative value.
+        /// </summary>
+        /// <param name="message">The message to update</param>
+        private void UpdateExpiresAt(SignalMessage message)
+        {
+            // We update here instead of earlier because we only want to start the timer once the message is actually sent.
+            long messageExpiration;
+            if (message.ExpiresAt == 0)
+            {
+                messageExpiration = 0;
+            }
+            else
+            {
+                messageExpiration = Util.CurrentTimeMillis() + (long)TimeSpan.FromSeconds(message.ExpiresAt).TotalMilliseconds;
+            }
+            message.ExpiresAt = messageExpiration;
         }
     }
 }

@@ -260,6 +260,7 @@ namespace Signal_Windows
             if (success)
             {
                 Views.Add(newViewId, frontend);
+                DisappearingMessagesManager.AddFrontend(frontend.Dispatcher, frontend);
                 await switcher.ShowAsStandaloneAsync(newViewId);
                 Logger.LogInformation("CreateSecondaryWindow() added view {0}", newViewId);
             }
@@ -316,6 +317,7 @@ namespace Signal_Windows
                 }
                 var frontend = new SignalWindowsFrontend(Window.Current.Dispatcher, (ViewModelLocator)Resources["Locator"], currView.Id);
                 Views.Add(currView.Id, frontend);
+                DisappearingMessagesManager.AddFrontend(frontend.Dispatcher, frontend);
                 MainViewId = currView.Id;
                 SetupTopBar();
 
@@ -359,6 +361,7 @@ namespace Signal_Windows
             var signalWindowsFrontend = Views[sender.Id];
             Handle.RemoveFrontend(signalWindowsFrontend.Dispatcher);
             Views.Remove(sender.Id);
+            DisappearingMessagesManager.RemoveFrontend(signalWindowsFrontend.Dispatcher);
             if (sender.Id != MainViewId)
             {
                 Window.Current.Close();

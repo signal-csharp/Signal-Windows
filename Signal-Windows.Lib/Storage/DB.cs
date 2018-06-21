@@ -919,6 +919,33 @@ namespace Signal_Windows.Storage
             return set_mark? m : null;
         }
 
+        public static void DeleteMessage(SignalMessage message)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    ctx.Remove(message);
+                    SignalConversation conversation = ctx.Contacts
+                        .Where(c => c.ThreadId == message.ThreadId)
+                        .Single();
+                    conversation.MessagesCount -= 1;
+                    conversation.LastMessage = null;
+                    conversation.LastMessageId = null;
+                    conversation.LastSeenMessage = null;
+                    conversation.LastSeenMessageIndex = ctx.Messages
+                        .Where(m => m.ThreadId == conversation.ThreadId)
+                        .Count() - 1;
+
+                    // also delete fts message
+                    SignalMessageContent ftsMessage = ctx.Messages_fts.Where(m => m == message.Content)
+                        .Single();
+                    ctx.Remove(ftsMessage);
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
         #endregion Messages
 
         #region Attachments
@@ -932,6 +959,18 @@ namespace Signal_Windows.Storage
                     return ctx.Attachments
                         .Where(a => a.Guid == guid)
                         .FirstOrDefault();
+                }
+            }
+        }
+
+        public static void DeleteAttachment(SignalAttachment attachment)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    ctx.Remove(attachment);
+                    ctx.SaveChanges();
                 }
             }
         }

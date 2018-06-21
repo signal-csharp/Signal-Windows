@@ -31,6 +31,7 @@ namespace Signal_Windows.Controls
         public SignalConversation Conversation;
         private UnreadMarker UnreadMarker = new UnreadMarker();
         public int UnreadMarkerIndex = -1;
+        private readonly object RemoveLock = new object();
 
         public VirtualizedCollection(SignalConversation c)
         {
@@ -123,7 +124,7 @@ namespace Signal_Windows.Controls
         public object SyncRoot => this;
 
         /// <summary>
-        /// "Adds" a SignalMessageContainer to this virtualized collection.</summary>
+        /// "Adds" a IMessageView to this virtualized collection.</summary>
         /// <remarks>
         /// The message may (if incoming) or may not (if outgoing) already be present in the database, so we explicitly insert at the correct position in the cache line.
         /// Count is mapped to the SignalConversation's MessagesCount, so callers must update appropriately before calling this method, and no async method must be called in between.</remarks>
@@ -155,6 +156,72 @@ namespace Signal_Windows.Controls
             return inConversationIndex;
         }
 
+        /// <summary>
+        /// Removes a message from the message collection.
+        /// </summary>
+        /// <param name="signalMessage">The message to remove</param>
+        public void Remove(SignalMessage signalMessage)
+        {
+            lock (RemoveLock)
+            {
+                bool deletedItem = false;
+                int virtualIndex = -1;
+                int finalVirtualIndex = -1;
+                IMessageView removedMessage = null;
+
+                // The cache dictionary isn't always ordered so make sure to go through the
+                // dictionary in order.
+                var keys = MessageStorage.Keys.ToList();
+                keys.Sort();
+                foreach (var key in keys)
+                {
+                    var page = MessageStorage[key];
+                    for (int i = 0; i < page.Count; i++)
+                    {
+                        var item = page[i];
+                        virtualIndex += 1;
+                        if (!deletedItem)
+                        {
+                            // if we haven't deleted the item yet keep looking for it
+                            if (signalMessage.Id == item.Model.Id)
+                            {
+                                deletedItem = true;
+                                finalVirtualIndex = GetVirtualIndex(virtualIndex);
+                                removedMessage = item;
+                                page.RemoveAt(i);
+                                if (DbIdToMessageMap.ContainsKey(signalMessage.Id))
+                                {
+                                    DbIdToMessageMap.Remove(signalMessage.Id);
+                                }
+                            }
+                        }
+                    }
+
+                    // After we've looped through if we're not on the last page and the page doesn't have
+                    // PAGE_SIZE, take the first message from the next page and add it to the end of this page
+                    if (key + 1 != MessageStorage.Count && page.Count < PAGE_SIZE)
+                    {
+                        var nextPage = key + 1;
+                        if (MessageStorage.ContainsKey(nextPage))
+                        {
+                            page.Add(MessageStorage[nextPage][0]);
+                            MessageStorage[nextPage].RemoveAt(0);
+                        }
+                    }
+                }
+
+                if (deletedItem)
+                {
+                    Conversation.MessagesCount--;
+                    CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, removedMessage, finalVirtualIndex));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Loads a page of messages into the cache in the specified page index.
+        /// </summary>
+        /// <param name="pageIndex">The page index to load messages into</param>
         private void LoadPage(int pageIndex)
         {
             MessageStorage[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE)
@@ -173,6 +240,14 @@ namespace Signal_Windows.Controls
         private void AddMessageToMap(IMessageView msg)
         {
             DbIdToMessageMap[msg.Model.Id] = msg;
+        }
+
+        private void RemoveMessageFromMap(IMessageView message)
+        {
+            if (DbIdToMessageMap.ContainsKey(message.Model.Id))
+            {
+                DbIdToMessageMap.Remove(message.Model.Id);
+            }
         }
 
         public void Clear()

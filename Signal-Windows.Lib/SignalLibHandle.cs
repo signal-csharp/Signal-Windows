@@ -48,6 +48,7 @@ namespace Signal_Windows.Lib
         Task HandleAuthFailure();
         void HandleAttachmentStatusChanged(SignalAttachment sa);
         void HandleBlockedContacts(List<SignalContact> blockedContacts);
+        void HandleMessageDelete(SignalMessage messsage);
     }
 
     public interface ISignalLibHandle
@@ -131,6 +132,7 @@ namespace Signal_Windows.Lib
                     Logger.LogInformation("Registering frontend of dispatcher {0}", w.GetHashCode());
                     Frames.Add(d, w);
                     w.ReplaceConversationList(GetConversations());
+                    DisappearingMessagesManager.AddFrontend(d, w);
                     return true;
                 }
                 else
@@ -152,6 +154,7 @@ namespace Signal_Windows.Lib
             SemaphoreSlim.Wait(CancelSource.Token);
             Logger.LogTrace("RemoveFrontend() locked");
             Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());
+            DisappearingMessagesManager.RemoveFrontend(d);
             Frames.Remove(d);
             SemaphoreSlim.Release();
             Logger.LogTrace("RemoveFrontend() released");

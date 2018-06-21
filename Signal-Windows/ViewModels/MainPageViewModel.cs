@@ -346,6 +346,14 @@ namespace Signal_Windows.ViewModels
                 }
             }
         }
+
+        public void HandleMessageDelete(SignalMessage message)
+        {
+            if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+            {
+                View.Thread.HandleDeleteMesage(message);
+            }
+        }
         #endregion
     }
 }

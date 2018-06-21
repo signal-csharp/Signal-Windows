@@ -322,14 +322,26 @@ namespace Signal_Windows.Lib
                     conversation = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
                 }
             }
+            conversation.ExpiresInSeconds = (uint)message.ExpiresInSeconds;
             SignalDBContext.UpdateExpiresInLocked(conversation, (uint)message.ExpiresInSeconds);
+            string finalMessage;
+            if (message.ExpiresInSeconds == 0)
+            {
+                finalMessage = $"{prefix} has turned off disappearing messages.";
+            }
+            else
+            {
+                finalMessage = $"{prefix} set disappearing message time to {message.ExpiresInSeconds} seconds.";
+            }
+            // Update conversations to reflect the new expires in seconds
+            await SignalLibHandle.Instance.DispatchAddOrUpdateConversation(conversation, null);
             SignalMessage sm = new SignalMessage()
             {
                 Direction = type,
                 Type = SignalMessageType.ExpireUpdate,
                 Status = status,
                 Author = author,
-                Content = new SignalMessageContent() { Content = $"{prefix} set the expiration timer to {message.ExpiresInSeconds} seconds." },
+                Content = new SignalMessageContent() { Content = finalMessage },
                 ThreadId = conversation.ThreadId,
                 DeviceId = (uint)envelope.GetSourceDevice(),
                 Receipts = 0,
@@ -518,6 +530,15 @@ namespace Signal_Windows.Lib
                     composedTimestamp = envelope.GetTimestamp();
                 }
 
+                long messageExpiration;
+                if (dataMessage.ExpiresInSeconds == 0)
+                {
+                    messageExpiration = 0;
+                }
+                else
+                {
+                    messageExpiration = timestamp + (long)TimeSpan.FromSeconds(dataMessage.ExpiresInSeconds).TotalMilliseconds;
+                }
                 SignalMessage sm = new SignalMessage()
                 {
                     Direction = type,
@@ -530,6 +551,7 @@ namespace Signal_Windows.Lib
                     Receipts = 0,
                     ComposedTimestamp = composedTimestamp,
                     ReceivedTimestamp = timestamp,
+                    ExpiresAt = messageExpiration
                 };
                 SignalDBContext.SaveMessageLocked(sm);
                 dbgroup.MessagesCount += 1;
@@ -615,6 +637,15 @@ namespace Signal_Windows.Lib
                 return;
             }
 
+            long messageExpiration;
+            if (dataMessage.ExpiresInSeconds == 0)
+            {
+                messageExpiration = 0;
+            }
+            else
+            {
+                messageExpiration = timestamp + (long)TimeSpan.FromSeconds(dataMessage.ExpiresInSeconds).TotalMilliseconds;
+            }
             List<SignalAttachment> attachments = new List<SignalAttachment>();
             SignalMessage message = new SignalMessage()
             {
@@ -627,6 +658,7 @@ namespace Signal_Windows.Lib
                 Receipts = 0,
                 ComposedTimestamp = composedTimestamp,
                 ReceivedTimestamp = timestamp,
+                ExpiresAt = messageExpiration,
                 AttachmentsCount = (uint)attachments.Count,
                 Attachments = attachments
             };
@@ -654,6 +686,7 @@ namespace Signal_Windows.Lib
                 // Make sure to update attachments count
                 message.AttachmentsCount = (uint)attachments.Count;
             }
+            DisappearingMessagesManager.AddMessage(message);
             await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(message, conversation);
         }
     }
