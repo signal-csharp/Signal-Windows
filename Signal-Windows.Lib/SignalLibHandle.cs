@@ -538,7 +538,7 @@ namespace Signal_Windows.Lib
             conversation.LastActiveTimestamp = message.ComposedTimestamp;
             if (attachmentStorageFile != null)
             {
-                StorageFolder plaintextFile = await ApplicationData.Current.LocalCacheFolder.GetFolderAsync(@"Attachments\");
+                StorageFolder plaintextFile = await ApplicationData.Current.LocalCacheFolder.CreateFolderAsync(@"Attachments\", CreationCollisionOption.OpenIfExists);
                 foreach (var attachment in message.Attachments)
                 {
                     Logger.LogTrace(@"Copying attachment to \Attachments\{0}.plain", attachment.Id.ToString());
