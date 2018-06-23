@@ -274,7 +274,7 @@ namespace Signal_Windows.Controls
 
         public AppendResult Append(Message sm)
         {
-            AppendResult result = null;
+            AppendResult result = new AppendResult(false);
             bool bottom = GetBottommostIndex() == Collection.Count - 2; // -2 because we already incremented Count
             Collection.Add(sm, sm.Model.Author == null);
             if (bottom)
@@ -283,7 +283,7 @@ namespace Signal_Windows.Controls
                 ScrollToBottom();
                 if (ActivationState != CoreWindowActivationState.Deactivated)
                 {
-                    result = new AppendResult(GetBottommostIndex()); //TODO correct?
+                    result = new AppendResult(true);
                 }
             }
             return result;
@@ -404,7 +404,7 @@ namespace Signal_Windows.Controls
                     var msg = ((IMessageView)Collection[bottomIndex]).Model;
                     Task.Run(async () =>
                     {
-                        await App.Handle.SetMessageRead(rawBottomIndex, msg, SignalConversation);
+                        await App.Handle.SetMessageRead(msg);
                     });
                 }
             }

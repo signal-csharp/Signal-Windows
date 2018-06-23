@@ -276,8 +276,8 @@ namespace Signal_Windows.Lib
 
         private async Task HandleSyncedReadMessage(ReadMessage readMessage)
         {
-            var conv = await SignalDBContext.UpdateMessageRead(readMessage);
-            await SignalLibHandle.Instance.DispatchMessageRead(conv.LastSeenMessageIndex, conv);
+            var updatedConversation = SignalDBContext.UpdateMessageRead(readMessage.Timestamp);
+            await SignalLibHandle.Instance.DispatchMessageRead(updatedConversation);
         }
 
         private async Task HandleExpirationUpdateMessage(SignalServiceEnvelope envelope, SignalServiceContent content, SignalServiceDataMessage message, bool isSync, long timestamp)
@@ -322,7 +322,8 @@ namespace Signal_Windows.Lib
                     conversation = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
                 }
             }
-            SignalDBContext.UpdateExpiresInLocked(conversation, (uint)message.ExpiresInSeconds);
+            conversation.ExpiresInSeconds = (uint) message.ExpiresInSeconds;
+            SignalDBContext.UpdateExpiresInLocked(conversation);
             SignalMessage sm = new SignalMessage()
             {
                 Direction = type,
