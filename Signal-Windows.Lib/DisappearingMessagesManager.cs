@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using libsignalservice.util;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
 using Windows.UI.Core;
@@ -35,9 +36,14 @@ namespace Signal_Windows.Lib
             }
         }
 
-        public static void AddMessage(SignalMessage message)
+        /// <summary>
+        /// Queues a message for deletion.
+        /// </summary>
+        /// <param name="message">The message to queue for deletion</param>
+        /// <remarks>If the message expire time is 0 then the message will not be deleted.</remarks>
+        public static void QueueForDeletion(SignalMessage message)
         {
-            if (message.ExpiresAt == 0)
+            if (message.ExpiresAt <= 0)
             {
                 return;
             }
@@ -59,6 +65,19 @@ namespace Signal_Windows.Lib
                 await DeleteMessage(message);
             };
             Task.Run(deleteTask);
+        }
+
+        /// <summary>
+        /// Deletes expired messages from the database.
+        /// </summary>
+        public static void DeleteExpiredMessages()
+        {
+            long currentTimeMillis = Util.CurrentTimeMillis();
+            List<SignalMessage> expiredMessages = SignalDBContext.GetExpiredMessages(currentTimeMillis);
+            foreach (var expiredMessage in expiredMessages)
+            {
+                DeleteFromDb(expiredMessage);
+            }
         }
 
         private static async Task DeleteMessage(SignalMessage message)
@@ -89,6 +108,11 @@ namespace Signal_Windows.Lib
                 await t;
             }
 
+            DeleteFromDb(message);
+        }
+
+        private static void DeleteFromDb(SignalMessage message)
+        {
             foreach (var attachment in message.Attachments)
             {
                 SignalDBContext.DeleteAttachment(attachment);

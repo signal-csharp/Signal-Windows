@@ -919,6 +919,29 @@ namespace Signal_Windows.Storage
             return set_mark? m : null;
         }
 
+        /// <summary>
+        /// Gets messages older than the given timestamp.
+        /// </summary>
+        /// <param name="timestamp">Timestamp in millis</param>
+        /// <returns>Expired messages</returns>
+        public static List<SignalMessage> GetExpiredMessages(long timestampMillis)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var messages = ctx.Messages
+                        .Where(m => m.ExpiresAt > 0)
+                        .Where(m => m.ExpiresAt < timestampMillis)
+                        .Include(m => m.Attachments)
+                        .Include(m => m.Content)
+                        .AsNoTracking()
+                        .ToList();
+                    return messages;
+                }
+            }
+        }
+
         public static void DeleteMessage(SignalMessage message)
         {
             lock (DBLock)

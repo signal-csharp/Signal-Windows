@@ -30,7 +30,6 @@ namespace Signal_Windows.RC
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
-            
             Logger.LogInformation("Background task starting");
             Deferral = taskInstance.GetDeferral();
             SignalLogging.SetupLogging(false);

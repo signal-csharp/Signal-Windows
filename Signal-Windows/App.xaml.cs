@@ -75,6 +75,7 @@ namespace Signal_Windows
         private async void App_Resuming(object sender, object e)
         {
             Logger.LogInformation("Resuming");
+            DisappearingMessagesManager.DeleteExpiredMessages();
             await Handle.Reacquire();
         }
 
@@ -96,6 +97,7 @@ namespace Signal_Windows
         protected override async void OnActivated(IActivatedEventArgs args)
         {
             Logger.LogInformation("OnActivated() {0}", args.GetType());
+            DisappearingMessagesManager.DeleteExpiredMessages();
             if (args is ToastNotificationActivatedEventArgs toastArgs)
             {
                 string requestedConversation = toastArgs.Argument;
@@ -148,6 +150,7 @@ namespace Signal_Windows
         protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
             Logger.LogInformation("Launching (PreviousExecutionState={0})", e.PreviousExecutionState);
+            DisappearingMessagesManager.DeleteExpiredMessages();
             try
             {
                 string taskName = "SignalMessageBackgroundTask";

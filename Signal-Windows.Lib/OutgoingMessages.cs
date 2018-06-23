@@ -81,7 +81,7 @@ namespace Signal_Windows.Lib
                         {
                             await MessageSender.SendMessage(Token, new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
                             UpdateExpiresAt(outgoingSignalMessage);
-                            DisappearingMessagesManager.AddMessage(outgoingSignalMessage);
+                            DisappearingMessagesManager.QueueForDeletion(outgoingSignalMessage);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }
@@ -105,7 +105,7 @@ namespace Signal_Windows.Lib
                         {
                             await SendMessage(recipients, message);
                             UpdateExpiresAt(outgoingSignalMessage);
-                            DisappearingMessagesManager.AddMessage(outgoingSignalMessage);
+                            DisappearingMessagesManager.QueueForDeletion(outgoingSignalMessage);
                             outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                         }
                     }

@@ -686,7 +686,7 @@ namespace Signal_Windows.Lib
                 // Make sure to update attachments count
                 message.AttachmentsCount = (uint)attachments.Count;
             }
-            DisappearingMessagesManager.AddMessage(message);
+            DisappearingMessagesManager.QueueForDeletion(message);
             await SignalLibHandle.Instance.SaveAndDispatchSignalMessage(message, conversation);
         }
     }
