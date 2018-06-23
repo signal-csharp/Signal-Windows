@@ -76,14 +76,21 @@ namespace Signal_Windows.Lib
                         outgoingAttachmentsList = new List<SignalServiceAttachment>();
                         foreach (var attachment in outgoingSignalMessage.Attachments)
                         {
-                            var file = await ApplicationData.Current.LocalCacheFolder.GetFileAsync(@"Attachments\" + attachment.Id + ".plain");
-                            var stream = await file.OpenStreamForReadAsync();
-                            outgoingAttachmentsList.Add(SignalServiceAttachment.NewStreamBuilder()
-                                .WithContentType(attachment.ContentType)
-                                .WithStream(stream)
-                                .WithLength(stream.Length)
-                                .WithFileName(attachment.SentFileName)
-                                .Build());
+                            try
+                            {
+                                var file = await ApplicationData.Current.LocalCacheFolder.GetFileAsync(@"Attachments\" + attachment.Id + ".plain");
+                                var stream = await file.OpenStreamForReadAsync();
+                                outgoingAttachmentsList.Add(SignalServiceAttachment.NewStreamBuilder()
+                                    .WithContentType(attachment.ContentType)
+                                    .WithStream(stream)
+                                    .WithLength(stream.Length)
+                                    .WithFileName(attachment.SentFileName)
+                                    .Build());
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.LogError($"HandleOutgoingMessages() failed to add attachment {attachment.Id}: {e.Message}\n{e.StackTrace}");
+                            }
                         }
                     }
 
