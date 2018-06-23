@@ -231,6 +231,7 @@ namespace Signal_Windows.ViewModels
             localConversation.LastActiveTimestamp = conversation.LastActiveTimestamp;
             localConversation.UnreadCount = conversation.UnreadCount;
             localConversation.LastSeenMessageIndex = conversation.LastSeenMessageIndex;
+            localConversation.ExpiresInSeconds = conversation.ExpiresInSeconds;
             localConversation.UpdateUI();
             if (SelectedThread != null && SelectedThread == localConversation)
             {
@@ -241,11 +242,11 @@ namespace Signal_Windows.ViewModels
             return result;
         }
 
-        public void HandleMessageRead(long unreadMarkerIndex, SignalConversation conversation)
+        public void HandleMessageRead(SignalConversation updatedConversation)
         {
-            var localConversation = ConversationsDictionary[conversation.ThreadId];
-            localConversation.LastSeenMessageIndex = unreadMarkerIndex;
-            localConversation.UnreadCount = conversation.UnreadCount;
+            var localConversation = ConversationsDictionary[updatedConversation.ThreadId];
+            localConversation.LastSeenMessageIndex = updatedConversation.LastSeenMessageIndex;
+            localConversation.UnreadCount = updatedConversation.UnreadCount;
             localConversation.UpdateUI();
         }
 
