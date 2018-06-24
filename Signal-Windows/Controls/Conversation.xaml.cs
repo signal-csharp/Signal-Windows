@@ -15,6 +15,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
+using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
@@ -471,18 +472,20 @@ namespace Signal_Windows.Controls
                     {
                         RandomAccessStreamReference pastedBitmap = await dataPackageView.GetBitmapAsync();
                         var pastedBitmapStream = await pastedBitmap.OpenReadAsync();
-                        StorageFile tmpFile = await StorageFile.CreateStreamedFileAsync("Signal-Windows-tmpbitmap.bmp", async (fileStream) =>
+                        var tmpFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("Signal-Windows-Screenshot.png", CreationCollisionOption.GenerateUniqueName);
+                        using (var tmpFileStream = await tmpFile.OpenAsync(FileAccessMode.ReadWrite))
                         {
-                            byte[] buffer = new byte[8192];
-                            var read = await pastedBitmapStream.ReadAsync(buffer.AsBuffer(), (uint) buffer.Length, InputStreamOptions.None);
-                            while (read.Length > 0)
-                            {
-                                await fileStream.WriteAsync(read);
-                                read = await pastedBitmapStream.ReadAsync(buffer.AsBuffer(), (uint) buffer.Length, InputStreamOptions.None);
-                            }
-                            await fileStream.FlushAsync();
-                            fileStream.Dispose();
-                        }, null);
+                            BitmapDecoder decoder = await BitmapDecoder.CreateAsync(pastedBitmapStream);
+                            var pixels = await decoder.GetPixelDataAsync();
+                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, tmpFileStream);
+                            encoder.SetPixelData(decoder.BitmapPixelFormat,
+                                BitmapAlphaMode.Ignore, // Alpha is not used
+                                decoder.OrientedPixelWidth,
+                                decoder.OrientedPixelHeight,
+                                decoder.DpiX, decoder.DpiY,
+                                pixels.DetachPixelData());
+                            await encoder.FlushAsync();
+                        }
                         SelectedFile = tmpFile;
                         AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
                         UpdateSendButtonIcon();
