@@ -23,7 +23,7 @@ namespace Signal_Windows.Lib
 {
     class OutgoingMessages
     {
-        private readonly ILogger Logger = LibsignalLogging.CreateLogger<IncomingMessages>();
+        private readonly ILogger Logger = LibsignalLogging.CreateLogger<OutgoingMessages>();
         private readonly CancellationToken Token;
         private readonly SignalServiceMessageSender MessageSender;
         private readonly SignalLibHandle Handle;

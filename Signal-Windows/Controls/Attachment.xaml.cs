@@ -92,7 +92,8 @@ namespace Signal_Windows.Controls
         {
             "image/jpeg",
             "image/png",
-            "image/gif"
+            "image/gif",
+            "image/bmp"
         };
 
         public bool HandleUpdate(SignalAttachment sa)
