@@ -919,6 +919,19 @@ namespace Signal_Windows.Storage
             return set_mark? m : null;
         }
 
+        public static void UpdateMessageExpiresAt(SignalMessage message)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    var m = ctx.Messages.Single(t => t.Id == message.Id);
+                    m.ExpiresAt = message.ExpiresAt;
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
         /// <summary>
         /// Gets messages older than the given timestamp.
         /// </summary>

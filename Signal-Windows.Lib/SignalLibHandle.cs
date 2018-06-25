@@ -378,6 +378,7 @@ namespace Signal_Windows.Lib
         /// <param name="message"></param>
         public async Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation)
         {
+            UpdateMessageExpiration(message, conversation.ExpiresInSeconds);
             Logger.LogTrace("SetMessageRead() locking");
             await SemaphoreSlim.WaitAsync(CancelSource.Token);
             try
@@ -642,6 +643,7 @@ namespace Signal_Windows.Lib
                     AppendResult result = await b;
                     if (result != null)
                     {
+                        UpdateMessageExpiration(message, conversation.ExpiresInSeconds);
                         SignalDBContext.UpdateMessageRead(result.Index, conversation);
                         await DispatchMessageRead(result.Index + 1, conversation);
                         wasInstantlyRead = true;
@@ -710,6 +712,29 @@ namespace Signal_Windows.Lib
             foreach (var waitHandle in operations)
             {
                 await waitHandle;
+            }
+        }
+
+        internal void UpdateMessageExpiration(SignalMessage message, uint conversationExpireTimeSeconds)
+        {
+            if (message.Type == Signal_Windows.Models.SignalMessageType.Normal && message.ExpiresAt == 0)
+            {
+                long messageExpiration;
+                if (conversationExpireTimeSeconds == 0)
+                {
+                    messageExpiration = 0;
+                }
+                else
+                {
+                    messageExpiration = Util.CurrentTimeMillis() + (long)TimeSpan.FromSeconds(conversationExpireTimeSeconds).TotalMilliseconds;
+                }
+
+                if (messageExpiration > 0)
+                {
+                    message.ExpiresAt = messageExpiration;
+                    SignalDBContext.UpdateMessageExpiresAt(message);
+                    DisappearingMessagesManager.QueueForDeletion(message);
+                }
             }
         }
 
