@@ -272,7 +272,7 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public AppendResult Append(Message sm)
+        public AppendResult Append(IMessageView sm)
         {
             AppendResult result = new AppendResult(false);
             bool bottom = GetBottommostIndex() == Collection.Count - 2; // -2 because we already incremented Count

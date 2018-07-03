@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Signal_Windows.Controls;
+using Signal_Windows.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -128,6 +130,13 @@ namespace Signal_Windows
             else if (color == Blue_Grey.Color) { return BLUE_GREY; }
             else if (color == Grey.Color) { return GREY; }
             else { return GREY; }
+        }
+
+        public static IMessageView CreateMessageView(SignalMessage message)
+        {
+            if (message.Type == SignalMessageType.IdentityKeyChange)
+                return new IdentityKeyChangeMessage(message) as IMessageView;
+            return new Message(message) as IMessageView;
         }
 
         public static void AddRange<T>(this ObservableCollection<T> observableCollection, IEnumerable<T> collection)

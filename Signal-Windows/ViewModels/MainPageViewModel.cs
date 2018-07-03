@@ -204,8 +204,8 @@ namespace Signal_Windows.ViewModels
                     {
                         if (updateMessage != null)
                         {
-                            var container = new Message(updateMessage);
-                            View.Thread.Append(container);
+                            var messageView = Utils.CreateMessageView(updateMessage);
+                            View.Thread.Append(messageView);
                             View.Reload();
                         }
                     }
@@ -235,8 +235,8 @@ namespace Signal_Windows.ViewModels
             localConversation.UpdateUI();
             if (SelectedThread != null && SelectedThread == localConversation)
             {
-                var container = new Message(message);
-                result = View.Thread.Append(container);
+                var messageView = Utils.CreateMessageView(message);
+                result = View.Thread.Append(messageView);
             }
             RepositionConversation(localConversation);
             return result;
