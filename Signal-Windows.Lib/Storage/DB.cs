@@ -186,18 +186,16 @@ namespace Signal_Windows.Storage
                             old.VerifiedStatus = VerifiedStatus.Unverified;
                         }
                         old.IdentityKey = identity;
-                        var oldSession = ctx.Sessions
-                            .Where(s => s.Username == address.Name && s.DeviceId == 1)
-                            .SingleOrDefault();
-                        if (oldSession != null)
+                        var oldSessions = ctx.Sessions
+                            .Where(s => s.Username == address.Name);
+                        foreach(var oldSession in oldSessions)
                         {
                             SessionRecord sessionRecord = new SessionRecord(Base64.Decode(oldSession.Session));
                             sessionRecord.archiveCurrentState();
                             oldSession.Session = Base64.EncodeBytes(sessionRecord.serialize());
-                            SessionsCache[address.Name] = sessionRecord;
+                            SessionsCache[GetSessionCacheIndex(address.Name, oldSession.DeviceId)] = sessionRecord;
                         }
                         messages = InsertIdentityChangedMessages(address.Name);
-                        //TODO archive sibling sessions?
                     }
                     ctx.SaveChanges();
                 }

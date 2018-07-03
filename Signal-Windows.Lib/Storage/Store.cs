@@ -38,7 +38,8 @@ namespace Signal_Windows.Storage
             {
                 //TODO compare timestamps & firstUse, see Signal-Android impl
                 string identity = Base64.EncodeBytes(identityKey.serialize());
-                return savedIdentity == Base64.EncodeBytes(identityKey.serialize());
+                bool isTrusted = savedIdentity == Base64.EncodeBytes(identityKey.serialize());
+                return isTrusted;
             }
         }
 
