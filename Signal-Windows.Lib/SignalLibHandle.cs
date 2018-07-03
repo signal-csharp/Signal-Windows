@@ -794,7 +794,6 @@ namespace Signal_Windows.Lib
             try
             {
                 Logger.LogTrace("HandleOutgoingKeyChange() locked");
-                var messages = LibsignalDBContext.InsertIdentityChangedMessagesLocked(user);
                 await LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(user, 1), identity);
             }
             catch (Exception e)

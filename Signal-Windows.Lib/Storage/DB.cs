@@ -101,13 +101,6 @@ namespace Signal_Windows.Storage
             }
         }
 
-        internal static LinkedList<SignalMessage> InsertIdentityChangedMessagesLocked(string number)
-        {
-            lock (DBLock)
-            {
-                return InsertIdentityChangedMessages(number);
-            }
-        }
         private static LinkedList<SignalMessage> InsertIdentityChangedMessages(string number)
         {
             long now = Util.CurrentTimeMillis();
