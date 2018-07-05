@@ -1314,11 +1314,11 @@ namespace Signal_Windows.Storage
                     var dbConversation = GetSignalConversationByThreadId(ctx, conversation.ThreadId);
                     if (dbConversation == null)
                     {
-                        if (dbConversation is SignalContact dbContact)
+                        if (conversation is SignalContact dbContact)
                         {
                             ctx.Contacts.Add(dbContact);
                         }
-                        else if (dbConversation is SignalGroup dbGroup)
+                        else if (conversation is SignalGroup dbGroup)
                         {
                             ctx.Groups.Add(dbGroup);
                         }

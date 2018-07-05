@@ -26,24 +26,25 @@ namespace Signal_Windows.Lib
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<IncomingMessages>();
         private readonly CancellationToken Token;
-        private readonly SignalServiceMessagePipe Pipe;
+        private readonly Task<SignalServiceMessagePipe> PipeTask;
         private readonly SignalServiceMessageReceiver MessageReceiver;
 
-        public IncomingMessages(CancellationToken token, SignalServiceMessagePipe pipe, SignalServiceMessageReceiver messageReceiver)
+        public IncomingMessages(CancellationToken token, Task<SignalServiceMessagePipe> pipe, SignalServiceMessageReceiver messageReceiver)
         {
             Token = token;
-            Pipe = pipe;
+            PipeTask = pipe;
             MessageReceiver = messageReceiver;
         }
 
         public async Task HandleIncomingMessages()
         {
             Logger.LogDebug("HandleIncomingMessages()");
+            var pipe = await PipeTask;
             while (!Token.IsCancellationRequested)
             {
                 try
                 {
-                    await Pipe.ReadBlocking(this);
+                    await pipe.ReadBlocking(this);
                 }
                 catch (OperationCanceledException)
                 {
@@ -578,7 +579,7 @@ namespace Signal_Windows.Lib
                         Group = group,
                         Timestamp = Util.CurrentTimeMillis()
                     };
-                    await SignalLibHandle.Instance.OutgoingMessages.SendMessage(envelope.GetSourceAddress(), requestInfoMessage);
+                    SignalLibHandle.Instance.OutgoingQueue.Add(new SignalServiceDataMessageSendable(requestInfoMessage, envelope.GetSourceAddress()));
                 }
                 composedTimestamp = envelope.GetTimestamp();
             }

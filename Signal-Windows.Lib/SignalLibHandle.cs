@@ -103,10 +103,8 @@ namespace Signal_Windows.Lib
         private Task IncomingMessagesTask;
         private Task OutgoingMessagesTask;
         internal OutgoingMessages OutgoingMessages;
-        private SignalServiceMessagePipe Pipe;
-        private SignalServiceMessageSender MessageSender;
         private SignalServiceMessageReceiver MessageReceiver;
-        public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
+        public BlockingCollection<ISendable> OutgoingQueue = new BlockingCollection<ISendable>(new ConcurrentQueue<ISendable>());
         private EventWaitHandle GlobalResetEvent;
         private Dictionary<long, DownloadOperation> Downloads = new Dictionary<long, DownloadOperation>();
 
@@ -283,10 +281,7 @@ namespace Signal_Windows.Lib
                 });
                 if (LikelyHasValidStore)
                 {
-                    var initNetworkTask = Task.Run(async () =>
-                    {
-                        await InitNetwork();
-                    });
+                    await InitNetwork();
                 }
                 Running = true;
             }
@@ -365,7 +360,7 @@ namespace Signal_Windows.Lib
                         AttachmentsCount = (uint) attachmentsList.Count()
                     };
                     await SaveAndDispatchSignalMessage(message, attachmentStorageFile, conversation);
-                    OutgoingQueue.Add(message);
+                    OutgoingQueue.Add(new SignalMessageSendable(message));
                 }
                 finally
                 {
@@ -377,20 +372,24 @@ namespace Signal_Windows.Lib
 
         public void RequestSync()
         {
-            Task.Run(() =>
+            try
             {
                 Logger.LogTrace("RequestSync()");
                 var contactsRequest = SignalServiceSyncMessage.ForRequest(new RequestMessage(new SyncMessage.Types.Request()
                 {
                     Type = SyncMessage.Types.Request.Types.Type.Contacts
                 }));
-                OutgoingMessages.SendMessage(contactsRequest);
+                OutgoingQueue.Add(new SignalServiceSyncMessageSendable(contactsRequest));
                 var groupsRequest = SignalServiceSyncMessage.ForRequest(new RequestMessage(new SyncMessage.Types.Request()
                 {
                     Type = SyncMessage.Types.Request.Types.Type.Groups
                 }));
-                OutgoingMessages.SendMessage(groupsRequest);
-            });
+                OutgoingQueue.Add(new SignalServiceSyncMessageSendable(groupsRequest));
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("RequestSync() failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
         }
 
         /// <summary>
@@ -405,9 +404,9 @@ namespace Signal_Windows.Lib
             {
                 Logger.LogTrace("SetMessageRead() locked");
                 var updatedConversation = SignalDBContext.UpdateMessageRead(message.ComposedTimestamp);
-                OutgoingMessages.SendMessage(SignalServiceSyncMessage.ForRead(new List<ReadMessage>() {
+                OutgoingQueue.Add(new SignalServiceSyncMessageSendable(SignalServiceSyncMessage.ForRead(new List<ReadMessage>() {
                         new ReadMessage(message.Author.ThreadId, message.ComposedTimestamp)
-                }));
+                })));
                 await DispatchMessageRead(updatedConversation);
             }
             catch (Exception e)
@@ -423,7 +422,7 @@ namespace Signal_Windows.Lib
 
         public void ResendMessage(SignalMessage message)
         {
-            OutgoingQueue.Add(message);
+            OutgoingQueue.Add(new SignalMessageSendable(message));
         }
 
         public IEnumerable<SignalMessage> GetMessages(SignalConversation thread, int startIndex, int count)
@@ -460,7 +459,7 @@ namespace Signal_Windows.Lib
                 blockedNumbers.Add(contact.ThreadId);
             }
             var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers));
-            OutgoingMessages.SendMessage(blockMessage);
+            OutgoingQueue.Add(new SignalServiceSyncMessageSendable(blockMessage));
             await DispatchHandleBlockedContacts(blockedContacts);
         }
         #endregion
@@ -747,15 +746,18 @@ namespace Signal_Windows.Lib
             SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(null, Events.SignalPipeMessageType.PipeEmptyMessage));
         }
 
-        internal async Task HandleMessageSentLocked(SignalMessage msg)
+        internal async Task HandleMessageSentLocked(ISendable msg)
         {
-            Logger.LogTrace("HandleMessageSentLocked() locking");
-            await SemaphoreSlim.WaitAsync(CancelSource.Token);
-            Logger.LogTrace("HandleMessageSentLocked() locked");
-            var updated = SignalDBContext.UpdateMessageStatus(msg);
-            await DispatchMessageUpdate(updated);
-            SemaphoreSlim.Release();
-            Logger.LogTrace("HandleMessageSentLocked() released");
+            if (msg is SignalMessageSendable smSendable)
+            {
+                Logger.LogTrace("HandleMessageSentLocked() locking");
+                await SemaphoreSlim.WaitAsync(CancelSource.Token);
+                Logger.LogTrace("HandleMessageSentLocked() locked");
+                var updated = SignalDBContext.UpdateMessageStatus(smSendable.OutgoingSignalMessage);
+                await DispatchMessageUpdate(updated);
+                SemaphoreSlim.Release();
+                Logger.LogTrace("HandleMessageSentLocked() released");
+            }
         }
 
         internal async Task DispatchMessageUpdate(SignalMessage msg)
@@ -895,10 +897,9 @@ namespace Signal_Windows.Lib
             try
             {
                 MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
-                Pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
-                MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
-                IncomingMessagesTask = Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, Pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
-                OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
+                var pipeTask = MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
+                OutgoingMessages = new OutgoingMessages(CancelSource.Token, pipeTask, Store, this);
+                IncomingMessagesTask = Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, pipeTask, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
                 OutgoingMessagesTask = Task.Factory.StartNew(async () => await OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
             }
             catch(Exception e)
