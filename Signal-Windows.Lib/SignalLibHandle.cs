@@ -197,14 +197,8 @@ namespace Signal_Windows.Lib
                 {
                     return false;
                 }
-                else
-                {
-                    LikelyHasValidStore = true;
-                }
-                var initNetwork = Task.Run(async () =>
-                {
-                    await InitNetwork();
-                });
+                LikelyHasValidStore = true;
+                InitNetwork();
                 var recoverDownloadsTask = Task.Run(() =>
                 {
                     RecoverDownloads().Wait();
@@ -281,7 +275,7 @@ namespace Signal_Windows.Lib
                 });
                 if (LikelyHasValidStore)
                 {
-                    await InitNetwork();
+                    InitNetwork();
                 }
                 Running = true;
             }
@@ -892,20 +886,31 @@ namespace Signal_Windows.Lib
         /// <summary>
         /// Initializes the websocket connection handling. Must not not be called on a UI thread. Must not be called on a task which holds the handle lock.
         /// </summary>
-        private async Task InitNetwork()
+        private void InitNetwork()
         {
             try
             {
                 MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
-                var pipeTask = MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
+                var pipeTask = Task.Run(async () =>
+                {
+                    try
+                    {
+                        return await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
+                    }
+                    catch(Exception e)
+                    {
+                        Logger.LogError("InitNetwork failed: {0}\n{1}", e.Message, e.StackTrace);
+                        await HandleAuthFailure();
+                        throw e;
+                    }
+                });
                 OutgoingMessages = new OutgoingMessages(CancelSource.Token, pipeTask, Store, this);
                 IncomingMessagesTask = Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, pipeTask, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
                 OutgoingMessagesTask = Task.Factory.StartNew(async () => await OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
             }
             catch(Exception e)
             {
-                Logger.LogError("InitNetwork failed: {0}\n{1}", e.Message, e.StackTrace);
-                await HandleAuthFailure();
+                Logger.LogError($"InitNetwork() failed: {e.Message}\n{e.StackTrace}");
             }
         }
 
