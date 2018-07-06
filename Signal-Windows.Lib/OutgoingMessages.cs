@@ -171,7 +171,7 @@ namespace Signal_Windows.Lib
                         try
                         {
                             sendable = Handle.OutgoingQueue.Take(Token);
-                            Logger.LogTrace($"Sending {sendable.GetType()}");
+                            Logger.LogTrace($"Sending {sendable.GetType().Name}");
                             await sendable.Send(messageSender, Token);
                         }
                         catch (OperationCanceledException) { return; }
