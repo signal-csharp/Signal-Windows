@@ -895,7 +895,9 @@ namespace Signal_Windows.Lib
                 {
                     try
                     {
-                        return await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
+                        var pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
+                        Logger.LogTrace("Messagepipe created");
+                        return pipe;
                     }
                     catch(Exception e)
                     {

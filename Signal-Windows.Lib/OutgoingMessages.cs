@@ -159,58 +159,68 @@ namespace Signal_Windows.Lib
         public async Task HandleOutgoingMessages()
         {
             Logger.LogDebug("HandleOutgoingMessages()");
-            var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), await CreatePipeTask, null, LibUtils.USER_AGENT);
-            while (!Token.IsCancellationRequested)
+            try
             {
-                ISendable sendable = null;
-                try
+                var pipe = await CreatePipeTask;
+                await Task.Delay(1);
+                var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), pipe, null, LibUtils.USER_AGENT);
+                while (!Token.IsCancellationRequested)
                 {
-                    sendable = Handle.OutgoingQueue.Take(Token);
-                    await sendable.Send(messageSender, Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    Logger.LogInformation("HandleOutgoingMessages() finished");
-                    return;
-                }
-                catch (EncapsulatedExceptions exceptions)
-                {
-                    sendable.Status = SignalMessageStatus.Confirmed;
-                    Logger.LogError("HandleOutgoingMessages() encountered libsignal exceptions");
-                    IList<UntrustedIdentityException> identityExceptions = exceptions.UntrustedIdentityExceptions;
-                    if (exceptions.NetworkExceptions.Count > 0)
+                    ISendable sendable = null;
+                    try
                     {
-                        sendable.Status = SignalMessageStatus.Failed_Network;
+                        sendable = Handle.OutgoingQueue.Take(Token);
+                        Logger.LogTrace($"Sending {sendable.GetType()}");
+                        await sendable.Send(messageSender, Token);
                     }
-                    if (identityExceptions.Count > 0)
+                    catch (OperationCanceledException) { return; }
+                    catch (EncapsulatedExceptions exceptions)
                     {
+                        sendable.Status = SignalMessageStatus.Confirmed;
+                        Logger.LogError("HandleOutgoingMessages() encountered libsignal exceptions");
+                        IList<UntrustedIdentityException> identityExceptions = exceptions.UntrustedIdentityExceptions;
+                        if (exceptions.NetworkExceptions.Count > 0)
+                        {
+                            sendable.Status = SignalMessageStatus.Failed_Network;
+                        }
+                        if (identityExceptions.Count > 0)
+                        {
+                            sendable.Status = SignalMessageStatus.Failed_Identity;
+                        }
+                        foreach (UntrustedIdentityException e in identityExceptions)
+                        {
+                            await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
+                        }
+                    }
+                    catch (RateLimitException)
+                    {
+                        Logger.LogError("HandleOutgoingMessages() could not send due to rate limits");
+                        sendable.Status = SignalMessageStatus.Failed_Ratelimit;
+                    }
+                    catch (UntrustedIdentityException e)
+                    {
+                        Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
                         sendable.Status = SignalMessageStatus.Failed_Identity;
-                    }
-                    foreach (UntrustedIdentityException e in identityExceptions)
-                    {
                         await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
                     }
+                    catch (Exception e)
+                    {
+                        var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                        Logger.LogError("HandleOutgoingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
+                        sendable.Status = SignalMessageStatus.Failed_Unknown;
+                    }
+                    await Handle.HandleMessageSentLocked(sendable);
                 }
-                catch (RateLimitException)
-                {
-                    Logger.LogError("HandleOutgoingMessages() could not send due to rate limits");
-                    sendable.Status = SignalMessageStatus.Failed_Ratelimit;
-                }
-                catch (UntrustedIdentityException e)
-                {
-                    Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
-                    sendable.Status = SignalMessageStatus.Failed_Identity;
-                    await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
-                }
-                catch (Exception e)
-                {
-                    var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
-                    Logger.LogError("HandleOutgoingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
-                    sendable.Status = SignalMessageStatus.Failed_Unknown;
-                }
-                await Handle.HandleMessageSentLocked(sendable);
             }
-            Logger.LogInformation("HandleOutgoingMessages() finished");
+            catch (OperationCanceledException) { }
+            catch (Exception e)
+            {
+                Logger.LogError($"HandleOutgoingMessages() failed: {e.Message}\n{e.StackTrace}");
+            }
+            finally
+            {
+                Logger.LogInformation("HandleOutgoingMessages() finished");
+            }
         }
     }
 }

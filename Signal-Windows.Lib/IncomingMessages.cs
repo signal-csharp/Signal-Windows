@@ -40,6 +40,7 @@ namespace Signal_Windows.Lib
         {
             Logger.LogDebug("HandleIncomingMessages()");
             var pipe = await PipeTask;
+            await Task.Delay(1);
             while (!Token.IsCancellationRequested)
             {
                 try
