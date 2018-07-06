@@ -39,25 +39,27 @@ namespace Signal_Windows.Lib
         public async Task HandleIncomingMessages()
         {
             Logger.LogDebug("HandleIncomingMessages()");
-            var pipe = await PipeTask;
-            await Task.Delay(1);
-            while (!Token.IsCancellationRequested)
+            await PipeTask.ContinueWith(async _ =>
             {
-                try
+                var pipe = await PipeTask;
+                while (!Token.IsCancellationRequested)
                 {
-                    await pipe.ReadBlocking(this);
+                    try
+                    {
+                        await pipe.ReadBlocking(this);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                        Logger.LogWarning("HandleIncomingMessages() failed: {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
+                    }
                 }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception e)
-                {
-                    var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
-                    Logger.LogWarning("HandleIncomingMessages() failed: {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
-                }
-            }
-            Logger.LogInformation("HandleIncomingMessages() finished");
+                Logger.LogInformation("HandleIncomingMessages() finished");
+            }, TaskContinuationOptions.RunContinuationsAsynchronously);
         }
 
         public async Task OnMessage(SignalServiceMessagePipeMessage message)
