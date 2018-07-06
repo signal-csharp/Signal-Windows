@@ -166,7 +166,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="libsignal-service-dotnet">
-      <Version>2.7.5.15</Version>
+      <Version>2.7.5.16</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore">
       <Version>1.1.5</Version>

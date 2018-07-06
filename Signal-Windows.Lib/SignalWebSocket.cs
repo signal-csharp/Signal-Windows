@@ -49,23 +49,21 @@ namespace Signal_Windows.Lib
             Logger.LogWarning("WebSocket_Closed() {0} ({1})", args.Code, args.Reason);
         }
 
-        private async void WebSocket_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
+        private void WebSocket_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
         {
             try
             {
                 using (var data = args.GetDataStream())
+                using (var buffer = new MemoryStream())
                 {
-                    MessageReceived.Invoke(sender, new SignalWebSocketMessageReceivedEventArgs() { Message = data.AsStreamForRead() });
+                    data.AsStreamForRead().CopyTo(buffer);
+                    MessageReceived.Invoke(sender, new SignalWebSocketMessageReceivedEventArgs() { Message = buffer.ToArray() });
                 }
             }
             catch(Exception e)
             {
                 Logger.LogError("WebSocket_MessageReceived failed: {0}\n{1}", e.Message, e.StackTrace);
-                try
-                {
-                    await ConnectAsync();
-                }
-                catch (TaskCanceledException) { }
+                Task.Run(ConnectAsync);
             }
         }
 
