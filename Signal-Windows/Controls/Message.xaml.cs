@@ -167,13 +167,20 @@ namespace Signal_Windows.Controls
                     }
                     catch (Exception)
                     {
+                        MessageContentTextBlock.Inlines.Add(new Run()
+                        {
+                            Text = link
+                        });
                         continue;
+                    }
+                    finally
+                    {
+                        previousIndex = currentIndex + match.Length;
+                        currentIndex = previousIndex;
                     }
                     hyperlink.UnderlineStyle = UnderlineStyle.Single;
                     hyperlink.Inlines.Add(hyperlinkRun);
                     MessageContentTextBlock.Inlines.Add(hyperlink);
-                    previousIndex = currentIndex + match.Length;
-                    currentIndex = previousIndex;
                 }
 
                 // Then finish up by adding the rest of the message text to the TextBox
