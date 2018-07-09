@@ -161,7 +161,8 @@ namespace Signal_Windows.Lib
             Logger.LogDebug("HandleOutgoingMessages()");
             try
             {
-                await CreatePipeTask.ContinueWith(async _ =>
+                await CreatePipeTask;
+                await Task.Run(async () =>
                 {
                     var pipe = await CreatePipeTask;
                     var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), pipe, null, LibUtils.USER_AGENT);
@@ -212,9 +213,13 @@ namespace Signal_Windows.Lib
                         }
                         await Handle.HandleMessageSentLocked(sendable);
                     }
-                }, TaskContinuationOptions.RunContinuationsAsynchronously);
+                    Logger.LogInformation("HandleOutgoingMessages() stopping: cancellation was requested");
+                });
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+                Logger.LogInformation("HandleOutgoingMessages() stopping: cancellation was requested (OperationCancelledException)");
+            }
             catch (Exception e)
             {
                 Logger.LogError($"HandleOutgoingMessages() failed: {e.Message}\n{e.StackTrace}");
