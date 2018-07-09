@@ -126,7 +126,10 @@ namespace Signal_Windows.Lib
                     dataWriter.DetachStream();
                 }
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+                Logger.LogTrace($"SendMessage() was cancelled");
+            }
             catch (Exception e)
             {
                 Logger.LogError($"SendMessage() failed: {e.Message}\n{e.StackTrace}");
