@@ -41,8 +41,11 @@ namespace Signal_Windows.Controls
 
         public void AddLinefeed()
         {
-            InputTextBox.Text += "\r";
-            InputTextBox.SelectionStart = InputTextBox.Text.Length;
+            string prefix = InputTextBox.Text.Substring(0, InputTextBox.SelectionStart);
+            string suffix = InputTextBox.Text.Substring(InputTextBox.SelectionStart);
+            var pos = InputTextBox.SelectionStart;
+            InputTextBox.Text = prefix + "\r" + suffix;
+            InputTextBox.SelectionStart = pos + 1;
             InputTextBox.SelectionLength = 0;
         }
 
