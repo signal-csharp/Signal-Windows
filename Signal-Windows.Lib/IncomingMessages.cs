@@ -94,6 +94,14 @@ namespace Signal_Windows.Lib
                     SignalLibHandle.Instance.DispatchPipeEmptyMessage();
                 }
             }
+            catch (Exception e)
+            {
+                Logger.LogError("OnMessage failed: {0}\n{1}", e.Message, e.StackTrace);
+                if (e.InnerException != null)
+                {
+                    Logger.LogError("InnerException: {0}\n{1}", e.InnerException.Message, e.InnerException.StackTrace);
+                }
+            }
             finally
             {
                 SignalLibHandle.Instance.SemaphoreSlim.Release();
