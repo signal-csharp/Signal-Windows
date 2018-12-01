@@ -30,10 +30,9 @@ namespace Signal_Windows.RC
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
-            
-            Logger.LogInformation("Background task starting");
-            Deferral = taskInstance.GetDeferral();
+            SignalFileLoggerProvider.ForceAddBGLog(LibUtils.GetBGStartMessage());
             SignalLogging.SetupLogging(false);
+            Deferral = taskInstance.GetDeferral();
             ToastNotifier = ToastNotificationManager.CreateToastNotifier();
             taskInstance.Canceled += OnCanceled;
             bool locked = LibUtils.Lock(5000);

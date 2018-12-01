@@ -890,15 +890,17 @@ namespace Signal_Windows.Lib
         {
             try
             {
+                Logger.LogTrace("InitNetwork() sync context = {0}", SynchronizationContext.Current);
                 MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
                 var pipeTask = Task.Run(async () =>
                 {
                     try
                     {
                         var pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
-                        Logger.LogTrace("Messagepipe created");
-                        IncomingMessagesTask = await Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
-                        OutgoingMessagesTask = await Task.Factory.StartNew(async () => await new OutgoingMessages(CancelSource.Token, pipe, Store, this).HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
+                        Logger.LogTrace("Starting IncomingMessagesTask");
+                        IncomingMessagesTask = Task.Run(() => new IncomingMessages(CancelSource.Token, pipe, MessageReceiver).HandleIncomingMessages());
+                        Logger.LogTrace("Starting OutgoingMessagesTask");
+                        OutgoingMessagesTask = Task.Run(() => new OutgoingMessages(CancelSource.Token, pipe, Store, this).HandleOutgoingMessages());
                         return pipe;
                     }
                     catch(Exception e)

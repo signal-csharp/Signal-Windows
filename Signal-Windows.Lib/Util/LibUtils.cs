@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel;
 using Windows.Foundation.Metadata;
 using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
@@ -113,6 +114,24 @@ namespace Signal_Windows.Lib
         public static FileStream CreateTmpFile(string name)
         {
             return File.Open(ApplicationData.Current.LocalCacheFolder.Path + Path.AltDirectorySeparatorChar + name, FileMode.Create, FileAccess.ReadWrite);
+        }
+
+        public static string GetAppStartMessage()
+        {
+            var version = Package.Current.Id.Version;
+            return
+                "-------------------------------------------------\n" +
+                String.Format("    Signal-Windows {0}.{1}.{2}.{3} starting\n", version.Major, version.Minor, version.Build, version.Revision) +
+                "-------------------------------------------------\n";
+        }
+
+        public static string GetBGStartMessage()
+        {
+            var version = Package.Current.Id.Version;
+            return
+                "-------------------------------------------------\n" +
+                String.Format("    Signal-Windows BG {0}.{1}.{2}.{3} starting\n", version.Major, version.Minor, version.Build, version.Revision) +
+                "-------------------------------------------------\n";
         }
     }
 

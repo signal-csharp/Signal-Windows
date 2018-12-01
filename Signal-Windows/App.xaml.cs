@@ -58,7 +58,7 @@ namespace Signal_Windows
         /// </summary>
         public App()
         {
-            SignalFileLoggerProvider.ForceAddUILog(Utils.GetAppStartMessage());
+            SignalFileLoggerProvider.ForceAddUILog(LibUtils.GetAppStartMessage());
             Instance = this;
             SignalLogging.SetupLogging(true);
             this.InitializeComponent();
