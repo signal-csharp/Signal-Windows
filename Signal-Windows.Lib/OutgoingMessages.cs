@@ -146,12 +146,12 @@ namespace Signal_Windows.Lib
         private readonly CancellationToken Token;
         private readonly SignalLibHandle Handle;
         private readonly SignalStore Store;
-        private readonly Task<SignalServiceMessagePipe> CreatePipeTask;
+        private readonly SignalServiceMessagePipe Pipe;
 
-        public OutgoingMessages(CancellationToken token, Task<SignalServiceMessagePipe> createPipeTask, SignalStore store, SignalLibHandle handle)
+        public OutgoingMessages(CancellationToken token, SignalServiceMessagePipe pipe, SignalStore store, SignalLibHandle handle)
         {
             Token = token;
-            CreatePipeTask = createPipeTask;
+            Pipe = pipe;
             Store = store;
             Handle = handle;
         }
@@ -161,60 +161,55 @@ namespace Signal_Windows.Lib
             Logger.LogDebug("HandleOutgoingMessages()");
             try
             {
-                await CreatePipeTask;
-                await Task.Run(async () =>
+                var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
+                while (!Token.IsCancellationRequested)
                 {
-                    var pipe = await CreatePipeTask;
-                    var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), pipe, null, LibUtils.USER_AGENT);
-                    while (!Token.IsCancellationRequested)
+                    ISendable sendable = null;
+                    try
                     {
-                        ISendable sendable = null;
-                        try
+                        sendable = Handle.OutgoingQueue.Take(Token);
+                        Logger.LogTrace($"Sending {sendable.GetType().Name}");
+                        await sendable.Send(messageSender, Token);
+                    }
+                    catch (OperationCanceledException) { return; }
+                    catch (EncapsulatedExceptions exceptions)
+                    {
+                        sendable.Status = SignalMessageStatus.Confirmed;
+                        Logger.LogError("HandleOutgoingMessages() encountered libsignal exceptions");
+                        IList<UntrustedIdentityException> identityExceptions = exceptions.UntrustedIdentityExceptions;
+                        if (exceptions.NetworkExceptions.Count > 0)
                         {
-                            sendable = Handle.OutgoingQueue.Take(Token);
-                            Logger.LogTrace($"Sending {sendable.GetType().Name}");
-                            await sendable.Send(messageSender, Token);
+                            sendable.Status = SignalMessageStatus.Failed_Network;
                         }
-                        catch (OperationCanceledException) { return; }
-                        catch (EncapsulatedExceptions exceptions)
+                        if (identityExceptions.Count > 0)
                         {
-                            sendable.Status = SignalMessageStatus.Confirmed;
-                            Logger.LogError("HandleOutgoingMessages() encountered libsignal exceptions");
-                            IList<UntrustedIdentityException> identityExceptions = exceptions.UntrustedIdentityExceptions;
-                            if (exceptions.NetworkExceptions.Count > 0)
-                            {
-                                sendable.Status = SignalMessageStatus.Failed_Network;
-                            }
-                            if (identityExceptions.Count > 0)
-                            {
-                                sendable.Status = SignalMessageStatus.Failed_Identity;
-                            }
-                            foreach (UntrustedIdentityException e in identityExceptions)
-                            {
-                                await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
-                            }
-                        }
-                        catch (RateLimitException)
-                        {
-                            Logger.LogError("HandleOutgoingMessages() could not send due to rate limits");
-                            sendable.Status = SignalMessageStatus.Failed_Ratelimit;
-                        }
-                        catch (UntrustedIdentityException e)
-                        {
-                            Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
                             sendable.Status = SignalMessageStatus.Failed_Identity;
+                        }
+                        foreach (UntrustedIdentityException e in identityExceptions)
+                        {
                             await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
                         }
-                        catch (Exception e)
-                        {
-                            var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
-                            Logger.LogError("HandleOutgoingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
-                            sendable.Status = SignalMessageStatus.Failed_Unknown;
-                        }
-                        await Handle.HandleMessageSentLocked(sendable);
                     }
-                    Logger.LogInformation("HandleOutgoingMessages() stopping: cancellation was requested");
-                });
+                    catch (RateLimitException)
+                    {
+                        Logger.LogError("HandleOutgoingMessages() could not send due to rate limits");
+                        sendable.Status = SignalMessageStatus.Failed_Ratelimit;
+                    }
+                    catch (UntrustedIdentityException e)
+                    {
+                        Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
+                        sendable.Status = SignalMessageStatus.Failed_Identity;
+                        await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
+                    }
+                    catch (Exception e)
+                    {
+                        var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                        Logger.LogError("HandleOutgoingMessages() failed in line {0}: {1}\n{2}", line, e.Message, e.StackTrace);
+                        sendable.Status = SignalMessageStatus.Failed_Unknown;
+                    }
+                    await Handle.HandleMessageSentLocked(sendable);
+                }
+                Logger.LogInformation("HandleOutgoingMessages() stopping: cancellation was requested");
             }
             catch (OperationCanceledException)
             {

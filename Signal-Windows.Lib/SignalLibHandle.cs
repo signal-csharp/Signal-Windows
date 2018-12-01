@@ -298,9 +298,9 @@ namespace Signal_Windows.Lib
                 IncomingMessagesTask?.Wait();
                 OutgoingMessagesTask?.Wait();
                 Instance = null;
-                Logger.LogTrace("Release() releasing global)");
+                Logger.LogTrace("Release() releasing global");
                 LibUtils.Unlock();
-                Logger.LogTrace("Release() releasing local)");
+                Logger.LogTrace("Release() releasing local");
                 SemaphoreSlim.Release();
                 Logger.LogTrace("Release() released");
             }
@@ -897,6 +897,8 @@ namespace Signal_Windows.Lib
                     {
                         var pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
                         Logger.LogTrace("Messagepipe created");
+                        IncomingMessagesTask = await Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
+                        OutgoingMessagesTask = await Task.Factory.StartNew(async () => await new OutgoingMessages(CancelSource.Token, pipe, Store, this).HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
                         return pipe;
                     }
                     catch(Exception e)
@@ -906,9 +908,6 @@ namespace Signal_Windows.Lib
                         throw e;
                     }
                 });
-                OutgoingMessages = new OutgoingMessages(CancelSource.Token, pipeTask, Store, this);
-                IncomingMessagesTask = Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, pipeTask, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
-                OutgoingMessagesTask = Task.Factory.StartNew(async () => await OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
             }
             catch(Exception e)
             {

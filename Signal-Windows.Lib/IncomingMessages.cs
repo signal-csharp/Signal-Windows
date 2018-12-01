@@ -26,40 +26,36 @@ namespace Signal_Windows.Lib
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<IncomingMessages>();
         private readonly CancellationToken Token;
-        private readonly Task<SignalServiceMessagePipe> PipeTask;
+        private readonly SignalServiceMessagePipe Pipe;
         private readonly SignalServiceMessageReceiver MessageReceiver;
 
-        public IncomingMessages(CancellationToken token, Task<SignalServiceMessagePipe> pipe, SignalServiceMessageReceiver messageReceiver)
+        public IncomingMessages(CancellationToken token, SignalServiceMessagePipe pipe, SignalServiceMessageReceiver messageReceiver)
         {
             Token = token;
-            PipeTask = pipe;
+            Pipe = pipe;
             MessageReceiver = messageReceiver;
         }
 
         public async Task HandleIncomingMessages()
         {
             Logger.LogDebug("HandleIncomingMessages()");
-            await PipeTask.ContinueWith(async _ =>
+            while (!Token.IsCancellationRequested)
             {
-                var pipe = await PipeTask;
-                while (!Token.IsCancellationRequested)
+                try
                 {
-                    try
-                    {
-                        await pipe.ReadBlocking(this);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
-                    catch (Exception e)
-                    {
-                        var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
-                        Logger.LogWarning("HandleIncomingMessages() failed: {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
-                    }
+                    await Pipe.ReadBlocking(this);
                 }
-                Logger.LogInformation("HandleIncomingMessages() finished");
-            }, TaskContinuationOptions.RunContinuationsAsynchronously);
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception e)
+                {
+                    var line = new StackTrace(e, true).GetFrames()[0].GetFileLineNumber();
+                    Logger.LogWarning("HandleIncomingMessages() failed: {0} occured ({1}):\n{2}", e.GetType(), e.Message, e.StackTrace);
+                }
+            }
+            Logger.LogInformation("HandleIncomingMessages() finished");
         }
 
         public async Task OnMessage(SignalServiceMessagePipeMessage message)
