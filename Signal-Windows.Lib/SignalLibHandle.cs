@@ -102,7 +102,6 @@ namespace Signal_Windows.Lib
         private ISignalFrontend MainWindow;
         private Task IncomingMessagesTask;
         private Task OutgoingMessagesTask;
-        internal OutgoingMessages OutgoingMessages;
         private SignalServiceMessageReceiver MessageReceiver;
         public BlockingCollection<ISendable> OutgoingQueue = new BlockingCollection<ISendable>(new ConcurrentQueue<ISendable>());
         private EventWaitHandle GlobalResetEvent;
