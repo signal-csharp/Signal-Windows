@@ -61,18 +61,27 @@ namespace Signal_Windows.Views
             string tag = radioButton.Tag.ToString();
             if (tag == Vm.NameAndMessageTag)
             {
-                Vm.NameAndMessageChecked = true;
-                GlobalSettingsManager.ShowNotificationTextSetting = GlobalSettingsManager.ShowNotificationTextSettings.NameAndMessage;
+                if (GlobalSettingsManager.ShowNotificationTextSetting != GlobalSettingsManager.ShowNotificationTextSettings.NameAndMessage)
+                {
+                    GlobalSettingsManager.ShowNotificationTextSetting = GlobalSettingsManager.ShowNotificationTextSettings.NameAndMessage;
+                    Vm.NameAndMessageChecked = true;
+                }
             }
             else if (tag == Vm.NameOnlyTag)
             {
-                Vm.NameOnlyChecked = true;
-                GlobalSettingsManager.ShowNotificationTextSetting = GlobalSettingsManager.ShowNotificationTextSettings.NameOnly;
+                if (GlobalSettingsManager.ShowNotificationTextSetting != GlobalSettingsManager.ShowNotificationTextSettings.NameOnly)
+                {
+                    GlobalSettingsManager.ShowNotificationTextSetting = GlobalSettingsManager.ShowNotificationTextSettings.NameOnly;
+                    Vm.NameOnlyChecked = true;
+                }
             }
             else if (tag == Vm.NoNameOrMessageTag)
             {
-                Vm.NoNameOrMessageChecked = true;
-                GlobalSettingsManager.ShowNotificationTextSetting = GlobalSettingsManager.ShowNotificationTextSettings.NoNameOrMessage;
+                if (GlobalSettingsManager.ShowNotificationTextSetting != GlobalSettingsManager.ShowNotificationTextSettings.NoNameOrMessage)
+                {
+                    GlobalSettingsManager.ShowNotificationTextSetting = GlobalSettingsManager.ShowNotificationTextSettings.NoNameOrMessage;
+                    Vm.NoNameOrMessageChecked = true;
+                }
             }
         }
     }

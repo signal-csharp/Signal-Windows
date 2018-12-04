@@ -44,14 +44,20 @@ namespace Signal_Windows.ViewModels
             var showNotificationTextSettings = GlobalSettingsManager.ShowNotificationTextSetting;
             if (showNotificationTextSettings == GlobalSettingsManager.ShowNotificationTextSettings.NameAndMessage)
             {
+                NameOnlyChecked = false;
+                NoNameOrMessageChecked = false;
                 NameAndMessageChecked = true;
             }
             else if (showNotificationTextSettings == GlobalSettingsManager.ShowNotificationTextSettings.NameOnly)
             {
+                NameAndMessageChecked = false;
+                NoNameOrMessageChecked = false;
                 NameOnlyChecked = true;
             }
             else if (showNotificationTextSettings == GlobalSettingsManager.ShowNotificationTextSettings.NoNameOrMessage)
             {
+                NameOnlyChecked = false;
+                NameAndMessageChecked = false;
                 NoNameOrMessageChecked = true;
             }
         }
