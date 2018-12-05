@@ -169,6 +169,11 @@ namespace Signal_Windows.ViewModels
         }
 
         #region SignalFrontend API
+        public void OpenAttachment(SignalAttachment sa)
+        {
+            View.Frame.Navigate(typeof(AttachmentDetailsPage), sa);
+        }
+
         public void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
         {
             SignalConversation uiConversation;
