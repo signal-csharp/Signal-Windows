@@ -69,6 +69,62 @@ namespace Signal_Windows.ViewModels
             }
         }
 
+        private bool _IsPaneOpen = false;
+        public bool IsPaneOpen
+        {
+            get => _IsPaneOpen;
+            set
+            {
+                if (_IsPaneOpen != value)
+                {
+                    _IsPaneOpen = value;
+                    RaisePropertyChanged(nameof(IsPaneOpen));
+                }
+            }
+        }
+
+        private double _CompactPaneLength = 0;
+        public double CompactPaneLength
+        {
+            get => _CompactPaneLength;
+            set
+            {
+                if (_CompactPaneLength != value)
+                {
+                    _CompactPaneLength = value;
+                    RaisePropertyChanged(nameof(CompactPaneLength));
+                }
+            }
+        }
+
+        private double _OpenPaneLength = 320;
+        public double OpenPaneLength
+        {
+            get => _OpenPaneLength;
+            set
+            {
+                if (_OpenPaneLength != value)
+                {
+                    _OpenPaneLength = value;
+                    RaisePropertyChanged(nameof(OpenPaneLength));
+                }
+            }
+        }
+
+        private SplitViewDisplayMode _DisplayMode = SplitViewDisplayMode.CompactInline;
+        public SplitViewDisplayMode DisplayMode
+        {
+            get => _DisplayMode;
+            set
+            {
+                if (_DisplayMode != value)
+                {
+                    _DisplayMode = value;
+                    RaisePropertyChanged(nameof(DisplayMode));
+                }
+            }
+        }
+
         internal void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
             SelectedThread = null;

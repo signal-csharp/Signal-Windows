@@ -6,15 +6,19 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="Black">
 
     <!-- https://www.goedware.com/index.php/blog/3-pinch-zoom-image-in-uwp-app -->
-    <FlipView Name="ImageFlipView" ItemsSource="{x:Bind Attachments}" Width="Auto" Height="Auto">
-        <FlipView.ItemTemplate>
-            <DataTemplate>
-                <Image Source="{Binding}" />
-            </DataTemplate>
-        </FlipView.ItemTemplate>
-    </FlipView>
-
+    <StackPanel>
+        <Button Grid.Column="1" x:Name="ExportButton" Background="{x:Null}" Click="ExportButton_Click">
+            <SymbolIcon Symbol="Save" Foreground="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+        </Button>
+        <FlipView Name="ImageFlipView" ItemsSource="{x:Bind Attachments}" Width="Auto" Height="Auto">
+            <FlipView.ItemTemplate>
+                <DataTemplate>
+                    <Image Source="{Binding}" />
+                </DataTemplate>
+            </FlipView.ItemTemplate>
+        </FlipView>
+    </StackPanel>
 </Page>

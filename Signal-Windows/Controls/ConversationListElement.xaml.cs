@@ -172,7 +172,7 @@ namespace Signal_Windows.Controls
                         UpdateBlockedContactElement();
                         Model.UpdateUI = UpdateBlockedContactElement;
                     }
-                    else if (frame.CurrentSourcePageType == typeof(MainPage))
+                    else
                     {
                         UpdateConversationDisplay();
                         Model.UpdateUI = UpdateConversationDisplay;

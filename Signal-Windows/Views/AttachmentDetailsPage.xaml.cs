@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -27,6 +28,7 @@ namespace Signal_Windows.Views
     public sealed partial class AttachmentDetailsPage : Page
     {
         public ObservableCollection<string> Attachments { get; set; } = new ObservableCollection<string>();
+        private SignalAttachment Attachment;
 
         public AttachmentDetailsPage()
         {
@@ -40,7 +42,8 @@ namespace Signal_Windows.Views
             base.OnNavigatedTo(e);
             Utils.EnableBackButton(BackButton_Click);
             Attachments.Clear();
-            Attachments.Add($"{ApplicationData.Current.LocalCacheFolder.Path}/Attachments/{(e.Parameter as SignalAttachment).Id}.plain");
+            Attachment = e.Parameter as SignalAttachment;
+            Attachments.Add($"{ApplicationData.Current.LocalCacheFolder.Path}/Attachments/{Attachment.Id}.plain");
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
@@ -53,6 +56,11 @@ namespace Signal_Windows.Views
         {
             Frame.GoBack();
             e.Handled = true;
+        }
+
+        private async void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            await App.Handle.ExportAttachment(Attachment);
         }
     }
 }
