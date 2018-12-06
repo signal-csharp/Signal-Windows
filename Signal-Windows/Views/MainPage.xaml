@@ -8,6 +8,7 @@
     xmlns:viewmodels="using:Signal_Windows.ViewModels"
     xmlns:controls="using:Signal_Windows.Controls"
     mc:Ignorable="d"
+    NavigationCacheMode="Required"
     DataContext="{Binding MainPageInstance, Source={StaticResource Locator}}">
 
     <Page.Resources>
@@ -24,7 +25,7 @@
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Page.Resources>
-    <SplitView Name="MainPanel" CompactPaneLength="0" OpenPaneLength="320" DisplayMode="CompactInline">
+    <SplitView Name="MainPanel" IsPaneOpen="{x:Bind Vm.IsPaneOpen, Mode=OneWay}" CompactPaneLength="{x:Bind Vm.CompactPaneLength, Mode=OneWay}" OpenPaneLength="{x:Bind Vm.OpenPaneLength, Mode=OneWay}" DisplayMode="{x:Bind Vm.DisplayMode, Mode=OneWay}">
         <SplitView.Pane>
             <Grid x:Name="ContactsGrid">
                 <Grid.RowDefinitions>
@@ -47,10 +48,10 @@
                     </Button>
                 </Grid>
                 <AutoSuggestBox Grid.Row="1" Margin="16"/>
-                <ListView Grid.Row="2" Name="ContactsList" ItemsSource="{x:Bind Vm.Conversations, Mode=TwoWay}" SelectionMode="Single" SelectionChanged="Vm.ConversationsList_SelectionChanged" SelectedItem="{x:Bind Vm.SelectedConversation, Mode=TwoWay}">
+                <ListView Grid.Row="2" Name="ContactsList" ItemsSource="{x:Bind Vm.Conversations, Mode=TwoWay}" SelectionMode="Single" SelectionChanged="Vm.ConversationsList_SelectionChanged" SelectedItem="{x:Bind Vm.SelectedConversation, Mode=TwoWay}" VirtualizingStackPanel.VirtualizationMode="Recycling">
                     <ListView.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel></StackPanel>
+                            <VirtualizingStackPanel></VirtualizingStackPanel>
                         </ItemsPanelTemplate>
                     </ListView.ItemsPanel>
                     <ListView.ItemContainerStyle>

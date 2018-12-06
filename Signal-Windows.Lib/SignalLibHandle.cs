@@ -76,6 +76,7 @@ namespace Signal_Windows.Lib
 
         // Attachment API
         void StartAttachmentDownload(SignalAttachment sa);
+        Task ExportAttachment(SignalAttachment sa);
         //void AbortAttachmentDownload(SignalAttachment sa); TODO
     }
 
@@ -480,6 +481,39 @@ namespace Signal_Windows.Lib
                     Logger.LogTrace("StartAttachmentDownload() released");
                 }
             });
+        }
+
+        public async Task ExportAttachment(SignalAttachment sa)
+        {
+            try
+            {
+                Logger.LogTrace("ExportAttachment() locking");
+                await SemaphoreSlim.WaitAsync(CancelSource.Token);
+                Logger.LogTrace("ExportAttachment() locked");
+                var savePicker = new Windows.Storage.Pickers.FileSavePicker
+                {
+                    SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Downloads,
+                    SuggestedFileName = sa.SentFileName ?? "signal"
+                };
+                savePicker.FileTypeChoices.Add("Any", new List<string>() { "." });
+                var target_file = await savePicker.PickSaveFileAsync();
+                if (target_file != null)
+                {
+                    CachedFileManager.DeferUpdates(target_file);
+                    IStorageFile localCopy = await ApplicationData.Current.LocalCacheFolder.GetFileAsync($@"Attachments\{sa.Id}.plain");
+                    await localCopy.CopyAndReplaceAsync(target_file);
+                    Windows.Storage.Provider.FileUpdateStatus status = await CachedFileManager.CompleteUpdatesAsync(target_file);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("ExportAttachment failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+                Logger.LogTrace("ExportAttachment() released");
+            }
         }
         #endregion
 
