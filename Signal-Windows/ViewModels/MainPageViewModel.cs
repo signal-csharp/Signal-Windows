@@ -293,13 +293,13 @@ namespace Signal_Windows.ViewModels
             localConversation.UnreadCount = conversation.UnreadCount;
             localConversation.LastSeenMessageIndex = conversation.LastSeenMessageIndex;
             localConversation.ExpiresInSeconds = conversation.ExpiresInSeconds;
-            localConversation.UpdateUI();
             if (SelectedThread != null && SelectedThread == localConversation)
             {
                 var messageView = Utils.CreateMessageView(message);
                 result = View.Thread.Append(messageView);
             }
             RepositionConversation(localConversation);
+            localConversation.UpdateUI?.Invoke();
             return result;
         }
 
