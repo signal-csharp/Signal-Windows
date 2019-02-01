@@ -89,6 +89,16 @@ namespace Signal_Windows.Controls
         public static readonly DependencyProperty SendMessageVisibilityProperty =
             DependencyProperty.Register("SendMessageVisibility", typeof(Visibility), typeof(UserInput), null);
 
+        public bool SpellCheckEnabled
+        {
+            get { return (bool)GetValue(SpellCheckEnabledProperty); }
+            set { SetValue(SpellCheckEnabledProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for SendMessageVisibility.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty SpellCheckEnabledProperty =
+            DependencyProperty.Register("SpellCheckEnabled", typeof(bool), typeof(UserInput), null);
+
         private void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
             OnSendMessageButtonClicked?.Invoke();

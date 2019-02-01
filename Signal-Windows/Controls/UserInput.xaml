@@ -18,7 +18,7 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBox Grid.Row="1" Grid.Column="0" x:Name="InputTextBox" VerticalAlignment="Center" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" InputScope="Chat" Visibility="{x:Bind SendMessageVisibility, Mode=OneWay}" MaxLength="2000" KeyDown="InputTextBox_KeyDown" TextChanged="InputTextBox_TextChanged"/>
+        <TextBox Grid.Row="1" Grid.Column="0" x:Name="InputTextBox" VerticalAlignment="Center" PlaceholderText="Type a message" BorderBrush="{x:Null}" BorderThickness="0" TextWrapping="Wrap" InputScope="Chat" Visibility="{x:Bind SendMessageVisibility, Mode=OneWay}" MaxLength="2000" KeyDown="InputTextBox_KeyDown" TextChanged="InputTextBox_TextChanged" IsSpellCheckEnabled="{x:Bind SpellCheckEnabled, Mode=OneWay}"/>
         <Button x:Name="SendMessageButton" Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Width="50" VerticalContentAlignment="Stretch" MinHeight="50" Visibility="{x:Bind SendMessageVisibility, Mode=OneWay}" AllowFocusOnInteraction="False" IsEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" Click="SendMessageButton_Click" Background="{x:Bind SendButtonBackground}">
             <SymbolIcon x:Name="SendMessageButtonSymbol"  Symbol="Attach"/>
         </Button>

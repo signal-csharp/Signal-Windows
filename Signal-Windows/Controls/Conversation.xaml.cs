@@ -121,6 +121,13 @@ namespace Signal_Windows.Controls
             set { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendMessageVisible))); }
         }
 
+        private bool spellCheckEnabled;
+        public bool SpellCheckEnabled
+        {
+            get { return spellCheckEnabled; }
+            set { spellCheckEnabled = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpellCheckEnabled))); }
+        }
+
         public Conversation()
         {
             this.InitializeComponent();
@@ -202,6 +209,7 @@ namespace Signal_Windows.Controls
             UserInputBar.FocusTextBox();
             DisposeCurrentThread();
             UpdateHeader(conversation);
+            SpellCheckEnabled = GlobalSettingsManager.SpellCheckSetting;
 
             /*
              * When selecting a small (~650 messages) conversation after a bigger (~1800 messages) one,

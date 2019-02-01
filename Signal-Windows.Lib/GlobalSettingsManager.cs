@@ -25,6 +25,7 @@ namespace Signal_Windows.Lib
         }
         private const string BlockScreenshots = "BlockScreenshots";
         private const string EnableReadReceipts = "EnableReadReceipts";
+        private const string SpellCheck = "SpellCheck";
 
         private static ApplicationDataContainer localSettings;
         private static IReadOnlyDictionary<string, ApplicationDataContainer> Containers
@@ -92,6 +93,18 @@ namespace Signal_Windows.Lib
             set
             {
                 Containers[PrivacyContainer].Values[EnableReadReceipts] = value;
+            }
+        }
+
+        public static bool SpellCheckSetting
+        {
+            get
+            {
+                return GetSetting(Containers[ChatsAndMediaContainer], SpellCheck, true);
+            }
+            set
+            {
+                Containers[ChatsAndMediaContainer].Values[SpellCheck] = value;
             }
         }
 

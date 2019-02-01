@@ -127,7 +127,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <local:AddedAttachment Grid.Row="0" Grid.ColumnSpan="2" x:Name="AddedAttachmentDisplay" AllowFocusOnInteraction="False" OnCancelAttachmentButtonClicked="AddedAttachmentDisplay_OnCancelAttachmentButtonClicked"/>
-            <local:UserInput Grid.Row="1" x:Name="UserInputBar" SendMessageVisibility="{x:Bind SendMessageVisible, Mode=OneWay}" BlockedVisibility="{x:Bind Blocked, Mode=OneWay}" SendButtonEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" OnSendMessageButtonClicked="UserInputBar_OnSendMessageButtonClicked" OnEnterKeyPressed="UserInputBar_OnEnterKeyPressed" OnUnblockButtonClicked="UserInputBar_OnUnblockButtonClicked" OnInputTextBoxTextChanged="UpdateSendButtonIcon"/>
+            <local:UserInput Grid.Row="1" x:Name="UserInputBar" SendMessageVisibility="{x:Bind SendMessageVisible, Mode=OneWay}" BlockedVisibility="{x:Bind Blocked, Mode=OneWay}" SendButtonEnabled="{x:Bind SendButtonEnabled, Mode=OneWay}" SpellCheckEnabled="{x:Bind SpellCheckEnabled, Mode=OneWay}" OnSendMessageButtonClicked="UserInputBar_OnSendMessageButtonClicked" OnEnterKeyPressed="UserInputBar_OnEnterKeyPressed" OnUnblockButtonClicked="UserInputBar_OnUnblockButtonClicked" OnInputTextBoxTextChanged="UpdateSendButtonIcon"/>
         </Grid>
     </Grid>
 </UserControl>
