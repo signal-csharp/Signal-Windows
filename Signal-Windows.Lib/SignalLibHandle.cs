@@ -67,7 +67,7 @@ namespace Signal_Windows.Lib
         Task Reacquire();
         void Release();
         bool AddFrontend(CoreDispatcher d, ISignalFrontend w);
-        void RemoveFrontend(CoreDispatcher d);
+        Task RemoveFrontend(CoreDispatcher d);
 
         // Background API
         event EventHandler<SignalMessageEventArgs> SignalMessageEvent;
@@ -144,20 +144,25 @@ namespace Signal_Windows.Lib
             }
         }
 
-        public void RemoveFrontend(CoreDispatcher d)
+        public async Task RemoveFrontend(CoreDispatcher d)
         {
             Logger.LogTrace("RemoveFrontend() locking");
-            if (SynchronizationContext.Current != null)
+            await SemaphoreSlim.WaitAsync(CancelSource.Token);
+            try
             {
-                Logger.LogCritical("RemoveFrontend must not be called with a syncchronization context");
-                throw new InvalidOperationException();
+                Logger.LogTrace("RemoveFrontend() locked");
+                Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());
+                Frames.Remove(d);
             }
-            SemaphoreSlim.Wait(CancelSource.Token);
-            Logger.LogTrace("RemoveFrontend() locked");
-            Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());
-            Frames.Remove(d);
-            SemaphoreSlim.Release();
-            Logger.LogTrace("RemoveFrontend() released");
+            catch (Exception e)
+            {
+                Logger.LogCritical($"RemoveFrontend failed(): {e.Message} ({e.GetType()})\n{e.StackTrace}");
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+                Logger.LogTrace("RemoveFrontend() released");
+            }
         }
 
         public void PurgeAccountData()
@@ -245,11 +250,13 @@ namespace Signal_Windows.Lib
                 GlobalResetEvent.Reset();
                 LibsignalDBContext.ClearSessionCache();
                 Instance = this;
+                Logger.LogTrace($"Reacquire() updating {Frames.Count} frames");
                 await Task.Run(async () =>
                 {
                     List<Task> tasks = new List<Task>();
                     foreach (var f in Frames)
                     {
+                        Logger.LogTrace($"Reacquire() updating frame {f.Value}");
                         var conversations = GetConversations();
                         var taskCompletionSource = new TaskCompletionSource<bool>();
                         await f.Key.RunAsync(CoreDispatcherPriority.Normal, () =>
@@ -273,6 +280,7 @@ namespace Signal_Windows.Lib
                     {
                         await t;
                     }
+                    Logger.LogTrace($"Reacquire() recovering downloads");
                     await RecoverDownloads();
                     Store = LibsignalDBContext.GetSignalStore();
                     if (Store != null)
@@ -282,6 +290,7 @@ namespace Signal_Windows.Lib
                 });
                 if (LikelyHasValidStore)
                 {
+                    Logger.LogTrace($"Reacquire() initializing network");
                     InitNetwork();
                 }
             }

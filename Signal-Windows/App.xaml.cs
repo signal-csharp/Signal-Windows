@@ -42,9 +42,20 @@ namespace Signal_Windows
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
         public static ISignalLibHandle Handle = SignalHelper.CreateSignalLibHandle(false);
-        private Dictionary<int, SignalWindowsFrontend> Views = new Dictionary<int, SignalWindowsFrontend>();
+        private Dictionary<int, SignalWindowsFrontend> _Views = new Dictionary<int, SignalWindowsFrontend>();
         public static int MainViewId;
         private IBackgroundTaskRegistration backgroundTaskRegistration;
+
+        private Dictionary<int, SignalWindowsFrontend> Views
+        {
+            get
+            {
+                lock (_Views)
+                {
+                    return _Views;
+                }
+            }
+        }
 
         static App()
         {
@@ -272,6 +283,7 @@ namespace Signal_Windows
 
         private void SetupTopBar()
         {
+            Logger.LogTrace("SetupTopBar()");
             // mobile clients have a status bar
             if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
             {
@@ -353,11 +365,12 @@ namespace Signal_Windows
             Debug.WriteLine("Background task completed");
         }
 
-        private void CurrView_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)
+        private async void CurrView_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)
         {
+            Logger.LogTrace($"CurrView_Consolidated() sender.Id = {sender.Id}");
             sender.Consolidated -= CurrView_Consolidated;
             var signalWindowsFrontend = Views[sender.Id];
-            Task.Run(() => Handle.RemoveFrontend(signalWindowsFrontend.Dispatcher)).Wait();
+            await Handle.RemoveFrontend(signalWindowsFrontend.Dispatcher);
             Views.Remove(sender.Id);
             if (sender.Id != MainViewId)
             {
