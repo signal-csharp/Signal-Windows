@@ -147,6 +147,11 @@ namespace Signal_Windows.Lib
         public void RemoveFrontend(CoreDispatcher d)
         {
             Logger.LogTrace("RemoveFrontend() locking");
+            if (SynchronizationContext.Current != null)
+            {
+                Logger.LogCritical("RemoveFrontend must not be called with a syncchronization context");
+                throw new InvalidOperationException();
+            }
             SemaphoreSlim.Wait(CancelSource.Token);
             Logger.LogTrace("RemoveFrontend() locked");
             Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());

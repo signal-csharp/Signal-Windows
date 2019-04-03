@@ -357,7 +357,7 @@ namespace Signal_Windows
         {
             sender.Consolidated -= CurrView_Consolidated;
             var signalWindowsFrontend = Views[sender.Id];
-            Handle.RemoveFrontend(signalWindowsFrontend.Dispatcher);
+            Task.Run(() => Handle.RemoveFrontend(signalWindowsFrontend.Dispatcher)).Wait();
             Views.Remove(sender.Id);
             if (sender.Id != MainViewId)
             {
