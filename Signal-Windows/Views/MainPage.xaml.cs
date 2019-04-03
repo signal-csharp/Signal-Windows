@@ -34,27 +34,31 @@ namespace Signal_Windows
 
         public void SwitchToStyle(PageStyle newStyle)
         {
-            if (newStyle == PageStyle.Narrow)
+            var frame = Window.Current.Content as Frame;
+            if (frame.CurrentSourcePageType == typeof(MainPage))
             {
-                if (Vm.SelectedThread != null)
+                if (newStyle == PageStyle.Narrow)
                 {
-                    Utils.EnableBackButton(Vm.BackButton_Click);
+                    if (Vm.SelectedThread != null)
+                    {
+                        Utils.EnableBackButton(Vm.BackButton_Click);
+                        Vm.IsPaneOpen = false;
+                        Vm.CompactPaneLength = 0;
+                    }
+                    else
+                    {
+                        Unselect();
+                        Vm.IsPaneOpen = true;
+                    }
+                }
+                else if (newStyle == PageStyle.Wide)
+                {
+                    Utils.DisableBackButton(Vm.BackButton_Click);
                     Vm.IsPaneOpen = false;
-                    Vm.CompactPaneLength = 0;
+                    Vm.CompactPaneLength = ContactsGrid.Width = 320;
                 }
-                else
-                {
-                    Unselect();
-                    Vm.IsPaneOpen = true;
-                }
+                UpdateStyle(newStyle);
             }
-            else if (newStyle == PageStyle.Wide)
-            {
-                Utils.DisableBackButton(Vm.BackButton_Click);
-                Vm.IsPaneOpen = false;
-                Vm.CompactPaneLength = ContactsGrid.Width = 320;
-            }
-            UpdateStyle(newStyle);
         }
 
         private void UpdateStyle(PageStyle currentStyle)
