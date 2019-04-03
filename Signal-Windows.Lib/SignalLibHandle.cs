@@ -231,9 +231,11 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("Reacquire() locking");
             CancelSource = new CancellationTokenSource();
             SemaphoreSlim.Wait(CancelSource.Token);
+            Logger.LogTrace("Reacquire() locked");
             try
             {
                 GlobalResetEvent = LibUtils.OpenResetEventSet();
+                Running = true;
                 LibUtils.Lock();
                 GlobalResetEvent.Reset();
                 LibsignalDBContext.ClearSessionCache();
@@ -277,7 +279,6 @@ namespace Signal_Windows.Lib
                 {
                     InitNetwork();
                 }
-                Running = true;
             }
             finally
             {
@@ -289,10 +290,12 @@ namespace Signal_Windows.Lib
         public void Release()
         {
             //TODO invalidate view information
-            Logger.LogTrace("Release() locking");
+            Logger.LogTrace("Release()");
             if (Running)
             {
+                Logger.LogTrace("Release() locking");
                 SemaphoreSlim.Wait(CancelSource.Token);
+                Logger.LogTrace("Release() locked");
                 Running = false;
                 CancelSource.Cancel();
                 IncomingMessagesTask?.Wait();
@@ -306,7 +309,7 @@ namespace Signal_Windows.Lib
             }
             else
             {
-                Logger.LogTrace("SignalLibHandle was already closed");
+                Logger.LogWarning("SignalLibHandle was already closed");
             }
         }
 
@@ -955,6 +958,7 @@ namespace Signal_Windows.Lib
         /// </summary>
         private async Task HandleAuthFailure()
         {
+            Logger.LogError("HandleAuthFailure");
             Logger.LogTrace("HandleAuthFailure() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
             try
