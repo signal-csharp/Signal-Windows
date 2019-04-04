@@ -942,7 +942,7 @@ namespace Signal_Windows.Lib
             {
                 Logger.LogTrace("InitNetwork() sync context = {0}", SynchronizationContext.Current);
                 MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
-                var pipeTask = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     try
                     {
@@ -951,9 +951,12 @@ namespace Signal_Windows.Lib
                         IncomingMessagesTask = Task.Run(() => new IncomingMessages(CancelSource.Token, pipe, MessageReceiver).HandleIncomingMessages());
                         Logger.LogTrace("Starting OutgoingMessagesTask");
                         OutgoingMessagesTask = Task.Run(() => new OutgoingMessages(CancelSource.Token, pipe, Store, this).HandleOutgoingMessages());
-                        return pipe;
                     }
-                    catch(Exception e)
+                    catch (OperationCanceledException)
+                    {
+                        Logger.LogInformation("InitNetwork cancelled");
+                    }
+                    catch (Exception e)
                     {
                         Logger.LogError("InitNetwork failed: {0}\n{1}", e.Message, e.StackTrace);
                         await HandleAuthFailure();
