@@ -35,7 +35,7 @@ namespace Signal_Windows
         public void SwitchToStyle(PageStyle newStyle)
         {
             var frame = Window.Current.Content as Frame;
-            if (frame.CurrentSourcePageType == typeof(MainPage))
+            if (frame?.CurrentSourcePageType == typeof(MainPage))
             {
                 if (newStyle == PageStyle.Narrow)
                 {
