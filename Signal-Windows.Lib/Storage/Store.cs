@@ -117,5 +117,10 @@ namespace Signal_Windows.Storage
         {
             LibsignalDBContext.RemoveSignedPreKey(signedPreKeyId);
         }
+
+        public IdentityKey GetIdentity(SignalProtocolAddress address)
+        {
+            return LibsignalDBContext.GetIdentityKey(address);
+        }
     }
 }

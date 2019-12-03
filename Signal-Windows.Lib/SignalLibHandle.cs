@@ -259,6 +259,7 @@ namespace Signal_Windows.Lib
                         Logger.LogTrace($"Reacquire() updating frame {f.Value}");
                         var conversations = GetConversations();
                         var taskCompletionSource = new TaskCompletionSource<bool>();
+                        Logger.LogTrace($"Invoking CoreDispatcher {f.Key.GetHashCode()}");
                         await f.Key.RunAsync(CoreDispatcherPriority.Normal, () =>
                         {
                             try
@@ -293,6 +294,10 @@ namespace Signal_Windows.Lib
                     Logger.LogTrace($"Reacquire() initializing network");
                     InitNetwork();
                 }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Reacquire() failed: {e.Message}\n{e.StackTrace}");
             }
             finally
             {
@@ -465,11 +470,12 @@ namespace Signal_Windows.Lib
         {
             List<SignalContact> blockedContacts = SignalDBContext.GetAllContactsLocked().Where(c => c.Blocked).ToList();
             List<string> blockedNumbers = new List<string>();
+            List<byte[]> blockedGroups = new List<byte[]>();
             foreach (var contact in blockedContacts)
             {
                 blockedNumbers.Add(contact.ThreadId);
             }
-            var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers));
+            var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers, blockedGroups));
             OutgoingQueue.Add(new SignalServiceSyncMessageSendable(blockMessage));
             await DispatchHandleBlockedContacts(blockedContacts);
         }

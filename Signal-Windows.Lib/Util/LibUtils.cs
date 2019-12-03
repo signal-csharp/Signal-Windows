@@ -1,6 +1,9 @@
+using libsignal.ecc;
+using libsignalmetadatadotnet.certificate;
 using libsignalservice;
 using libsignalservice.configuration;
 using libsignalservice.push;
+using libsignalservice.util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Toolkit.Uwp.Notifications;
 using System;
@@ -24,6 +27,7 @@ namespace Signal_Windows.Lib
         private static readonly ILogger Logger = LibsignalLogging.CreateLogger<LibUtils>();
         public const string GlobalMutexName = "SignalWindowsPrivateMessenger_Mutex";
         public const string GlobalEventWaitHandleName = "SignalWindowsPrivateMessenger_EventWaitHandle";
+        public static string UNIDENTIFIED_SENDER_TRUST_ROOT = "BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF";
         public static string URL = "https://textsecure-service.whispersystems.org";
         public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl("https://textsecure-service.whispersystems.org") };
         public static SignalServiceConfiguration ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null);
@@ -60,7 +64,7 @@ namespace Signal_Windows.Lib
             {
                 success = GlobalLock.WaitOne(timeout);
             }
-            catch(AbandonedMutexException e)
+            catch (AbandonedMutexException e)
             {
                 Logger.LogWarning("System lock was abandoned! {0}", e.Message);
                 success = true;
@@ -74,7 +78,7 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("System lock releasing, sync context = {0}", SynchronizationContext.Current);
             try
             {
-                if(GlobalLockContext != null)
+                if (GlobalLockContext != null)
                 {
                     GlobalLockContext.Post((a) =>
                     {
@@ -86,7 +90,7 @@ namespace Signal_Windows.Lib
                     GlobalLock.ReleaseMutex();
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.LogWarning("System lock failed to unlock! {0}\n{1}", e.Message, e.StackTrace);
             }
@@ -97,7 +101,7 @@ namespace Signal_Windows.Lib
         {
             Logger.LogTrace("OpenResetEventSet()");
             var handle = new EventWaitHandle(true, EventResetMode.ManualReset, GlobalEventWaitHandleName, out bool createdNew);
-            if(!createdNew)
+            if (!createdNew)
             {
                 Logger.LogTrace("OpenResetEventSet() setting old event");
                 handle.Set();
@@ -132,6 +136,12 @@ namespace Signal_Windows.Lib
                 "-------------------------------------------------\n" +
                 String.Format("    Signal-Windows BG {0}.{1}.{2}.{3} starting\n", version.Major, version.Minor, version.Build, version.Revision) +
                 "-------------------------------------------------\n";
+        }
+
+        public static CertificateValidator GetCertificateValidator()
+        {
+            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.Decode(UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
+            return new CertificateValidator(unidentifiedSenderTrustRoot);
         }
     }
 

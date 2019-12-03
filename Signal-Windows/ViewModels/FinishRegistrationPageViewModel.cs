@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
 using libsignalservice;
 using libsignalservice.util;
+using libsignalservicedotnet.crypto;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Lib;
 using Signal_Windows.Models;
@@ -34,7 +35,7 @@ namespace Signal_Windows.ViewModels
                         cancelSource.Token,
                         App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
                             SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
-                            true, null);
+                            true, null, null, false);
                     SignalStore store = new SignalStore()
                     {
                         DeviceId = 1,

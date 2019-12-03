@@ -76,13 +76,9 @@ namespace Signal_Windows.Lib
                             await SignalLibHandle.Instance.DispatchMessageUpdate(update);
                         }
                     }
-                    else if (envelope.IsPreKeySignalMessage() || envelope.IsSignalMessage())
-                    {
-                        await HandleMessage(envelope);
-                    }
                     else
                     {
-                        Logger.LogWarning("OnMessage() could not handle unknown message type {0}", envelope.GetEnvelopeType());
+                        await HandleMessage(envelope);
                     }
                 }
                 else if (message is SignalServiceMessagePipeEmptyMessage)
@@ -107,7 +103,7 @@ namespace Signal_Windows.Lib
 
         private async Task HandleMessage(SignalServiceEnvelope envelope)
         {
-            var cipher = new SignalServiceCipher(new SignalServiceAddress(SignalLibHandle.Instance.Store.Username), new Store());
+            var cipher = new SignalServiceCipher(new SignalServiceAddress(SignalLibHandle.Instance.Store.Username), new Store(), LibUtils.GetCertificateValidator());
             var content = cipher.Decrypt(envelope);
             long timestamp = Util.CurrentTimeMillis();
 
@@ -318,7 +314,7 @@ namespace Signal_Windows.Lib
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
+                author = await SignalDBContext.GetOrCreateContactLocked(content.Sender, timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
                 composedTimestamp = envelope.GetTimestamp();
                 if (message.Group != null)
@@ -327,7 +323,7 @@ namespace Signal_Windows.Lib
                 }
                 else
                 {
-                    conversation = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
+                    conversation = await SignalDBContext.GetOrCreateContactLocked(content.Sender, 0);
                 }
             }
             conversation.ExpiresInSeconds = (uint) message.ExpiresInSeconds;
@@ -372,10 +368,10 @@ namespace Signal_Windows.Lib
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
+                author = await SignalDBContext.GetOrCreateContactLocked(content.Sender, timestamp);
                 prefix = $"{author.ThreadDisplayName} has";
                 composedTimestamp = envelope.GetTimestamp();
-                conversationId = envelope.GetSource();
+                conversationId = content.Sender;
             }
             LibsignalDBContext.DeleteAllSessions(conversationId);
             conversation = await SignalDBContext.GetOrCreateContactLocked(conversationId, 0);
@@ -437,7 +433,7 @@ namespace Signal_Windows.Lib
                 SignalGroup group = await SignalDBContext.GetOrCreateGroupLocked(groupid, 0);
                 if (isSync)
                 {
-                    SignalContact author = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
+                    SignalContact author = await SignalDBContext.GetOrCreateContactLocked(content.Sender, 0);
                     SignalMessage sm = new SignalMessage()
                     {
                         Direction = SignalMessageDirection.Incoming,
@@ -456,7 +452,7 @@ namespace Signal_Windows.Lib
                 }
                 else
                 {
-                    SignalContact author = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), 0);
+                    SignalContact author = await SignalDBContext.GetOrCreateContactLocked(content.Sender, 0);
                     SignalMessage sm = new SignalMessage()
                     {
                         Direction = SignalMessageDirection.Incoming,
@@ -522,7 +518,7 @@ namespace Signal_Windows.Lib
                 {
                     status = 0;
                     type = SignalMessageDirection.Incoming;
-                    author = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
+                    author = await SignalDBContext.GetOrCreateContactLocked(content.Sender, timestamp);
                     prefix = $"{author.ThreadDisplayName} has";
                     composedTimestamp = envelope.GetTimestamp();
                 }
@@ -600,7 +596,7 @@ namespace Signal_Windows.Lib
                 }
                 else
                 {
-                    conversation = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
+                    conversation = await SignalDBContext.GetOrCreateContactLocked(content.Sender, timestamp);
                     composedTimestamp = envelope.GetTimestamp();
                 }
             }
@@ -615,7 +611,7 @@ namespace Signal_Windows.Lib
             {
                 status = 0;
                 type = SignalMessageDirection.Incoming;
-                author = await SignalDBContext.GetOrCreateContactLocked(envelope.GetSource(), timestamp);
+                author = await SignalDBContext.GetOrCreateContactLocked(content.Sender, timestamp);
             }
 
             if (author != null && author.Blocked)
@@ -652,7 +648,7 @@ namespace Signal_Windows.Lib
                         SentFileName = pointer.FileName,
                         ContentType = receivedAttachment.ContentType,
                         Key = pointer.Key,
-                        Relay = pointer.Relay,
+                        Relay = null,
                         StorageId = pointer.Id,
                         Size = (long)pointer.Size,
                         Digest = pointer.Digest

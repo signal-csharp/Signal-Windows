@@ -6,6 +6,7 @@ using libsignalservice.messages.multidevice;
 using libsignalservice.push;
 using libsignalservice.push.exceptions;
 using libsignalservice.util;
+using libsignalservicedotnet.crypto;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
@@ -39,7 +40,7 @@ namespace Signal_Windows.Lib
 
         public async Task Send(SignalServiceMessageSender messageSender, CancellationToken token)
         {
-            await messageSender.SendMessage(token, SyncMessage);
+            await messageSender.SendMessage(token, SyncMessage, null);
         }
     }
 
@@ -57,7 +58,7 @@ namespace Signal_Windows.Lib
 
         public async Task Send(SignalServiceMessageSender messageSender, CancellationToken token)
         {
-            await messageSender.SendMessage(token, Recipient, DataMessage);
+            await messageSender.SendMessage(token, Recipient, null, DataMessage);
         }
     }
 
@@ -111,7 +112,7 @@ namespace Signal_Windows.Lib
             {
                 if (!token.IsCancellationRequested)
                 {
-                    await messageSender.SendMessage(token, new SignalServiceAddress(OutgoingSignalMessage.ThreadId), message);
+                    await messageSender.SendMessage(token, new SignalServiceAddress(OutgoingSignalMessage.ThreadId), null, message);
                     OutgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                 }
             }
@@ -133,7 +134,12 @@ namespace Signal_Windows.Lib
                 };
                 if (!token.IsCancellationRequested)
                 {
-                    await messageSender.SendMessage(token, recipients, message);
+                    var uaps = new List<UnidentifiedAccessPair>();
+                    foreach (var _ in recipients)
+                    {
+                        uaps.Add(null);
+                    }
+                    await messageSender.SendMessage(token, recipients, uaps, message);
                     OutgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                 }
             }
@@ -161,7 +167,7 @@ namespace Signal_Windows.Lib
             Logger.LogDebug("HandleOutgoingMessages()");
             try
             {
-                var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
+                var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), LibUtils.USER_AGENT, Store.DeviceId != 1, Pipe, null, null);
                 while (!Token.IsCancellationRequested)
                 {
                     ISendable sendable = null;

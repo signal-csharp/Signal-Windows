@@ -332,6 +332,7 @@ namespace Signal_Windows.ViewModels
 
         public void ReplaceConversationList(List<SignalConversation> conversations)
         {
+            Logger.LogTrace("ReplaceConversationList()");
             ConversationsDictionary.Clear();
             Conversations.Clear();
             Conversations.AddRange(conversations);
@@ -351,6 +352,7 @@ namespace Signal_Windows.ViewModels
                 SelectedThread = ConversationsDictionary[SelectedThread.ThreadId];
                 TrySelectConversation(SelectedThread.ThreadId);
             }
+            Logger.LogTrace("ReplaceConversationList() finished");
         }
 
         public void HandleAttachmentStatusChanged(SignalAttachment sa)

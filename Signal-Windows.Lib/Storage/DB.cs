@@ -198,6 +198,19 @@ namespace Signal_Windows.Storage
                 await SignalLibHandle.Instance.DispatchHandleIdentityKeyChange(messages);
             }
         }
+
+        internal static IdentityKey GetIdentityKey(SignalProtocolAddress address)
+        {
+            lock(DBLock)
+            {
+                using (var ctx = new LibsignalDBContext())
+                {
+                    return new IdentityKey(Base64.Decode(ctx.Identities
+                        .Where(identity => identity.Username == address.Name)
+                        .Single().IdentityKey), 0);
+                }
+            }
+        }
         #endregion Identities
 
         #region Account
@@ -798,11 +811,12 @@ namespace Signal_Windows.Storage
         public static IEnumerable<SignalMessage> GetMessagesLocked(SignalConversation thread, int startIndex, int count)
         {
             Logger.LogTrace("GetMessagesLocked() skip {0} take {1}", startIndex, count);
+            var messages = new List<SignalMessage>();
             lock (DBLock)
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    var messages = ctx.Messages
+                    messages = ctx.Messages
                         .Where(m => m.ThreadId == thread.ThreadId)
                         .Include(m => m.Content)
                         .Include(m => m.Author)
@@ -812,9 +826,10 @@ namespace Signal_Windows.Storage
                         .AsNoTracking()
                         .Take(count)
                         .ToList();
-                    return messages;
                 }
             }
+            Logger.LogTrace($"GetMessagesLocked() returning {messages.Count} messages");
+            return messages;
         }
 
         public static SignalMessage UpdateMessageStatus(SignalMessage outgoingSignalMessage)

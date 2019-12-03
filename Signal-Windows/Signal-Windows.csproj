@@ -400,6 +400,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\libsignal-service-dotnet\libsignal-service-dotnet\libsignal-service-dotnet.csproj">
+      <Project>{e9a53462-4f57-4a4b-bcf8-7954c6f53e27}</Project>
+      <Name>libsignal-service-dotnet</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Signal-Windows.Lib\Signal-Windows.Lib.csproj">
       <Project>{1934fd82-a5ea-4b71-b915-a1826593cb6e}</Project>
       <Name>Signal-Windows.Lib</Name>
