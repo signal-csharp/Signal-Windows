@@ -11,7 +11,7 @@ using Signal_Windows.Storage;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
-
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -65,7 +65,7 @@ namespace Signal_Windows.Controls
         {
             if (Model != null)
             {
-                if (Model.Status == SignalAttachmentStatus.Finished)
+                if (Model.Status == SignalAttachmentStatus.Finished || Model.Message.Direction == SignalMessageDirection.Outgoing)
                 {
                     AttachmentImage.Visibility = Visibility.Visible;
                     AttachmentDownloadIcon.Visibility = Visibility.Collapsed;
@@ -88,17 +88,28 @@ namespace Signal_Windows.Controls
             App.Handle.StartAttachmentDownload(Model);
         }
 
-        private static HashSet<string> IMAGE_TYPES = new HashSet<string>()
+        private void AttachmentImage_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            "image/jpeg",
-            "image/png",
-            "image/gif"
-        };
+            if (IsDetailsPageEnabled)
+            {
+                App.CurrentSignalWindowsFrontend(ApplicationView.GetForCurrentView().Id).Locator.MainPageInstance.OpenAttachment(Model);
+            }
+        }
 
         public bool HandleUpdate(SignalAttachment sa)
         {
             DataContext = sa;
             return Model.Status != SignalAttachmentStatus.Finished && Model.Status != SignalAttachmentStatus.Failed_Permanently;
         }
+
+        private bool IsDetailsPageEnabled => IMAGE_TYPES.Contains(Model.ContentType);
+
+        private static HashSet<string> IMAGE_TYPES = new HashSet<string>()
+        {
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/bmp"
+        };
     }
 }

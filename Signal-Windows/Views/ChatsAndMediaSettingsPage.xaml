@@ -20,6 +20,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -69,6 +70,14 @@
                         <TextBox InputScope="Number" HorizontalAlignment="Left" Width="125" IsEnabled="False"/>
                     </StackPanel>
                     <Button Grid.Row="3" Content="Trim all conversations now" Margin="0,8,0,0" IsEnabled="False"/>
+                </Grid>
+                <Grid Grid.Row="2" Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Spell Check" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <ToggleSwitch x:Name="SpellCheckToggleSwitch" Grid.Row="1" Margin="0,8" IsOn="{x:Bind Vm.SpellCheck, Mode=TwoWay}" Toggled="SpellCheckToggleSwitch_Toggled"/>
                 </Grid>
             </Grid>
         </ScrollViewer>

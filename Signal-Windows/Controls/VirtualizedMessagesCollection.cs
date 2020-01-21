@@ -225,12 +225,8 @@ namespace Signal_Windows.Controls
         private void LoadPage(int pageIndex)
         {
             MessageStorage[pageIndex] = App.Handle.GetMessages(Conversation, pageIndex * PAGE_SIZE, PAGE_SIZE)
-                .Select(m =>
-                {
-                    if (m.Type == SignalMessageType.IdentityKeyChange)
-                        return new IdentityKeyChangeMessage(m) as IMessageView;
-                    return new Message(m) as IMessageView;
-                }).ToList();
+                .Select(m => Utils.CreateMessageView(m)).ToList();
+
             foreach (var msg in MessageStorage[pageIndex])
             {
                 AddMessageToMap(msg);

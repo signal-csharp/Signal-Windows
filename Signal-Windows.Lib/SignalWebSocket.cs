@@ -49,23 +49,22 @@ namespace Signal_Windows.Lib
             Logger.LogWarning("WebSocket_Closed() {0} ({1})", args.Code, args.Reason);
         }
 
-        private async void WebSocket_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
+        private void WebSocket_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
         {
+            Logger.LogTrace("WebSocket_MessageReceived()");
             try
             {
                 using (var data = args.GetDataStream())
+                using (var buffer = new MemoryStream())
                 {
-                    MessageReceived.Invoke(sender, new SignalWebSocketMessageReceivedEventArgs() { Message = data.AsStreamForRead() });
+                    data.AsStreamForRead().CopyTo(buffer);
+                    MessageReceived.Invoke(sender, new SignalWebSocketMessageReceivedEventArgs() { Message = buffer.ToArray() });
                 }
             }
             catch(Exception e)
             {
                 Logger.LogError("WebSocket_MessageReceived failed: {0}\n{1}", e.Message, e.StackTrace);
-                try
-                {
-                    await ConnectAsync();
-                }
-                catch (TaskCanceledException) { }
+                Task.Run(ConnectAsync);
             }
         }
 
@@ -77,6 +76,7 @@ namespace Signal_Windows.Lib
 
         public async Task ConnectAsync()
         {
+            Logger.LogTrace("ConnectAsync()");
             var locked = await SemaphoreSlim.WaitAsync(0, Token); // ensure no threads are reconnecting at the same time
             if (locked)
             {
@@ -85,6 +85,7 @@ namespace Signal_Windows.Lib
                     try
                     {
                         CreateMessageWebSocket();
+                        Logger.LogTrace("WebSocket.ConnectAsync()");
                         await WebSocket.ConnectAsync(SignalWSUri).AsTask(Token);
                         SemaphoreSlim.Release();
                         break;
@@ -102,6 +103,10 @@ namespace Signal_Windows.Lib
                     }
                 }
             }
+            else
+            {
+                Logger.LogTrace("ConnectAsync() not reconnecting: Reconnect in progress");
+            }
         }
 
         public void Dispose()
@@ -111,11 +116,24 @@ namespace Signal_Windows.Lib
 
         public async Task SendMessage(byte[] data)
         {
-            using (var dataWriter = new DataWriter(WebSocket.OutputStream))
+            Logger.LogTrace("SendMessage()");
+            try
             {
-                dataWriter.WriteBytes(data);
-                await dataWriter.StoreAsync();
-                dataWriter.DetachStream();
+                using (var dataWriter = new DataWriter(WebSocket.OutputStream))
+                {
+                    dataWriter.WriteBytes(data);
+                    await dataWriter.StoreAsync();
+                    dataWriter.DetachStream();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.LogTrace($"SendMessage() was cancelled");
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"SendMessage() failed: {e.Message}\n{e.StackTrace}");
+                var t = Task.Run(ConnectAsync);
             }
         }
     }

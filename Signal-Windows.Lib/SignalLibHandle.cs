@@ -29,19 +29,19 @@ namespace Signal_Windows.Lib
 {
     public class AppendResult
     {
-        public long Index { get;  }
-        public AppendResult(long index)
+        public bool WasInstantlyRead { get;  }
+        public AppendResult(bool wasInstantlyRead)
         {
-            Index = index;
+            WasInstantlyRead = wasInstantlyRead;
         }
     }
 
     public interface ISignalFrontend
     {
-        void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage);
-        AppendResult HandleMessage(SignalMessage message, SignalConversation conversation);
+        void AddOrUpdateConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
+        AppendResult HandleMessage(SignalMessage message, SignalConversation updatedConversation);
         void HandleUnreadMessage(SignalMessage message);
-        void HandleMessageRead(long unreadMarkerIndex, SignalConversation conversation);
+        void HandleMessageRead(SignalConversation updatedConversation);
         void HandleIdentitykeyChange(LinkedList<SignalMessage> messages);
         void HandleMessageUpdate(SignalMessage updatedMessage);
         void ReplaceConversationList(List<SignalConversation> conversations);
@@ -57,9 +57,9 @@ namespace Signal_Windows.Lib
         SignalStore Store { get; set; }
 
         void RequestSync();
-        Task SendMessage(SignalMessage message, SignalConversation conversation);
+        Task SendMessage(string messageText, StorageFile attachment, SignalConversation conversation);
         Task SendBlockedMessage();
-        Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation);
+        Task SetMessageRead(SignalMessage message);
         void ResendMessage(SignalMessage message);
         IEnumerable<SignalMessage> GetMessages(SignalConversation thread, int startIndex, int count);
         Task SaveAndDispatchSignalConversation(SignalConversation updatedConversation, SignalMessage updateMessage);
@@ -68,7 +68,7 @@ namespace Signal_Windows.Lib
         Task Reacquire();
         void Release();
         bool AddFrontend(CoreDispatcher d, ISignalFrontend w);
-        void RemoveFrontend(CoreDispatcher d);
+        Task RemoveFrontend(CoreDispatcher d);
 
         // Background API
         event EventHandler<SignalMessageEventArgs> SignalMessageEvent;
@@ -77,6 +77,7 @@ namespace Signal_Windows.Lib
 
         // Attachment API
         void StartAttachmentDownload(SignalAttachment sa);
+        Task ExportAttachment(SignalAttachment sa);
         //void AbortAttachmentDownload(SignalAttachment sa); TODO
     }
 
@@ -103,11 +104,8 @@ namespace Signal_Windows.Lib
         private ISignalFrontend MainWindow;
         private Task IncomingMessagesTask;
         private Task OutgoingMessagesTask;
-        internal OutgoingMessages OutgoingMessages;
-        private SignalServiceMessagePipe Pipe;
-        private SignalServiceMessageSender MessageSender;
         private SignalServiceMessageReceiver MessageReceiver;
-        public BlockingCollection<SignalMessage> OutgoingQueue = new BlockingCollection<SignalMessage>(new ConcurrentQueue<SignalMessage>());
+        public BlockingCollection<ISendable> OutgoingQueue = new BlockingCollection<ISendable>(new ConcurrentQueue<ISendable>());
         private EventWaitHandle GlobalResetEvent;
         private Dictionary<long, DownloadOperation> Downloads = new Dictionary<long, DownloadOperation>();
 
@@ -148,16 +146,26 @@ namespace Signal_Windows.Lib
             }
         }
 
-        public void RemoveFrontend(CoreDispatcher d)
+        public async Task RemoveFrontend(CoreDispatcher d)
         {
             Logger.LogTrace("RemoveFrontend() locking");
-            SemaphoreSlim.Wait(CancelSource.Token);
-            Logger.LogTrace("RemoveFrontend() locked");
-            Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());
-            DisappearingMessagesManager.RemoveFrontend(d);
-            Frames.Remove(d);
-            SemaphoreSlim.Release();
-            Logger.LogTrace("RemoveFrontend() released");
+            await SemaphoreSlim.WaitAsync(CancelSource.Token);
+            try
+            {
+                Logger.LogTrace("RemoveFrontend() locked");
+                Logger.LogInformation("Unregistering frontend of dispatcher {0}", d.GetHashCode());
+                DisappearingMessagesManager.RemoveFrontend(d);
+                Frames.Remove(d);
+            }
+            catch (Exception e)
+            {
+                Logger.LogCritical($"RemoveFrontend failed(): {e.Message} ({e.GetType()})\n{e.StackTrace}");
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+                Logger.LogTrace("RemoveFrontend() released");
+            }
         }
 
         public void PurgeAccountData()
@@ -202,14 +210,8 @@ namespace Signal_Windows.Lib
                 {
                     return false;
                 }
-                else
-                {
-                    LikelyHasValidStore = true;
-                }
-                var initNetwork = Task.Run(async () =>
-                {
-                    await InitNetwork();
-                });
+                LikelyHasValidStore = true;
+                InitNetwork();
                 var recoverDownloadsTask = Task.Run(() =>
                 {
                     RecoverDownloads().Wait();
@@ -242,20 +244,25 @@ namespace Signal_Windows.Lib
             Logger.LogTrace("Reacquire() locking");
             CancelSource = new CancellationTokenSource();
             SemaphoreSlim.Wait(CancelSource.Token);
+            Logger.LogTrace("Reacquire() locked");
             try
             {
                 GlobalResetEvent = LibUtils.OpenResetEventSet();
+                Running = true;
                 LibUtils.Lock();
                 GlobalResetEvent.Reset();
                 LibsignalDBContext.ClearSessionCache();
                 Instance = this;
+                Logger.LogTrace($"Reacquire() updating {Frames.Count} frames");
                 await Task.Run(async () =>
                 {
                     List<Task> tasks = new List<Task>();
                     foreach (var f in Frames)
                     {
+                        Logger.LogTrace($"Reacquire() updating frame {f.Value}");
                         var conversations = GetConversations();
                         var taskCompletionSource = new TaskCompletionSource<bool>();
+                        Logger.LogTrace($"Invoking CoreDispatcher {f.Key.GetHashCode()}");
                         await f.Key.RunAsync(CoreDispatcherPriority.Normal, () =>
                         {
                             try
@@ -277,6 +284,7 @@ namespace Signal_Windows.Lib
                     {
                         await t;
                     }
+                    Logger.LogTrace($"Reacquire() recovering downloads");
                     await RecoverDownloads();
                     Store = LibsignalDBContext.GetSignalStore();
                     if (Store != null)
@@ -286,12 +294,13 @@ namespace Signal_Windows.Lib
                 });
                 if (LikelyHasValidStore)
                 {
-                    var initNetworkTask = Task.Run(async () =>
-                    {
-                        await InitNetwork();
-                    });
+                    Logger.LogTrace($"Reacquire() initializing network");
+                    InitNetwork();
                 }
-                Running = true;
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Reacquire() failed: {e.Message}\n{e.StackTrace}");
             }
             finally
             {
@@ -303,24 +312,26 @@ namespace Signal_Windows.Lib
         public void Release()
         {
             //TODO invalidate view information
-            Logger.LogTrace("Release() locking");
+            Logger.LogTrace("Release()");
             if (Running)
             {
+                Logger.LogTrace("Release() locking");
                 SemaphoreSlim.Wait(CancelSource.Token);
+                Logger.LogTrace("Release() locked");
                 Running = false;
                 CancelSource.Cancel();
                 IncomingMessagesTask?.Wait();
                 OutgoingMessagesTask?.Wait();
                 Instance = null;
-                Logger.LogTrace("Release() releasing global)");
+                Logger.LogTrace("Release() releasing global");
                 LibUtils.Unlock();
-                Logger.LogTrace("Release() releasing local)");
+                Logger.LogTrace("Release() releasing local");
                 SemaphoreSlim.Release();
                 Logger.LogTrace("Release() released");
             }
             else
             {
-                Logger.LogTrace("SignalLibHandle was already closed");
+                Logger.LogWarning("SignalLibHandle was already closed");
             }
         }
 
@@ -333,7 +344,7 @@ namespace Signal_Windows.Lib
             Instance = null;
         }
 
-        public async Task SendMessage(SignalMessage message, SignalConversation conversation)
+        public async Task SendMessage(string messageText, StorageFile attachmentStorageFile, SignalConversation conversation)
         {
             await Task.Run(async () =>
             {
@@ -342,9 +353,33 @@ namespace Signal_Windows.Lib
                 Logger.LogTrace("SendMessage() locked");
                 try
                 {
-                    Logger.LogDebug("SendMessage saving message " + message.ComposedTimestamp);
-                    await SaveAndDispatchSignalMessage(message, conversation);
-                    OutgoingQueue.Add(message);
+                    var now = Util.CurrentTimeMillis();
+                    var attachmentsList = new List<SignalAttachment>();
+                    if (attachmentStorageFile != null)
+                    {
+                        attachmentsList.Add(new SignalAttachment()
+                        {
+                            ContentType = attachmentStorageFile.ContentType,
+                            SentFileName = attachmentStorageFile.Name
+                        });
+                    }
+
+                    SignalMessage message = new SignalMessage()
+                    {
+                        Author = null,
+                        ComposedTimestamp = now,
+                        ExpiresAt = conversation.ExpiresInSeconds,
+                        Content = new SignalMessageContent() { Content = messageText },
+                        ThreadId = conversation.ThreadId,
+                        ReceivedTimestamp = now,
+                        Direction = SignalMessageDirection.Outgoing,
+                        Read = true,
+                        Type = SignalMessageType.Normal,
+                        Attachments = attachmentsList,
+                        AttachmentsCount = (uint) attachmentsList.Count()
+                    };
+                    await SaveAndDispatchSignalMessage(message, attachmentStorageFile, conversation);
+                    OutgoingQueue.Add(new SignalMessageSendable(message));
                 }
                 finally
                 {
@@ -356,27 +391,31 @@ namespace Signal_Windows.Lib
 
         public void RequestSync()
         {
-            Task.Run(() =>
+            try
             {
                 Logger.LogTrace("RequestSync()");
                 var contactsRequest = SignalServiceSyncMessage.ForRequest(new RequestMessage(new SyncMessage.Types.Request()
                 {
                     Type = SyncMessage.Types.Request.Types.Type.Contacts
                 }));
-                OutgoingMessages.SendMessage(contactsRequest);
+                OutgoingQueue.Add(new SignalServiceSyncMessageSendable(contactsRequest));
                 var groupsRequest = SignalServiceSyncMessage.ForRequest(new RequestMessage(new SyncMessage.Types.Request()
                 {
                     Type = SyncMessage.Types.Request.Types.Type.Groups
                 }));
-                OutgoingMessages.SendMessage(groupsRequest);
-            });
+                OutgoingQueue.Add(new SignalServiceSyncMessageSendable(groupsRequest));
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("RequestSync() failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
         }
 
         /// <summary>
         /// Marks and dispatches a message as read. Must not be called on a task which holds the handle lock.
         /// </summary>
         /// <param name="message"></param>
-        public async Task SetMessageRead(long index, SignalMessage message, SignalConversation conversation)
+        public async Task SetMessageRead(SignalMessage message)
         {
             UpdateMessageExpiration(message, conversation.ExpiresInSeconds);
             Logger.LogTrace("SetMessageRead() locking");
@@ -384,11 +423,11 @@ namespace Signal_Windows.Lib
             try
             {
                 Logger.LogTrace("SetMessageRead() locked");
-                conversation = SignalDBContext.UpdateMessageRead(index, conversation);
-                OutgoingMessages.SendMessage(SignalServiceSyncMessage.ForRead(new List<ReadMessage>() {
+                var updatedConversation = SignalDBContext.UpdateMessageRead(message.ComposedTimestamp);
+                OutgoingQueue.Add(new SignalServiceSyncMessageSendable(SignalServiceSyncMessage.ForRead(new List<ReadMessage>() {
                         new ReadMessage(message.Author.ThreadId, message.ComposedTimestamp)
-                }));
-                await DispatchMessageRead(index + 1, conversation);
+                })));
+                await DispatchMessageRead(updatedConversation);
             }
             catch (Exception e)
             {
@@ -403,7 +442,7 @@ namespace Signal_Windows.Lib
 
         public void ResendMessage(SignalMessage message)
         {
-            OutgoingQueue.Add(message);
+            OutgoingQueue.Add(new SignalMessageSendable(message));
         }
 
         public IEnumerable<SignalMessage> GetMessages(SignalConversation thread, int startIndex, int count)
@@ -435,12 +474,13 @@ namespace Signal_Windows.Lib
         {
             List<SignalContact> blockedContacts = SignalDBContext.GetAllContactsLocked().Where(c => c.Blocked).ToList();
             List<string> blockedNumbers = new List<string>();
+            List<byte[]> blockedGroups = new List<byte[]>();
             foreach (var contact in blockedContacts)
             {
                 blockedNumbers.Add(contact.ThreadId);
             }
-            var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers));
-            OutgoingMessages.SendMessage(blockMessage);
+            var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers, blockedGroups));
+            OutgoingQueue.Add(new SignalServiceSyncMessageSendable(blockMessage));
             await DispatchHandleBlockedContacts(blockedContacts);
         }
         #endregion
@@ -468,6 +508,39 @@ namespace Signal_Windows.Lib
                     Logger.LogTrace("StartAttachmentDownload() released");
                 }
             });
+        }
+
+        public async Task ExportAttachment(SignalAttachment sa)
+        {
+            try
+            {
+                Logger.LogTrace("ExportAttachment() locking");
+                await SemaphoreSlim.WaitAsync(CancelSource.Token);
+                Logger.LogTrace("ExportAttachment() locked");
+                var savePicker = new Windows.Storage.Pickers.FileSavePicker
+                {
+                    SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Downloads,
+                    SuggestedFileName = sa.SentFileName ?? "signal"
+                };
+                savePicker.FileTypeChoices.Add("Any", new List<string>() { "." });
+                var target_file = await savePicker.PickSaveFileAsync();
+                if (target_file != null)
+                {
+                    CachedFileManager.DeferUpdates(target_file);
+                    IStorageFile localCopy = await ApplicationData.Current.LocalCacheFolder.GetFileAsync($@"Attachments\{sa.Id}.plain");
+                    await localCopy.CopyAndReplaceAsync(target_file);
+                    Windows.Storage.Provider.FileUpdateStatus status = await CachedFileManager.CompleteUpdatesAsync(target_file);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("ExportAttachment failed: {0}\n{1}", e.Message, e.StackTrace);
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+                Logger.LogTrace("ExportAttachment() released");
+            }
         }
         #endregion
 
@@ -501,7 +574,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        internal async Task SaveAndDispatchSignalMessage(SignalMessage message, SignalConversation conversation)
+        internal async Task SaveAndDispatchSignalMessage(SignalMessage message, StorageFile attachmentStorageFile, SignalConversation conversation)
         {
             conversation.MessagesCount += 1;
             if (message.Direction == SignalMessageDirection.Incoming)
@@ -516,7 +589,15 @@ namespace Signal_Windows.Lib
             SignalDBContext.SaveMessageLocked(message);
             conversation.LastMessage = message;
             conversation.LastActiveTimestamp = message.ComposedTimestamp;
-            //StartAttachmentDownloads(message);
+            if (attachmentStorageFile != null)
+            {
+                StorageFolder plaintextFile = await ApplicationData.Current.LocalCacheFolder.CreateFolderAsync(@"Attachments\", CreationCollisionOption.OpenIfExists);
+                foreach (var attachment in message.Attachments)
+                {
+                    Logger.LogTrace(@"Copying attachment to \Attachments\{0}.plain", attachment.Id.ToString());
+                    await attachmentStorageFile.CopyAsync(plaintextFile, attachment.Id.ToString() + ".plain", NameCollisionOption.ReplaceExisting);
+                }
+            }
             await DispatchHandleMessage(message, conversation);
         }
 
@@ -634,18 +715,18 @@ namespace Signal_Windows.Lib
                 });
                 operations.Add(taskCompletionSource.Task);
             }
-            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalMessageType.NormalMessage));
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(message, Events.SignalPipeMessageType.NormalMessage));
             if (message.Author != null)
             {
                 bool wasInstantlyRead = false;
                 foreach (var b in operations)
                 {
                     AppendResult result = await b;
-                    if (result != null)
+                    if (result != null && result.WasInstantlyRead)
                     {
                         UpdateMessageExpiration(message, conversation.ExpiresInSeconds);
-                        SignalDBContext.UpdateMessageRead(result.Index, conversation);
-                        await DispatchMessageRead(result.Index + 1, conversation);
+                        var updatedConversation = SignalDBContext.UpdateMessageRead(message.ComposedTimestamp);
+                        await DispatchMessageRead(updatedConversation);
                         wasInstantlyRead = true;
                         break;
                     }
@@ -686,7 +767,7 @@ namespace Signal_Windows.Lib
             }
         }
 
-        internal async Task DispatchMessageRead(long unreadMarkerIndex, SignalConversation conversation)
+        internal async Task DispatchMessageRead(SignalConversation conversation)
         {
             List<Task> operations = new List<Task>();
             foreach (var dispatcher in Frames.Keys)
@@ -696,7 +777,7 @@ namespace Signal_Windows.Lib
                 {
                     try
                     {
-                        Frames[dispatcher].HandleMessageRead(unreadMarkerIndex, conversation);
+                        Frames[dispatcher].HandleMessageRead(conversation);
                     }
                     catch (Exception e)
                     {
@@ -740,18 +821,21 @@ namespace Signal_Windows.Lib
 
         internal void DispatchPipeEmptyMessage()
         {
-            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(null, Events.SignalMessageType.PipeEmptyMessage));
+            SignalMessageEvent?.Invoke(this, new SignalMessageEventArgs(null, Events.SignalPipeMessageType.PipeEmptyMessage));
         }
 
-        internal async Task HandleMessageSentLocked(SignalMessage msg)
+        internal async Task HandleMessageSentLocked(ISendable msg)
         {
-            Logger.LogTrace("HandleMessageSentLocked() locking");
-            await SemaphoreSlim.WaitAsync(CancelSource.Token);
-            Logger.LogTrace("HandleMessageSentLocked() locked");
-            var updated = SignalDBContext.UpdateMessageStatus(msg);
-            await DispatchMessageUpdate(updated);
-            SemaphoreSlim.Release();
-            Logger.LogTrace("HandleMessageSentLocked() released");
+            if (msg is SignalMessageSendable smSendable)
+            {
+                Logger.LogTrace("HandleMessageSentLocked() locking");
+                await SemaphoreSlim.WaitAsync(CancelSource.Token);
+                Logger.LogTrace("HandleMessageSentLocked() locked");
+                var updated = SignalDBContext.UpdateMessageStatus(smSendable.OutgoingSignalMessage);
+                await DispatchMessageUpdate(updated);
+                SemaphoreSlim.Release();
+                Logger.LogTrace("HandleMessageSentLocked() released");
+            }
         }
 
         internal async Task DispatchMessageUpdate(SignalMessage msg)
@@ -790,9 +874,7 @@ namespace Signal_Windows.Lib
             try
             {
                 Logger.LogTrace("HandleOutgoingKeyChange() locked");
-                var messages = LibsignalDBContext.InsertIdentityChangedMessagesLocked(user);
                 await LibsignalDBContext.SaveIdentityLocked(new SignalProtocolAddress(user, 1), identity);
-                await DispatchHandleIdentityKeyChange(messages);
             }
             catch (Exception e)
             {
@@ -888,21 +970,37 @@ namespace Signal_Windows.Lib
         /// <summary>
         /// Initializes the websocket connection handling. Must not not be called on a UI thread. Must not be called on a task which holds the handle lock.
         /// </summary>
-        private async Task InitNetwork()
+        private void InitNetwork()
         {
             try
             {
+                Logger.LogTrace("InitNetwork() sync context = {0}", SynchronizationContext.Current);
                 MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT);
-                Pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
-                MessageSender = new SignalServiceMessageSender(CancelSource.Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), Pipe, null, LibUtils.USER_AGENT);
-                IncomingMessagesTask = Task.Factory.StartNew(async () => await new IncomingMessages(CancelSource.Token, Pipe, MessageReceiver).HandleIncomingMessages(), TaskCreationOptions.LongRunning);
-                OutgoingMessages = new OutgoingMessages(CancelSource.Token, MessageSender, this);
-                OutgoingMessagesTask = Task.Factory.StartNew(async () => await OutgoingMessages.HandleOutgoingMessages(), TaskCreationOptions.LongRunning);
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
+                        Logger.LogTrace("Starting IncomingMessagesTask");
+                        IncomingMessagesTask = Task.Run(() => new IncomingMessages(CancelSource.Token, pipe, MessageReceiver).HandleIncomingMessages());
+                        Logger.LogTrace("Starting OutgoingMessagesTask");
+                        OutgoingMessagesTask = Task.Run(() => new OutgoingMessages(CancelSource.Token, pipe, Store, this).HandleOutgoingMessages());
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Logger.LogInformation("InitNetwork cancelled");
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("InitNetwork failed: {0}\n{1}", e.Message, e.StackTrace);
+                        await HandleAuthFailure();
+                        throw e;
+                    }
+                });
             }
             catch(Exception e)
             {
-                Logger.LogError("InitNetwork failed: {0}\n{1}", e.Message, e.StackTrace);
-                await HandleAuthFailure();
+                Logger.LogError($"InitNetwork() failed: {e.Message}\n{e.StackTrace}");
             }
         }
 
@@ -911,6 +1009,7 @@ namespace Signal_Windows.Lib
         /// </summary>
         private async Task HandleAuthFailure()
         {
+            Logger.LogError("HandleAuthFailure");
             Logger.LogTrace("HandleAuthFailure() locking");
             SemaphoreSlim.Wait(CancelSource.Token);
             try

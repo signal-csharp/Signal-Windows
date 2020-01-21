@@ -11,7 +11,7 @@
 
     <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="8,0,0,0">
         <Grid Width="200" Height="200">
-            <Image Name="AttachmentImage" Stretch="UniformToFill">
+            <Image Name="AttachmentImage" Stretch="UniformToFill" Tapped="AttachmentImage_Tapped">
                 <Image.Source>
                     <BitmapImage UriSource="{x:Bind ImagePath, Mode=TwoWay}"/>
                 </Image.Source>

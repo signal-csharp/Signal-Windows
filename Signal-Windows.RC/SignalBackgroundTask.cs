@@ -30,9 +30,9 @@ namespace Signal_Windows.RC
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
-            Logger.LogInformation("Background task starting");
-            Deferral = taskInstance.GetDeferral();
+            SignalFileLoggerProvider.ForceAddBGLog(LibUtils.GetBGStartMessage());
             SignalLogging.SetupLogging(false);
+            Deferral = taskInstance.GetDeferral();
             ToastNotifier = ToastNotificationManager.CreateToastNotifier();
             taskInstance.Canceled += OnCanceled;
             bool locked = LibUtils.Lock(5000);
@@ -78,11 +78,11 @@ namespace Signal_Windows.RC
 
         private void Handle_SignalMessageEvent(object sender, SignalMessageEventArgs e)
         {
-            if (e.MessageType == Lib.Events.SignalMessageType.NormalMessage)
+            if (e.MessageType == Lib.Events.SignalPipeMessageType.NormalMessage)
             {
                 NotificationsUtils.Notify(e.Message);
             }
-            else if (e.MessageType == Lib.Events.SignalMessageType.PipeEmptyMessage)
+            else if (e.MessageType == Lib.Events.SignalPipeMessageType.PipeEmptyMessage)
             {
                 Logger.LogInformation("Background task has drained the pipe");
                 ResetEvent.Set();

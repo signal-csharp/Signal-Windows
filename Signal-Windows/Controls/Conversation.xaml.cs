@@ -11,9 +11,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
+using Windows.Graphics.Imaging;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
@@ -41,6 +46,7 @@ namespace Signal_Windows.Controls
         public VirtualizedCollection Collection;
         private CoreWindowActivationState ActivationState = CoreWindowActivationState.Deactivated;
         private int LastMarkReadRequest;
+        private StorageFile SelectedFile;
 
         private string _ThreadDisplayName;
 
@@ -74,14 +80,6 @@ namespace Signal_Windows.Controls
             set { _SeparatorVisiblity = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SeparatorVisibility))); }
         }
 
-        private Brush _HeaderBackground;
-
-        public Brush HeaderBackground
-        {
-            get { return _HeaderBackground; }
-            set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
-        }
-
         private bool _SendButtonEnabled;
         public bool SendButtonEnabled
         {
@@ -91,6 +89,14 @@ namespace Signal_Windows.Controls
                 _SendButtonEnabled = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendButtonEnabled)));
             }
+        }
+
+        private Brush _HeaderBackground;
+
+        public Brush HeaderBackground
+        {
+            get { return _HeaderBackground; }
+            set { _HeaderBackground = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HeaderBackground))); }
         }
 
         public Brush SendButtonBackground
@@ -113,6 +119,13 @@ namespace Signal_Windows.Controls
         {
             get { return !Blocked; }
             set { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendMessageVisible))); }
+        }
+
+        private bool spellCheckEnabled;
+        public bool SpellCheckEnabled
+        {
+            get { return spellCheckEnabled; }
+            set { spellCheckEnabled = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpellCheckEnabled))); }
         }
 
         public Conversation()
@@ -191,9 +204,12 @@ namespace Signal_Windows.Controls
                 SendMessageVisible = !Blocked;
             }
             LastMarkReadRequest = -1;
-            InputTextBox.IsEnabled = false;
+            SendButtonEnabled = false;
+            ResetInput();
+            UserInputBar.FocusTextBox();
             DisposeCurrentThread();
             UpdateHeader(conversation);
+            SpellCheckEnabled = GlobalSettingsManager.SpellCheckSetting;
 
             /*
              * When selecting a small (~650 messages) conversation after a bigger (~1800 messages) one,
@@ -206,7 +222,7 @@ namespace Signal_Windows.Controls
             Collection =  new VirtualizedCollection(conversation);
             ConversationItemsControl.ItemsSource = Collection;
             UpdateLayout();
-            InputTextBox.IsEnabled = conversation.CanReceive;
+            SendButtonEnabled = conversation.CanReceive;
             ScrollToUnread();
         }
 
@@ -264,9 +280,9 @@ namespace Signal_Windows.Controls
             }
         }
 
-        public AppendResult Append(Message sm)
+        public AppendResult Append(IMessageView sm)
         {
-            AppendResult result = null;
+            AppendResult result = new AppendResult(false);
             bool bottom = GetBottommostIndex() == Collection.Count - 2; // -2 because we already incremented Count
             Collection.Add(sm, sm.Model.Author == null);
             if (bottom)
@@ -275,7 +291,7 @@ namespace Signal_Windows.Controls
                 ScrollToBottom();
                 if (ActivationState != CoreWindowActivationState.Deactivated)
                 {
-                    result = new AppendResult(GetBottommostIndex()); //TODO correct?
+                    result = new AppendResult(true);
                 }
             }
             return result;
@@ -285,26 +301,20 @@ namespace Signal_Windows.Controls
         {
             Collection.Remove(message);
         }
-        
-        private async void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+
+        private async void UserInputBar_OnEnterKeyPressed()
         {
-            if (e.Key == VirtualKey.Enter)
+            bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
+            if (shift)
             {
-                e.Handled = true; // Prevent KeyDown from firing twice on W10 CU
-                bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-                if (shift)
+                UserInputBar.AddLinefeed();
+            }
+            else
+            {
+                bool sendMessageResult = await GetMainPageVm().SendMessage(UserInputBar.InputText, SelectedFile);
+                if (sendMessageResult)
                 {
-                    InputTextBox.Text += "\r";
-                    InputTextBox.SelectionStart = InputTextBox.Text.Length;
-                    InputTextBox.SelectionLength = 0;
-                }
-                else
-                {
-                    bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
-                    if (sendMessageResult)
-                    {
-                        InputTextBox.Text = string.Empty;
-                    }
+                    ResetInput();
                 }
             }
         }
@@ -318,19 +328,58 @@ namespace Signal_Windows.Controls
             }
         }
 
-        private async void SendMessageButton_Click(object sender, RoutedEventArgs e)
+
+        private async void UserInputBar_OnSendMessageButtonClicked()
         {
-            bool sendMessageResult = await GetMainPageVm().SendMessage(InputTextBox.Text);
-            if (sendMessageResult)
+            if (string.IsNullOrEmpty(UserInputBar.InputText) && SelectedFile == null)
             {
-                InputTextBox.Text = string.Empty;
+                var filePicker = new FileOpenPicker();
+                filePicker.FileTypeFilter.Add("*"); // Without this the file picker throws an exception, this is not documented
+                SelectedFile = await filePicker.PickSingleFileAsync();
+                if (SelectedFile != null)
+                {
+                    AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                    UpdateSendButtonIcon();
+                    UserInputBar.FocusTextBox();
+                }
+                else
+                {
+                    AddedAttachmentDisplay.HideAttachment();
+                }
+            }
+            else
+            {
+                bool sendMessageResult = await GetMainPageVm().SendMessage(UserInputBar.InputText, SelectedFile);
+                if (sendMessageResult)
+                {
+                    ResetInput();
+                }
             }
         }
 
-        private void InputTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private static ScrollViewer GetScrollViewer(DependencyObject element)
         {
-            TextBox t = sender as TextBox;
-            SendButtonEnabled = t.Text != string.Empty;
+            if (element is ScrollViewer)
+            {
+                return (ScrollViewer)element;
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                var child = VisualTreeHelper.GetChild(element, i);
+
+                var result = GetScrollViewer(child);
+                if (result == null)
+                {
+                    continue;
+                }
+                else
+                {
+                    return result;
+                }
+            }
+
+            return null;
         }
 
         private void ScrollToUnread()
@@ -393,13 +442,13 @@ namespace Signal_Windows.Controls
                     var msg = ((IMessageView)Collection[bottomIndex]).Model;
                     Task.Run(async () =>
                     {
-                        await App.Handle.SetMessageRead(rawBottomIndex, msg, SignalConversation);
+                        await App.Handle.SetMessageRead(msg);
                     });
                 }
             }
         }
 
-        private async void UnblockButton_Click(object sender, RoutedEventArgs e)
+        private async void UserInputBar_OnUnblockButtonClicked()
         {
             if (SignalConversation is SignalContact contact)
             {
@@ -411,6 +460,110 @@ namespace Signal_Windows.Controls
                 {
                     App.Handle.SendBlockedMessage();
                 });
+            }
+        }
+
+        private void AddedAttachmentDisplay_OnCancelAttachmentButtonClicked()
+        {
+            AddedAttachmentDisplay.HideAttachment();
+            SelectedFile = null;
+            UpdateSendButtonIcon();
+        }
+
+        private void UpdateSendButtonIcon()
+        {
+            if (UserInputBar.InputText != string.Empty || SelectedFile != null)
+            {
+                UserInputBar.SetSendButtonIcon(Symbol.Send);
+            }
+            else
+            {
+                UserInputBar.SetSendButtonIcon(Symbol.Attach);
+            }
+        }
+
+        private void ResetInput()
+        {
+            SelectedFile = null;
+            UserInputBar.InputText = string.Empty;
+            UpdateSendButtonIcon();
+            AddedAttachmentDisplay.HideAttachment();
+        }
+
+        private async void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.V)
+            {
+                bool ctrl = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
+                if (ctrl)
+                {
+                    var dataPackageView = Clipboard.GetContent();
+                    if (dataPackageView.Contains(StandardDataFormats.StorageItems))
+                    {
+                        var pastedFiles = await dataPackageView.GetStorageItemsAsync();
+                        var pastedFile = pastedFiles[0];
+                        SelectedFile = pastedFile as StorageFile;
+                        AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                        UpdateSendButtonIcon();
+                    }
+                    else if (dataPackageView.Contains(StandardDataFormats.Bitmap))
+                    {
+                        RandomAccessStreamReference pastedBitmap = await dataPackageView.GetBitmapAsync();
+                        var pastedBitmapStream = await pastedBitmap.OpenReadAsync();
+                        var tmpFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("Signal-Windows-Screenshot.png", CreationCollisionOption.GenerateUniqueName);
+                        using (var tmpFileStream = await tmpFile.OpenAsync(FileAccessMode.ReadWrite))
+                        {
+                            BitmapDecoder decoder = await BitmapDecoder.CreateAsync(pastedBitmapStream);
+                            var pixels = await decoder.GetPixelDataAsync();
+                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, tmpFileStream);
+                            encoder.SetPixelData(decoder.BitmapPixelFormat,
+                                BitmapAlphaMode.Ignore, // Alpha is not used
+                                decoder.OrientedPixelWidth,
+                                decoder.OrientedPixelHeight,
+                                decoder.DpiX, decoder.DpiY,
+                                pixels.DetachPixelData());
+                            await encoder.FlushAsync();
+                        }
+                        SelectedFile = tmpFile;
+                        AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                        UpdateSendButtonIcon();
+                    }
+                }
+            }
+        }
+
+        private void Grid_DragOver(object sender, DragEventArgs e)
+        {
+            e.AcceptedOperation = DataPackageOperation.Copy;
+            e.DragUIOverride.IsCaptionVisible = false;
+            e.DragUIOverride.IsGlyphVisible = false;
+        }
+
+        private async void Grid_Drop(object sender, DragEventArgs e)
+        {
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                var storageItems = await e.DataView.GetStorageItemsAsync();
+                var storageItem = storageItems[0];
+                SelectedFile = storageItem as StorageFile;
+                if (SelectedFile != null)
+                {
+                    AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
+                    UpdateSendButtonIcon();
+                }
+            }
+        }
+
+        private void ConversationItemsControl_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            var scrollbar = GetScrollViewer(this);
+            if (scrollbar != null)
+            {
+                var verticalDelta = e.PreviousSize.Height - e.NewSize.Height;
+                if (verticalDelta > 0)
+                {
+                    scrollbar.ChangeView(null, scrollbar.VerticalOffset + verticalDelta, null);
+                }
             }
         }
     }

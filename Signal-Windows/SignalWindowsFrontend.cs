@@ -77,10 +77,10 @@ namespace Signal_Windows
             Locator.MainPageInstance.HandleAttachmentStatusChanged(sa);
         }
 
-        public void HandleMessageRead(long unreadMarkerIndex, SignalConversation conversation)
+        public void HandleMessageRead(SignalConversation updatedConversation)
         {
-            Locator.MainPageInstance.HandleMessageRead(unreadMarkerIndex, conversation);
-            CheckNotification(conversation);
+            Locator.MainPageInstance.HandleMessageRead(updatedConversation);
+            CheckNotification(updatedConversation);
         }
 
         public void HandleUnreadMessage(SignalMessage message)

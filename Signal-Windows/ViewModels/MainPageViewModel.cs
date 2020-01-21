@@ -69,6 +69,62 @@ namespace Signal_Windows.ViewModels
             }
         }
 
+        private bool _IsPaneOpen = false;
+        public bool IsPaneOpen
+        {
+            get => _IsPaneOpen;
+            set
+            {
+                if (_IsPaneOpen != value)
+                {
+                    _IsPaneOpen = value;
+                    RaisePropertyChanged(nameof(IsPaneOpen));
+                }
+            }
+        }
+
+        private double _CompactPaneLength = 0;
+        public double CompactPaneLength
+        {
+            get => _CompactPaneLength;
+            set
+            {
+                if (_CompactPaneLength != value)
+                {
+                    _CompactPaneLength = value;
+                    RaisePropertyChanged(nameof(CompactPaneLength));
+                }
+            }
+        }
+
+        private double _OpenPaneLength = 320;
+        public double OpenPaneLength
+        {
+            get => _OpenPaneLength;
+            set
+            {
+                if (_OpenPaneLength != value)
+                {
+                    _OpenPaneLength = value;
+                    RaisePropertyChanged(nameof(OpenPaneLength));
+                }
+            }
+        }
+
+        private SplitViewDisplayMode _DisplayMode = SplitViewDisplayMode.CompactInline;
+        public SplitViewDisplayMode DisplayMode
+        {
+            get => _DisplayMode;
+            set
+            {
+                if (_DisplayMode != value)
+                {
+                    _DisplayMode = value;
+                    RaisePropertyChanged(nameof(DisplayMode));
+                }
+            }
+        }
+
         internal void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
             SelectedThread = null;
@@ -88,27 +144,14 @@ namespace Signal_Windows.ViewModels
             set { _ThreadListAlignRight = value; RaisePropertyChanged(nameof(ThreadListAlignRight)); }
         }
 
-        internal async Task<bool> SendMessage(string messageText)
+        internal async Task<bool> SendMessage(string messageText, StorageFile attachment)
         {
             try
             {
-                if (!string.IsNullOrEmpty(messageText))
+                if (messageText != string.Empty || attachment != null)
                 {
-                    var now = Util.CurrentTimeMillis();
                     messageText = messageText.Replace("\r", "\r\n");
-                    SignalMessage message = new SignalMessage()
-                    {
-                        Author = null,
-                        ComposedTimestamp = now,
-                        ExpiresAt = SelectedThread.ExpiresInSeconds,
-                        Content = new SignalMessageContent() { Content = messageText },
-                        ThreadId = SelectedThread.ThreadId,
-                        ReceivedTimestamp = now,
-                        Direction = SignalMessageDirection.Outgoing,
-                        Read = true,
-                        Type = SignalMessageType.Normal
-                    };
-                    await App.Handle.SendMessage(message, SelectedThread);
+                    await App.Handle.SendMessage(messageText, attachment, SelectedThread);
                 }
                 return true;
             }
@@ -182,6 +225,11 @@ namespace Signal_Windows.ViewModels
         }
 
         #region SignalFrontend API
+        public void OpenAttachment(SignalAttachment sa)
+        {
+            View.Frame.Navigate(typeof(AttachmentDetailsPage), sa);
+        }
+
         public void AddOrUpdateConversation(SignalConversation conversation, SignalMessage updateMessage)
         {
             SignalConversation uiConversation;
@@ -217,8 +265,8 @@ namespace Signal_Windows.ViewModels
                     {
                         if (updateMessage != null)
                         {
-                            var container = new Message(updateMessage);
-                            View.Thread.Append(container);
+                            var messageView = Utils.CreateMessageView(updateMessage);
+                            View.Thread.Append(messageView);
                             View.Reload();
                         }
                     }
@@ -244,21 +292,22 @@ namespace Signal_Windows.ViewModels
             localConversation.LastActiveTimestamp = conversation.LastActiveTimestamp;
             localConversation.UnreadCount = conversation.UnreadCount;
             localConversation.LastSeenMessageIndex = conversation.LastSeenMessageIndex;
-            localConversation.UpdateUI();
+            localConversation.ExpiresInSeconds = conversation.ExpiresInSeconds;
             if (SelectedThread != null && SelectedThread == localConversation)
             {
-                var container = new Message(message);
-                result = View.Thread.Append(container);
+                var messageView = Utils.CreateMessageView(message);
+                result = View.Thread.Append(messageView);
             }
             RepositionConversation(localConversation);
+            localConversation.UpdateUI?.Invoke();
             return result;
         }
 
-        public void HandleMessageRead(long unreadMarkerIndex, SignalConversation conversation)
+        public void HandleMessageRead(SignalConversation updatedConversation)
         {
-            var localConversation = ConversationsDictionary[conversation.ThreadId];
-            localConversation.LastSeenMessageIndex = unreadMarkerIndex;
-            localConversation.UnreadCount = conversation.UnreadCount;
+            var localConversation = ConversationsDictionary[updatedConversation.ThreadId];
+            localConversation.LastSeenMessageIndex = updatedConversation.LastSeenMessageIndex;
+            localConversation.UnreadCount = updatedConversation.UnreadCount;
             localConversation.UpdateUI();
         }
 
@@ -283,6 +332,7 @@ namespace Signal_Windows.ViewModels
 
         public void ReplaceConversationList(List<SignalConversation> conversations)
         {
+            Logger.LogTrace("ReplaceConversationList()");
             ConversationsDictionary.Clear();
             Conversations.Clear();
             Conversations.AddRange(conversations);
@@ -302,6 +352,7 @@ namespace Signal_Windows.ViewModels
                 SelectedThread = ConversationsDictionary[SelectedThread.ThreadId];
                 TrySelectConversation(SelectedThread.ThreadId);
             }
+            Logger.LogTrace("ReplaceConversationList() finished");
         }
 
         public void HandleAttachmentStatusChanged(SignalAttachment sa)

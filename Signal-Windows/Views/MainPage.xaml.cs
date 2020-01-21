@@ -6,6 +6,7 @@ using Signal_Windows.Models;
 using Signal_Windows.ViewModels;
 using Signal_Windows.Views;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI.Popups;
@@ -33,27 +34,31 @@ namespace Signal_Windows
 
         public void SwitchToStyle(PageStyle newStyle)
         {
-            if (newStyle == PageStyle.Narrow)
+            var frame = Window.Current.Content as Frame;
+            if (frame?.CurrentSourcePageType == typeof(MainPage))
             {
-                if (Vm.SelectedThread != null)
+                if (newStyle == PageStyle.Narrow)
                 {
-                    Utils.EnableBackButton(Vm.BackButton_Click);
-                    MainPanel.IsPaneOpen = false;
-                    MainPanel.CompactPaneLength = 0;
+                    if (Vm.SelectedThread != null)
+                    {
+                        Utils.EnableBackButton(Vm.BackButton_Click);
+                        Vm.IsPaneOpen = false;
+                        Vm.CompactPaneLength = 0;
+                    }
+                    else
+                    {
+                        Unselect();
+                        Vm.IsPaneOpen = true;
+                    }
                 }
-                else
+                else if (newStyle == PageStyle.Wide)
                 {
-                    Unselect();
-                    MainPanel.IsPaneOpen = true;
+                    Utils.DisableBackButton(Vm.BackButton_Click);
+                    Vm.IsPaneOpen = false;
+                    Vm.CompactPaneLength = ContactsGrid.Width = 320;
                 }
+                UpdateStyle(newStyle);
             }
-            else if (newStyle == PageStyle.Wide)
-            {
-                Utils.DisableBackButton(Vm.BackButton_Click);
-                MainPanel.IsPaneOpen = false;
-                MainPanel.CompactPaneLength = ContactsGrid.Width = 320;
-            }
-            UpdateStyle(newStyle);
         }
 
         private void UpdateStyle(PageStyle currentStyle)
@@ -62,39 +67,34 @@ namespace Signal_Windows
             {
                 // TODO: When phone is in landscape mode this is incorrect and some stuff gets cut off, we need to
                 // get the actual useable width (actualwidth - top icon bar - bottom control bar)
-                ContactsGrid.Width = ActualWidth;
+                ContactsGrid.Width = Frame.ActualWidth;
                 if (Vm.SelectedThread == null)
                 {
-                    MainPanel.OpenPaneLength = ActualWidth;
+                    Vm.OpenPaneLength = Frame.ActualWidth;
                 }
             }
             else if (currentStyle == PageStyle.Wide)
             {
-                MainPanel.CompactPaneLength = MainPanel.OpenPaneLength = ContactsGrid.Width = 320;
+                Vm.CompactPaneLength = Vm.OpenPaneLength = ContactsGrid.Width = 320;
             }
         }
 
         public PageStyle GetCurrentViewStyle()
         {
-            return Utils.GetViewStyle(new Size(ActualWidth, ActualHeight));
+            return Utils.GetViewStyle(new Size(Frame.ActualWidth, ActualHeight));
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            if (e.Parameter != null)
-            {
-                Vm.RequestedConversationId = e.Parameter as string;
-            }
-            UpdateLayout();
+            Vm.RequestedConversationId = e.Parameter as string;
             SwitchToStyle(GetCurrentViewStyle());
-            MainPanel.DisplayMode = SplitViewDisplayMode.CompactInline;
+            Vm.DisplayMode = SplitViewDisplayMode.CompactInline;
             Frame.SizeChanged += Frame_SizeChanged;
             Vm.TrySelectConversation(Vm.RequestedConversationId);
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
-            Vm.Deselect();
             Frame.SizeChanged -= Frame_SizeChanged;
             if (GetCurrentViewStyle() == PageStyle.Narrow)
             {

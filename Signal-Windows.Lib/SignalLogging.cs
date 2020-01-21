@@ -96,6 +96,7 @@ namespace Signal_Windows.Storage
     public class SignalFileLoggerProvider : ILoggerProvider
     {
         private static readonly string UILog = ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.ui.log";
+        private static readonly string BGLog = ApplicationData.Current.LocalCacheFolder.Path + @"\Signal-Windows.bg.log";
         private readonly string Filename;
         private readonly string OldFilename;
         private readonly string Prefix;
@@ -162,6 +163,21 @@ namespace Signal_Windows.Storage
                 try
                 {
                     File.AppendAllText(UILog, msg);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(string.Format("SignalFileLoggerProvider failed to write: {0}", e));
+                }
+            }
+        }
+
+        public static void ForceAddBGLog(string msg)
+        {
+            lock (Lock)
+            {
+                try
+                {
+                    File.AppendAllText(BGLog, msg);
                 }
                 catch (Exception e)
                 {

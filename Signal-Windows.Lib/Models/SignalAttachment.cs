@@ -29,7 +29,6 @@ namespace Signal_Windows.Models
             return new SignalServiceAttachmentPointer(StorageId,
                 ContentType,
                 Key,
-                Relay,
                 (uint)Util.ToIntExact(Size),
                 null,
                 0,

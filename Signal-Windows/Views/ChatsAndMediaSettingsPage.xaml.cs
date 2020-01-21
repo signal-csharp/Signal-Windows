@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Signal_Windows.Lib;
 using Signal_Windows.ViewModels;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -37,6 +38,7 @@ namespace Signal_Windows.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             Utils.EnableBackButton(BackButton_Click);
+            Vm.OnNavigatedTo();
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
@@ -48,6 +50,12 @@ namespace Signal_Windows.Views
         {
             Frame.GoBack();
             e.Handled = true;
+        }
+
+        private void SpellCheckToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+        {
+            var toggleSwitch = sender as ToggleSwitch;
+            Vm.SpellCheckToggleSwitch_Toggled(toggleSwitch.IsOn);
         }
     }
 }

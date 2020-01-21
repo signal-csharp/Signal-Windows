@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Signal_Windows.Controls;
+using Signal_Windows.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -128,6 +130,13 @@ namespace Signal_Windows
             else if (color == Blue_Grey.Color) { return BLUE_GREY; }
             else if (color == Grey.Color) { return GREY; }
             else { return GREY; }
+        }
+
+        public static IMessageView CreateMessageView(SignalMessage message)
+        {
+            if (message.Type == SignalMessageType.IdentityKeyChange)
+                return new IdentityKeyChangeMessage(message) as IMessageView;
+            return new Message(message) as IMessageView;
         }
 
         public static void AddRange<T>(this ObservableCollection<T> observableCollection, IEnumerable<T> collection)
@@ -262,16 +271,6 @@ namespace Signal_Windows
             int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
             double num = Math.Round(bytes / Math.Pow(1024, place), 1);
             return (Math.Sign(byteCount) * num).ToString() + suf[place];
-        }
-
-
-        public static string GetAppStartMessage()
-        {
-            var version = Package.Current.Id.Version;
-            return
-                "-------------------------------------------------\n" +
-                String.Format("    Signal-Windows {0}.{1}.{2}.{3} starting\n", version.Major, version.Minor, version.Build, version.Revision) +
-                "-------------------------------------------------\n";
         }
 
         public static string GetCountryCode(string ISO3166) //https://stackoverflow.com/questions/34837436/uwp-get-country-phone-number-prefix
