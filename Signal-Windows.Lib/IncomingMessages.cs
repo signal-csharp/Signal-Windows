@@ -327,7 +327,7 @@ namespace Signal_Windows.Lib
                 }
             }
             conversation.ExpiresInSeconds = (uint)message.ExpiresInSeconds;
-            SignalDBContext.UpdateExpiresInLocked(conversation, (uint)message.ExpiresInSeconds);
+            SignalDBContext.UpdateExpiresInLocked(conversation);
             string finalMessage;
             if (message.ExpiresInSeconds == 0)
             {

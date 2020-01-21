@@ -417,13 +417,13 @@ namespace Signal_Windows.Lib
         /// <param name="message"></param>
         public async Task SetMessageRead(SignalMessage message)
         {
-            UpdateMessageExpiration(message, conversation.ExpiresInSeconds);
             Logger.LogTrace("SetMessageRead() locking");
             await SemaphoreSlim.WaitAsync(CancelSource.Token);
             try
             {
                 Logger.LogTrace("SetMessageRead() locked");
                 var updatedConversation = SignalDBContext.UpdateMessageRead(message.ComposedTimestamp);
+                UpdateMessageExpiration(message, updatedConversation.ExpiresInSeconds);
                 OutgoingQueue.Add(new SignalServiceSyncMessageSendable(SignalServiceSyncMessage.ForRead(new List<ReadMessage>() {
                         new ReadMessage(message.Author.ThreadId, message.ComposedTimestamp)
                 })));

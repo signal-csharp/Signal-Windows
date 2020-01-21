@@ -108,6 +108,9 @@ namespace Signal_Windows.Lib
                 Attachments = outgoingAttachmentsList
             };
 
+            UpdateExpiresAt(OutgoingSignalMessage);
+            DisappearingMessagesManager.QueueForDeletion(OutgoingSignalMessage);
+
             if (!OutgoingSignalMessage.ThreadId.EndsWith("="))
             {
                 if (!token.IsCancellationRequested)
@@ -144,6 +147,25 @@ namespace Signal_Windows.Lib
                 }
             }
         }
+
+        /// <summary>
+        /// Updates a message ExpiresAt to be a timestamp instead of a relative value.
+        /// </summary>
+        /// <param name="message">The message to update</param>
+        private void UpdateExpiresAt(SignalMessage message)
+        {
+            // We update here instead of earlier because we only want to start the timer once the message is actually sent.
+            long messageExpiration;
+            if (message.ExpiresAt == 0)
+            {
+                messageExpiration = 0;
+            }
+            else
+            {
+                messageExpiration = Util.CurrentTimeMillis() + (long)TimeSpan.FromSeconds(message.ExpiresAt).TotalMilliseconds;
+            }
+            message.ExpiresAt = messageExpiration;
+        }
     }
 
     class OutgoingMessages
@@ -173,13 +195,6 @@ namespace Signal_Windows.Lib
                     ISendable sendable = null;
                     try
                     {
-                        if (!Token.IsCancellationRequested)
-                        {
-                            await MessageSender.SendMessage(Token, new SignalServiceAddress(outgoingSignalMessage.ThreadId), message);
-                            UpdateExpiresAt(outgoingSignalMessage);
-                            DisappearingMessagesManager.QueueForDeletion(outgoingSignalMessage);
-                            outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
-                        }
                         sendable = Handle.OutgoingQueue.Take(Token);
                         Logger.LogTrace($"Sending {sendable.GetType().Name}");
                         await sendable.Send(messageSender, Token);
@@ -200,10 +215,11 @@ namespace Signal_Windows.Lib
                         }
                         foreach (UntrustedIdentityException e in identityExceptions)
                         {
-                            await SendMessage(recipients, message);
-                            UpdateExpiresAt(outgoingSignalMessage);
-                            DisappearingMessagesManager.QueueForDeletion(outgoingSignalMessage);
-                            outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
+                            // TODO: Not sure what to do with this.
+                            //await SendMessage(recipients, message);
+                            //UpdateExpiresAt(outgoingSignalMessage);
+                            //DisappearingMessagesManager.QueueForDeletion(outgoingSignalMessage);
+                            //outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                             await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
                         }
                     }
@@ -240,25 +256,6 @@ namespace Signal_Windows.Lib
             {
                 Logger.LogInformation("HandleOutgoingMessages() finished");
             }
-        }
-
-        /// <summary>
-        /// Updates a message ExpiresAt to be a timestamp instead of a relative value.
-        /// </summary>
-        /// <param name="message">The message to update</param>
-        private void UpdateExpiresAt(SignalMessage message)
-        {
-            // We update here instead of earlier because we only want to start the timer once the message is actually sent.
-            long messageExpiration;
-            if (message.ExpiresAt == 0)
-            {
-                messageExpiration = 0;
-            }
-            else
-            {
-                messageExpiration = Util.CurrentTimeMillis() + (long)TimeSpan.FromSeconds(message.ExpiresAt).TotalMilliseconds;
-            }
-            message.ExpiresAt = messageExpiration;
         }
     }
 }
