@@ -403,6 +403,12 @@ namespace Signal_Windows.ViewModels
             if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
             {
                 View.Thread.HandleDeleteMesage(message);
+                var localConversation = ConversationsDictionary[SelectedThread.ThreadId];
+                localConversation.MessagesCount -= 1;
+                localConversation.LastMessage = null;
+                localConversation.LastMessageId = null;
+                localConversation.LastSeenMessage = null;
+                localConversation.UpdateUI?.Invoke();
             }
         }
         #endregion
