@@ -104,9 +104,16 @@ namespace Signal_Windows.Lib
         private async Task HandleMessage(SignalServiceEnvelope envelope)
         {
             var cipher = new SignalServiceCipher(new SignalServiceAddress(SignalLibHandle.Instance.Store.Username), new Store(), LibUtils.GetCertificateValidator());
+            // TODO: Starting to get messages of an unknown type which causes Decrypt to return null, so handle the null case for now.
             var content = cipher.Decrypt(envelope);
             long timestamp = Util.CurrentTimeMillis();
 
+            if (content == null)
+            {
+                //TODO callmessages
+                Logger.LogWarning("HandleMessage() received unrecognized message");
+                return;
+            }
             if (content.Message != null)
             {
                 SignalServiceDataMessage message = content.Message;

@@ -128,7 +128,7 @@ namespace Signal_Windows.ViewModels
             Contact.ExpiresInSeconds = (uint)timeSpan.TotalSeconds;
             await Task.Run(() =>
             {
-                App.Handle.SaveAndDispatchSignalConversation(Contact, null);
+                SignalDBContext.UpdateExpiresInLocked(Contact);
             });
         }
 
