@@ -440,10 +440,13 @@ namespace Signal_Windows.Controls
                 {
                     LastMarkReadRequest = rawBottomIndex;
                     var msg = ((IMessageView)Collection[bottomIndex]).Model;
-                    Task.Run(async () =>
+                    if (msg.Author != null)
                     {
-                        await App.Handle.SetMessageRead(msg);
-                    });
+                        Task.Run(async () =>
+                        {
+                            await App.Handle.SetMessageRead(msg);
+                        });
+                    }
                 }
             }
         }

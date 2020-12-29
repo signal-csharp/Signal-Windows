@@ -212,7 +212,7 @@ namespace Signal_Windows.Controls
 
                 if (deletedItem)
                 {
-                    Conversation.MessagesCount--;
+                    Conversation.MessagesCount -= 1;
                     CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, removedMessage, finalVirtualIndex));
                 }
             }

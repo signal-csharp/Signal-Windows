@@ -404,7 +404,8 @@ namespace Signal_Windows.ViewModels
             {
                 View.Thread.HandleDeleteMesage(message);
                 var localConversation = ConversationsDictionary[SelectedThread.ThreadId];
-                localConversation.MessagesCount -= 1;
+                // don't need to decrement MessagesCount by 1 because it was already decremented by HandleDeleteMessage
+                // specifically decremented by VirtualizedMessageCollection.Remove()
                 localConversation.LastMessage = null;
                 localConversation.LastMessageId = null;
                 localConversation.LastSeenMessage = null;
