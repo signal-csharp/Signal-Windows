@@ -54,14 +54,10 @@ namespace Signal_Windows.Lib
                 TimeSpan deleteTimeSpan = expireTime - receivedTime;
                 if (deleteTimeSpan < TimeSpan.Zero)
                 {
-                    Debug.WriteLine($"deleteTimeSpan was less than 0: {deleteTimeSpan.ToString()}");
-                    Debug.WriteLine($"Deleting message: {message.Content.Content}");
                     await DeleteMessage(message);
                     return;
                 }
-                Debug.WriteLine($"Deleting message in {deleteTimeSpan.TotalSeconds} seconds");
                 await Task.Delay(deleteTimeSpan);
-                Debug.WriteLine($"Deleting message: {message.Content.Content}");
                 await DeleteMessage(message);
             };
             Task.Run(deleteTask);
