@@ -20,7 +20,7 @@ This is an unofficial Signal client for the Universal Windows Platform. It is (c
 - a prettier interface
 
 ## I want to try it out but I'm not a developer
-You can get Signal-Windows from the Windows store with [this invite link](https://redeem.microsoft.com/?mstoken=9Q92F-6V26X-M7R4C-42939-7779Z).
+You can get Signal-Windows from the Windows store with [this invite link](http://go.microsoft.com/fwlink/?LinkId=532540&mstoken=XP2CK-MPM9Q-T2R6C-KJ979-RVWQZ).
 
 ## Bug reports
 Found a bug? Great! Open a pull request or an issue.
