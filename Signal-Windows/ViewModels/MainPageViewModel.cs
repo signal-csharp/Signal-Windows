@@ -397,6 +397,21 @@ namespace Signal_Windows.ViewModels
                 }
             }
         }
+
+        public void HandleMessageDelete(SignalMessage message)
+        {
+            if (SelectedThread != null && SelectedThread.ThreadId == message.ThreadId)
+            {
+                View.Thread.HandleDeleteMesage(message);
+                var localConversation = ConversationsDictionary[SelectedThread.ThreadId];
+                // don't need to decrement MessagesCount by 1 because it was already decremented by HandleDeleteMessage
+                // specifically decremented by VirtualizedMessageCollection.Remove()
+                localConversation.LastMessage = null;
+                localConversation.LastMessageId = null;
+                localConversation.LastSeenMessage = null;
+                localConversation.UpdateUI?.Invoke();
+            }
+        }
         #endregion
     }
 }

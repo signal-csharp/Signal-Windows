@@ -123,6 +123,15 @@ namespace Signal_Windows.ViewModels
             FillBrush = Utils.GetBrushFromColor(Utils.CalculateDefaultColor(Contact.ThreadDisplayName));
         }
 
+        internal async Task SetDisappearingMessagesTime(TimeSpan timeSpan)
+        {
+            Contact.ExpiresInSeconds = (uint)timeSpan.TotalSeconds;
+            await Task.Run(() =>
+            {
+                SignalDBContext.UpdateExpiresInLocked(Contact);
+            });
+        }
+
         internal void BackButton_Click(object sender, BackRequestedEventArgs e)
         {
             View.Frame.GoBack();

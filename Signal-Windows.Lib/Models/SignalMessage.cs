@@ -19,7 +19,7 @@ namespace Signal_Windows.Models
         public uint Receipts { get; set; }
         public long ReceivedTimestamp { get; set; }
         public long ComposedTimestamp { get; set; }
-        public uint ExpiresAt { get; set; }
+        public long ExpiresAt { get; set; }
         public uint AttachmentsCount { get; set; }
         public List<SignalAttachment> Attachments { get; set; } = new List<SignalAttachment>();
     }

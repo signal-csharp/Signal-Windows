@@ -101,7 +101,6 @@
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem x:Name="ConversationSettingsButton" Text="Conversation settings" Click="ConversationSettingsButton_Click"/>
-                            <MenuFlyoutItem Text="Disappearing messages" IsEnabled="False"/>
                             <MenuFlyoutItem Text="All media" IsEnabled="False"/>
                             <ToggleMenuFlyoutItem Text="Mute conversation" IsEnabled="False"/>
                             <MenuFlyoutItem Text="Reset secure session" IsEnabled="False"/>

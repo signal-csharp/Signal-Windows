@@ -104,9 +104,16 @@ namespace Signal_Windows.Lib
         private async Task HandleMessage(SignalServiceEnvelope envelope)
         {
             var cipher = new SignalServiceCipher(new SignalServiceAddress(SignalLibHandle.Instance.Store.Username), new Store(), LibUtils.GetCertificateValidator());
+            // TODO: Starting to get messages of an unknown type which causes Decrypt to return null, so handle the null case for now.
             var content = cipher.Decrypt(envelope);
             long timestamp = Util.CurrentTimeMillis();
 
+            if (content == null)
+            {
+                //TODO callmessages
+                Logger.LogWarning("HandleMessage() received unrecognized message");
+                return;
+            }
             if (content.Message != null)
             {
                 SignalServiceDataMessage message = content.Message;
@@ -326,15 +333,26 @@ namespace Signal_Windows.Lib
                     conversation = await SignalDBContext.GetOrCreateContactLocked(content.Sender, 0);
                 }
             }
-            conversation.ExpiresInSeconds = (uint) message.ExpiresInSeconds;
+            conversation.ExpiresInSeconds = (uint)message.ExpiresInSeconds;
             SignalDBContext.UpdateExpiresInLocked(conversation);
+            string finalMessage;
+            if (message.ExpiresInSeconds == 0)
+            {
+                finalMessage = $"{prefix} has turned off disappearing messages.";
+            }
+            else
+            {
+                finalMessage = $"{prefix} set disappearing message time to {message.ExpiresInSeconds} seconds.";
+            }
+            // Update conversations to reflect the new expires in seconds
+            await SignalLibHandle.Instance.DispatchAddOrUpdateConversation(conversation, null);
             SignalMessage sm = new SignalMessage()
             {
                 Direction = type,
                 Type = SignalMessageType.ExpireUpdate,
                 Status = status,
                 Author = author,
-                Content = new SignalMessageContent() { Content = $"{prefix} set the expiration timer to {message.ExpiresInSeconds} seconds." },
+                Content = new SignalMessageContent() { Content = finalMessage },
                 ThreadId = conversation.ThreadId,
                 DeviceId = (uint)envelope.GetSourceDevice(),
                 Receipts = 0,
@@ -534,7 +552,7 @@ namespace Signal_Windows.Lib
                     DeviceId = (uint)envelope.GetSourceDevice(),
                     Receipts = 0,
                     ComposedTimestamp = composedTimestamp,
-                    ReceivedTimestamp = timestamp,
+                    ReceivedTimestamp = timestamp
                 };
                 SignalDBContext.SaveMessageLocked(sm);
                 dbgroup.MessagesCount += 1;

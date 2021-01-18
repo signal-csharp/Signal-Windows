@@ -23,6 +23,8 @@ namespace Signal_Windows.Views
     /// </summary>
     public sealed partial class ConversationSettingsPage : Page
     {
+        private bool loading = true;
+
         public ConversationSettingsPageViewModel Vm
         {
             get { return (ConversationSettingsPageViewModel)DataContext; }
@@ -36,9 +38,64 @@ namespace Signal_Windows.Views
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            loading = true;
             base.OnNavigatedTo(e);
             Utils.EnableBackButton(Vm.BackButton_Click);
             Vm.OnNavigatedTo();
+            SetSelectedDisappearingRadioButton(TimeSpan.FromSeconds(Vm.Contact.ExpiresInSeconds));
+            loading = false;
+        }
+
+        void SetSelectedDisappearingRadioButton(TimeSpan expiresIn)
+        {
+            if (expiresIn == TimeSpan.Zero)
+            {
+                DisappearingOffButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromSeconds(5))
+            {
+                Disappearing5sButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromSeconds(10))
+            {
+                Disappearing10sButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromSeconds(30))
+            {
+                Disappearing30sButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromMinutes(1))
+            {
+                Disappearing1mButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromMinutes(5))
+            {
+                Disappearing5mButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromMinutes(30))
+            {
+                Disappearing30mButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromHours(1))
+            {
+                Disappearing1hButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromHours(6))
+            {
+                Disappearing6hButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromHours(12))
+            {
+                Disappearing12hButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromDays(1))
+            {
+                Disappearing1dButton.IsChecked = true;
+            }
+            else if (expiresIn == TimeSpan.FromDays(7))
+            {
+                Disappearing1wButton.IsChecked = true;
+            }
         }
 
         protected override async void OnNavigatingFrom(NavigatingCancelEventArgs e)
@@ -166,6 +223,102 @@ namespace Signal_Windows.Views
         private void BlockButton_Click(object sender, RoutedEventArgs e)
         {
             Vm.BlockButton_Click();
+        }
+
+        private async void DisappearingOffButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.Zero);
+            }
+        }
+
+        private async void Disappearing5sButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromSeconds(5));
+            }
+        }
+
+        private async void Disappearing10sButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromSeconds(10));
+            }
+        }
+
+        private async void Disappearing30sButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromSeconds(30));
+            }
+        }
+
+        private async void Disappearing1mButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromMinutes(1));
+            }
+        }
+
+        private async void Disappearing5mButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromMinutes(5));
+            }
+        }
+
+        private async void Disappearing30mButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromMinutes(30));
+            }
+        }
+
+        private async void Disappearing1hButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromHours(1));
+            }
+        }
+
+        private async void Disappearing6hButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromHours(6));
+            }
+        }
+
+        private async void Disappearing12hButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromHours(12));
+            }
+        }
+
+        private async void Disappearing1dButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromDays(1));
+            }
+        }
+
+        private async void Disappearing1wButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!loading)
+            {
+                await Vm.SetDisappearingMessagesTime(TimeSpan.FromDays(7));
+            }
         }
     }
 }

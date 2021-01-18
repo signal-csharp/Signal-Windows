@@ -31,6 +31,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" Margin="0,0,0,8" HorizontalAlignment="Left">
                     <TextBlock Text="Display Name" Margin="0,0,0,4" FontSize="15"/>
@@ -47,6 +48,21 @@
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Row="3" Margin="0,8" HorizontalAlignment="Left">
+                    <TextBlock Text="Disappering messages" Margin="0,0,0,4"/>
+                    <RadioButton x:Name="DisappearingOffButton" Content="Off" Checked="DisappearingOffButton_Checked"/>
+                    <RadioButton x:Name="Disappearing5sButton" Content="5 seconds" Checked="Disappearing5sButton_Checked"/>
+                    <RadioButton x:Name="Disappearing10sButton" Content="10 seconds" Checked="Disappearing10sButton_Checked"/>
+                    <RadioButton x:Name="Disappearing30sButton" Content="30 seconds" Checked="Disappearing30sButton_Checked"/>
+                    <RadioButton x:Name="Disappearing1mButton" Content="1 minute" Checked="Disappearing1mButton_Checked"/>
+                    <RadioButton x:Name="Disappearing5mButton" Content="5 minutes" Checked="Disappearing5mButton_Checked"/>
+                    <RadioButton x:Name="Disappearing30mButton" Content="30 minutes" Checked="Disappearing30mButton_Checked"/>
+                    <RadioButton x:Name="Disappearing1hButton" Content="1 hour" Checked="Disappearing1hButton_Checked"/>
+                    <RadioButton x:Name="Disappearing6hButton" Content="6 hours" Checked="Disappearing6hButton_Checked"/>
+                    <RadioButton x:Name="Disappearing12hButton" Content="12 hours" Checked="Disappearing12hButton_Checked"/>
+                    <RadioButton x:Name="Disappearing1dButton" Content="1 day" Checked="Disappearing1dButton_Checked"/>
+                    <RadioButton x:Name="Disappearing1wButton" Content="1 week" Checked="Disappearing1wButton_Checked"/>
+                </StackPanel>
+                <StackPanel Grid.Row="4" Margin="0,8" HorizontalAlignment="Left">
                     <TextBlock Text="Color" Margin="0,0,0,4"/>
                     <Button x:Name="ResetButton" Content="Reset" Margin="0,8" Click="ResetButton_Click"/>
                     <Grid>
@@ -80,8 +96,8 @@
                         <Button x:Name="Color14" Background="{x:Bind Vm.Colors[14]}" Width="50" Height="50" Margin="4,4" Grid.Row="4" Grid.Column="2" Click="Color14_Click"/>
                     </Grid>
                 </StackPanel>
-                <Button Grid.Row="4" Content="View safety number" IsEnabled="False" Margin="0,16"/>
-                <Button x:Name="BlockButton" Grid.Row="5" Content="{x:Bind Vm.BlockedText, Mode=OneWay}" Margin="0,16" Background="#FFEF5350" MinWidth="75" MinHeight="32" Click="BlockButton_Click" />
+                <Button Grid.Row="5" Content="View safety number" IsEnabled="False" Margin="0,16"/>
+                <Button x:Name="BlockButton" Grid.Row="6" Content="{x:Bind Vm.BlockedText, Mode=OneWay}" Margin="0,16" Background="#FFEF5350" MinWidth="75" MinHeight="32" Click="BlockButton_Click" />
             </Grid>
         </ScrollViewer>
     </Grid>

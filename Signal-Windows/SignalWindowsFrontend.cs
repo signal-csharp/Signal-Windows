@@ -96,6 +96,11 @@ namespace Signal_Windows
             Locator.MainPageInstance.HandleBlockedContacts(blockedContacts);
         }
 
+        public void HandleMessageDelete(SignalMessage message)
+        {
+            Locator.MainPageInstance.HandleMessageDelete(message);
+        }
+
         private void CheckNotification(SignalConversation conversation)
         {
             if (ApplicationView.GetForCurrentView().Id == App.MainViewId)
