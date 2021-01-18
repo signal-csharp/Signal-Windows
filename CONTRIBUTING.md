@@ -29,7 +29,7 @@ You can link Signal-Windows as a slave to any signal device capable of linking s
 #### Using a Signal-Android or Signal-iOS master
 Same procedure as with Signal-Desktop: Scan the qr-code.
 
-#### Using a signal-cli master
+#### Using a [signal-cli](https://github.com/AsamK/signal-cli) master
 Signal-Windows kindly also displays the tsdevice string below the qrcode. Use `signal-cli addDevice --uri` like you would with a Signal-Desktop slave.
 
 ## Backing Up the Database
