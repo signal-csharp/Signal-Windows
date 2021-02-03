@@ -48,6 +48,7 @@
     <Extension Category="windows.certificates">
       <Certificates>
         <Certificate StoreName="TrustedPeople" Content="textsecure-servicewhispersystemsorg.crt" />
+        <Certificate StoreName="TrustedPeople" Content="api-directory-signal-org.crt"/>
       </Certificates>
     </Extension>
   </Extensions>

@@ -143,6 +143,7 @@
     <Content Include="Assets\Wide310x150Logo.scale-125.png" />
     <Content Include="Assets\Wide310x150Logo.scale-150.png" />
     <Content Include="Assets\Wide310x150Logo.scale-400.png" />
+    <Content Include="api-directory-signal-org.crt" />
     <None Include="Package.StoreAssociation.xml" />
     <None Include="Package.xml" />
     <Content Include="textsecure-servicewhispersystemsorg.crt" />
