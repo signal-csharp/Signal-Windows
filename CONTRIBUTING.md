@@ -38,3 +38,15 @@ Signal-Windows kindly also displays the tsdevice string below the qrcode. Use `s
 If you want to backup your database files, `Libsignal.db` and `Signal.db`, you can find them in `C:\Users\<USERNAME>\AppData\Local\Packages\2383BenediktRadtke.SignalPrivateMessenger_teak1p7hcx9ga\LocalCache\`  
 
 On mobile these are found at `LocalAppData\2383BenediktRadtke.SignalPrivateMessenger_<VERSION>_arm__teak1p7hcx9ga\LocalCache\`
+
+## Adding a New View
+
+1. Add a new Blank Page in `Signal-Windows/Views`. For example NewPage.xaml.
+2. Add a new class in `Signal-Windows/ViewModels`. The name of the class should be the `ViewModel` appended to the page name. For example NewPageViewModel.cs.
+3. Inherit from `ViewModelBase` (namespace `GalaSoft.MvvmLight`) in the new view model class. For example `public class NewPageViewModel : ViewModelBase`
+4. Add a property for the new page in the new view model class. For example `public NewView View { get; set; }`
+5. In the new view code behind add a property for the new view model class. For example `public NewPageViewModel Vm { get { return (NewPageViewModel)DataContext; } }`
+6. In the new view code behind assign the view model `View` to the code behind class in the constructor. For example in the NewPage constructor add `Vm.View = this;` after `this.InitializeComponent();`
+7. In `Signal-Windows/ViewModels/ViewModelLocator.cs` register the new page view model in `SimpleIoc`. For example `SimpleIoc.Default.Register<NewPageViewModel>();`
+8. Add a property that returns an instance of the new page view model. For example `public NewPageViewModel NewPageInstance { get { return ServiceLocator.Current.GetInstance<NewPageViewModel>(Key.ToString()); } }`
+9. In the new page XAML set the DataContext of the page to the instance of the new page view model. This must be set in the Page opening tag. For example `DataContext="{Binding NewPageInstance, Source={StaticResource Locator}}"`
