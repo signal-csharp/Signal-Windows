@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
+using Windows.ApplicationModel.Core;
 using Windows.Foundation;
 using Windows.Foundation.Metadata;
 using Windows.UI;
@@ -130,6 +131,16 @@ namespace Signal_Windows
             else if (color == Blue_Grey.Color) { return BLUE_GREY; }
             else if (color == Grey.Color) { return GREY; }
             else { return GREY; }
+        }
+
+        public static async Task CallOnMainViewUIThreadAsync(DispatchedHandler handler)
+        {
+            await CallOnUIThreadAsync(CoreApplication.MainView.CoreWindow.Dispatcher, handler);
+        }
+
+        public static async Task CallOnUIThreadAsync(CoreDispatcher dispatcher, DispatchedHandler handler)
+        {
+            await dispatcher.RunAsync(CoreDispatcherPriority.Normal, handler);
         }
 
         public static IMessageView CreateMessageView(SignalMessage message)

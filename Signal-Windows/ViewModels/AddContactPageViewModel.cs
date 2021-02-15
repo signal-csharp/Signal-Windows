@@ -22,6 +22,7 @@ using Windows.UI.Xaml.Controls;
 using System.Globalization;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Signal_Windows.Lib;
 
 namespace Signal_Windows.ViewModels
 {
@@ -117,7 +118,7 @@ namespace Signal_Windows.ViewModels
             RefreshingContacts = true;
             Contacts.Clear();
             signalContacts.Clear();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(App.ServiceConfiguration, App.Handle.Store.Username, App.Handle.Store.Password, (int)App.Handle.Store.DeviceId, App.USER_AGENT);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceConfiguration, App.Handle.Store.Username, App.Handle.Store.Password, (int)App.Handle.Store.DeviceId, LibUtils.USER_AGENT, LibUtils.HttpClient);
             ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
             List<PhoneContact> intermediateContacts = new List<PhoneContact>();
             if (contactStore != null)
@@ -191,11 +192,12 @@ namespace Signal_Windows.ViewModels
                     }
                 }
 
-                var signalContactDetails = await accountManager.GetContacts(cancelSource.Token, intermediateContacts.Select(c => c.PhoneNumber).ToList());
+                List<string> intermediateContactPhoneNumbers = intermediateContacts.Select(c => c.PhoneNumber).ToList();
+                var registeredUsers = await accountManager.GetRegisteredUsersAsync(intermediateContactPhoneNumbers, LibUtils.SignalSettings.ContactDiscoveryServiceEnclaveId, cancelSource.Token);
                 foreach (var contact in intermediateContacts)
                 {
-                    var foundContact = signalContactDetails.FirstOrDefault(c => c.Number == contact.PhoneNumber);
-                    if (foundContact != null)
+                    var foundContact = registeredUsers.FirstOrDefault(c => c.Key == contact.PhoneNumber).Key;
+                    if (!string.IsNullOrEmpty(foundContact))
                     {
                         contact.OnSignal = true;
                         ContactAnnotation contactAnnotation = new ContactAnnotation

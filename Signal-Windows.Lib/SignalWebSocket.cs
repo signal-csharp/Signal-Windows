@@ -96,7 +96,7 @@ namespace Signal_Windows.Lib
                         if (e.Message.Contains("(403)"))
                         {
                             SemaphoreSlim.Release();
-                            throw new AuthorizationFailedException("OWS server rejected authorization.");
+                            throw new AuthorizationFailedException(403, "OWS server rejected authorization.");
                         }
                         Logger.LogError("ConnectAsync() failed: {0}\n{1}", e.Message, e.StackTrace); //System.Runtime.InteropServices.COMException (0x80072EE7)
                         await Task.Delay(10 * 1000);

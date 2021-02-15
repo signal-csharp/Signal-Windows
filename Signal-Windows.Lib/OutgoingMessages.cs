@@ -189,7 +189,7 @@ namespace Signal_Windows.Lib
             Logger.LogDebug("HandleOutgoingMessages()");
             try
             {
-                var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), LibUtils.USER_AGENT, Store.DeviceId != 1, Pipe, null, null);
+                var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), LibUtils.USER_AGENT, LibUtils.HttpClient, Store.DeviceId != 1, Pipe, null, null);
                 while (!Token.IsCancellationRequested)
                 {
                     ISendable sendable = null;

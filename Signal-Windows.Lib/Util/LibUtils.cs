@@ -1,24 +1,16 @@
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading;
 using libsignal.ecc;
 using libsignalmetadatadotnet.certificate;
 using libsignalservice;
 using libsignalservice.configuration;
-using libsignalservice.push;
 using libsignalservice.util;
 using Microsoft.Extensions.Logging;
-using Microsoft.Toolkit.Uwp.Notifications;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using Signal_Windows.Lib.Settings;
 using Windows.ApplicationModel;
-using Windows.Foundation.Metadata;
-using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
-using Windows.UI.Core;
-using Windows.UI.Notifications;
 
 namespace Signal_Windows.Lib
 {
@@ -28,14 +20,28 @@ namespace Signal_Windows.Lib
         public const string GlobalMutexName = "SignalWindowsPrivateMessenger_Mutex";
         public const string GlobalEventWaitHandleName = "SignalWindowsPrivateMessenger_EventWaitHandle";
         public static string UNIDENTIFIED_SENDER_TRUST_ROOT = "BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF";
-        public static string URL = "https://textsecure-service.whispersystems.org";
-        public static SignalServiceUrl[] ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl("https://textsecure-service.whispersystems.org") };
-        public static SignalServiceConfiguration ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null);
+        public static SignalServiceUrl[] ServiceUrls;
+        public static SignalContactDiscoveryUrl[] ContactDiscoveryUrls;
+        public static SignalServiceConfiguration ServiceConfiguration;
         public static bool MainPageActive = false;
         public static string USER_AGENT = "Signal-Windows";
         public static uint PREKEY_BATCH_SIZE = 100;
         public static bool WindowActive = false;
         public static Mutex GlobalLock;
+        public static HttpClient HttpClient;
+        public static AppConfig AppConfig;
+        public static SignalSettings SignalSettings;
+
+        static LibUtils()
+        {
+            HttpClient = new HttpClient();
+            AppConfig = new AppConfig();
+            SignalSettings = AppConfig.GetSignalSettings();
+            ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(SignalSettings.ServiceUrl) };
+            ContactDiscoveryUrls = new SignalContactDiscoveryUrl[] { new SignalContactDiscoveryUrl(SignalSettings.ContactDiscoveryServiceUrl) };
+            ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null, ContactDiscoveryUrls);
+        }
+
         private static SynchronizationContext GlobalLockContext;
 
         internal static void Lock()
