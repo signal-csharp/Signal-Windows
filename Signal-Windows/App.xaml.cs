@@ -105,6 +105,27 @@ namespace Signal_Windows
         protected override async void OnActivated(IActivatedEventArgs args)
         {
             Logger.LogInformation("OnActivated() {0}", args.GetType());
+            if (args.Kind == ActivationKind.Protocol)
+            {
+                ProtocolActivatedEventArgs protocolArgs = args as ProtocolActivatedEventArgs;
+                // We support multiple protocols so check what scheme was used to launch the app
+                if (protocolArgs.Uri.Scheme.ToLower() == "signalpassback")
+                {
+                    if (protocolArgs.Data.ContainsKey("token"))
+                    {
+                        string signalCaptchaToken = (string)protocolArgs.Data["token"];
+                        var registerPageInstance = CurrentSignalWindowsFrontend(MainViewId).Locator.RegisterPageInstance;
+                        registerPageInstance.CaptchaCode = signalCaptchaToken;
+                        registerPageInstance.CaptchaWebViewEnabled = false;
+                        CurrentSignalWindowsFrontend(MainViewId).Locator.CaptchaPageInstance.View.Frame.GoBack();
+                    }
+                    else
+                    {
+                        Logger.LogError("App was launched with signalpassback:// but wasn't passed a token");
+                    }
+                    return;
+                }
+            }
             DisappearingMessagesManager.DeleteExpiredMessages();
             if (args is ToastNotificationActivatedEventArgs toastArgs)
             {

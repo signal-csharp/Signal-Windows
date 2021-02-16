@@ -193,6 +193,7 @@
     <Compile Include="ViewModels\AdvancedSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\AppearanceSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\BlockedContactsPageViewModel.cs" />
+    <Compile Include="ViewModels\CaptchaPageViewModel.cs" />
     <Compile Include="ViewModels\ChatsAndMediaSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\ConversationSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\FinishRegistrationPageViewModel.cs" />
@@ -222,6 +223,9 @@
     </Compile>
     <Compile Include="Views\BlockedContactsPage.xaml.cs">
       <DependentUpon>BlockedContactsPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\CaptchaPage.xaml.cs">
+      <DependentUpon>CaptchaPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ChatsAndMediaSettingsPage.xaml.cs">
       <DependentUpon>ChatsAndMediaSettingsPage.xaml</DependentUpon>
@@ -339,6 +343,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\BlockedContactsPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\CaptchaPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

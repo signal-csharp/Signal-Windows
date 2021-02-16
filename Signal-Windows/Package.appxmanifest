@@ -37,6 +37,9 @@
             <uap:DisplayName>Signal Private Messenger Message</uap:DisplayName>
           </uap:Protocol>
         </uap:Extension>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="signalpassback"/>
+        </uap:Extension>
       </Extensions>
     </Application>
   </Applications>

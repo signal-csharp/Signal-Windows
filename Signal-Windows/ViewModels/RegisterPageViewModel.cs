@@ -38,8 +38,35 @@ namespace Signal_Windows.ViewModels
             }
         }
 
+        private string captchaCode = string.Empty;
+        public string CaptchaCode
+        {
+            get { return captchaCode; }
+            set { captchaCode = value; RaisePropertyChanged(nameof(CaptchaCode)); }
+        }
+
+        private bool captchaCodeTextBoxVisible = false;
+        public bool CaptchaCodeTextBoxVisible
+        {
+            get { return captchaCodeTextBoxVisible; }
+            set { captchaCodeTextBoxVisible = value; RaisePropertyChanged(nameof(CaptchaCodeTextBoxVisible)); }
+        }
+
+        private bool captchaWebViewEnabled = false;
+        public bool CaptchaWebViewEnabled
+        {
+            get { return captchaWebViewEnabled; }
+            set { captchaWebViewEnabled = value; RaisePropertyChanged(nameof(CaptchaWebViewEnabled)); }
+        }
+
         internal void RegisterPage_Loaded()
         {
+            if (CaptchaWebViewEnabled)
+            {
+                CaptchaCodeTextBoxVisible = true;
+                View.Frame.Navigate(typeof(CaptchaPage));
+            }
+
             var c = Windows.System.UserProfile.GlobalizationPreferences.HomeGeographicRegion;
             for (int i = 0; i < CountryArrays.Abbreviations.Length; i++)
             {

@@ -24,12 +24,6 @@ namespace Signal_Windows.Views
     /// </summary>
     public sealed partial class RegisterFinalizationPage : Page
     {
-        public RegisterFinalizationPage()
-        {
-            this.InitializeComponent();
-            Vm.View = this;
-        }
-
         public RegisterFinalizationPageViewModel Vm
         {
             get
@@ -38,15 +32,27 @@ namespace Signal_Windows.Views
             }
         }
 
+        public RegisterFinalizationPage()
+        {
+            this.InitializeComponent();
+            Vm.View = this;
+            Loaded += RegisterFinalizationPage_Loaded;
+        }
+
+        private async void RegisterFinalizationPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            await Vm.RegisterFinalizationPage_Loaded();
+        }
+
         private void FinishButton_Click(object sender, RoutedEventArgs e)
         {
             Vm.FinishButton_Click();
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await Vm.OnNavigatedTo();
+            Vm.OnNavigatedTo();
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)

@@ -2,7 +2,9 @@
 using libsignal;
 using libsignal.util;
 using libsignalservice;
+using libsignalservice.push.exceptions;
 using libsignalservice.util;
+using Microsoft.Extensions.Logging;
 using Signal_Windows.Lib;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
@@ -22,6 +24,7 @@ namespace Signal_Windows.ViewModels
 {
     public class RegisterFinalizationPageViewModel : ViewModelBase
     {
+        private readonly ILogger logger = LibsignalLogging.CreateLogger<RegisterFinalizationPageViewModel>();
         public RegisterFinalizationPage View { get; set; }
 
         private string _VerificationCode = string.Empty;
@@ -55,35 +58,69 @@ namespace Signal_Windows.ViewModels
             View.Frame.Navigate(typeof(FinishRegistrationPage));
         }
 
-        internal async Task OnNavigatedTo()
+        internal void OnNavigatedTo()
         {
             UIEnabled = false;
             Utils.EnableBackButton(BackButton_Click);
+        }
+
+        internal async Task RegisterFinalizationPage_Loaded()
+        {
             CancelSource = new CancellationTokenSource();
             Password = Base64.EncodeBytes(Util.GetSecretBytes(18));
             SignalRegistrationId = KeyHelper.generateRegistrationId(false);
             IdentityKeyPair = KeyHelper.generateIdentityKeyPair();
             try
             {
-                AccountManager = await Task.Run(() => InitRegistration(false));
+                AccountManager = await InitRegistration(false);
                 UIEnabled = true;
             }
-            catch(Exception e)
+            catch (Exception ex)
             {
-                View.Frame.Navigate(typeof(RegisterPage));
+                logger.LogError(new EventId(), ex, ex.Message);
+                View.Frame.GoBack();
             }
         }
 
         private async Task<SignalServiceAccountManager> InitRegistration(bool voice)
         {
             App.Handle.PurgeAccountData();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceConfiguration, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber, Password, 1 /*device id isn't actually used*/, LibUtils.USER_AGENT, LibUtils.HttpClient);
+            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceConfiguration,
+                App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber,
+                Password, 1 /*device id isn't actually used*/, LibUtils.USER_AGENT, LibUtils.HttpClient);
+
+            string captcha = null;
+            if (!string.IsNullOrWhiteSpace(App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.CaptchaCode))
             {
-                await accountManager.RequestVoiceVerificationCode(CancelSource.Token);
+                captcha = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.CaptchaCode;
             }
-            else
+
+            try
             {
-                await accountManager.RequestSmsVerificationCode(CancelSource.Token);
+                if (voice)
+                {
+                    await accountManager.RequestVoiceVerificationCode(captcha, CancelSource.Token);
+                }
+                else
+                {
+                    await accountManager.RequestSmsVerificationCode(captcha, CancelSource.Token);
+                }
+            }
+            catch (CaptchaRequiredException)
+            {
+                App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.CaptchaWebViewEnabled = true;
+                throw;
+            }
+            catch (Exception ex)
+            {
+                await Utils.CallOnMainViewUIThreadAsync(async () =>
+                {
+                    var title = ex.Message;
+                    var content = "Please ensure your phone number is correct and your device is connected to the internet.";
+                    MessageDialog dialog = new MessageDialog(content, title);
+                    await dialog.ShowAsync();
+                });
+                throw;
             }
             return accountManager;
         }

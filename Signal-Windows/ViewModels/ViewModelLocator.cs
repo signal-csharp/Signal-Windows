@@ -47,6 +47,7 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<ChatsAndMediaSettingsPageViewModel>();
             SimpleIoc.Default.Register<AdvancedSettingsPageViewModel>();
             SimpleIoc.Default.Register<BlockedContactsPageViewModel>();
+            SimpleIoc.Default.Register<CaptchaPageViewModel>();
         }
 
         // <summary>
@@ -146,6 +147,11 @@ namespace Signal_Windows.ViewModels
         public BlockedContactsPageViewModel BlockedContactsPageInstance
         {
             get { return ServiceLocator.Current.GetInstance<BlockedContactsPageViewModel>(Key.ToString()); }
+        }
+
+        public CaptchaPageViewModel CaptchaPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<CaptchaPageViewModel>(Key.ToString()); }
         }
 
         // <summary>

@@ -55,6 +55,7 @@
                     <TextBox Grid.Column="1" Text="{x:Bind Vm.PhonePrefix, Mode=TwoWay}" MinWidth="32" InputScope="TelephoneCountryCode"/>
                     <TextBox Grid.Column="3" Text="{x:Bind Vm.PhoneSuffix, Mode=TwoWay}" PlaceholderText="Phone number" InputScope="TelephoneNumber"/>
                 </Grid>
+                <TextBox Text="{x:Bind Vm.CaptchaCode, Mode=TwoWay}" Visibility="{x:Bind Vm.CaptchaCodeTextBoxVisible, Mode=OneWay}" Margin="0,16,0,0" PlaceholderText="CAPTCHA token" IsEnabled="False" />
             </StackPanel>
             <TextBlock x:Name="VerifyTextBlock" Text="Verify your phone number to connect with Signal." FontSize="20" Foreground="White" HorizontalAlignment="Center" Margin="0,16,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
             <Button x:Name="RegisterButton" Background="White" Foreground="#2190EA" HorizontalAlignment="Center" Content="Register" Click="RegisterButton_Click" Margin="0,16,0,0" Width="256"/>
