@@ -975,7 +975,7 @@ namespace Signal_Windows.Lib
             try
             {
                 Logger.LogTrace("InitNetwork() sync context = {0}", SynchronizationContext.Current);
-                MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, Store.SignalingKey, (int)Store.DeviceId), LibUtils.USER_AGENT, LibUtils.HttpClient);
+                MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, (int)Store.DeviceId), LibUtils.USER_AGENT, LibUtils.HttpClient);
                 Task.Run(async () =>
                 {
                     try
