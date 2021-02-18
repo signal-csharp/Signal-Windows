@@ -22,6 +22,8 @@ This is an unofficial Signal client for the Universal Windows Platform. It is (c
 ## I want to try it out but I'm not a developer
 You can get Signal-Windows from the Windows store with [this invite link](http://go.microsoft.com/fwlink/?LinkId=532540&mstoken=CQ4QC-KPTJV-XP2VT-67J39-7R9QZ).
 
+Support for completing CAPTCHAs is provided by [CAPTCHA for Signal Private Messenger](https://github.com/signal-csharp/SignalCaptcha) and its store link is here: https://www.microsoft.com/store/apps/9NXCBTL0SBPJ
+
 ## Bug reports
 Found a bug? Great! Open a pull request or an issue.
 
