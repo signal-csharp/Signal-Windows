@@ -33,25 +33,8 @@ namespace Signal_Windows.Views
 
         public CaptchaPage()
         {
-            // pretty much the only reason 
             this.InitializeComponent();
             Vm.View = this;
-            KeyDown += CaptchaPage_KeyDown;
-        }
-
-        private bool IsCtrlKeyPressed()
-        {
-            var ctrlState = CoreWindow.GetForCurrentThread().GetKeyState(Windows.System.VirtualKey.Control);
-            return (ctrlState & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
-        }
-
-        private void CaptchaPage_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if ((IsCtrlKeyPressed() && e.Key == Windows.System.VirtualKey.R) ||
-                e.Key == Windows.System.VirtualKey.F5)
-            {
-                webView.Refresh();
-            }
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -64,6 +47,12 @@ namespace Signal_Windows.Views
         {
             base.OnNavigatingFrom(e);
             Vm.OnNavigatingFrom();
+        }
+
+        private void refreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            // KeyDown event doesn't work with WebView so just use a button to allow users to refresh the page
+            webView.Refresh();
         }
     }
 }

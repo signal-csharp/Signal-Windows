@@ -10,5 +10,11 @@
 
     <Grid>
         <WebView x:Name="webView" Source="{x:Bind Vm.WebViewSource, Mode=TwoWay}"/>
+        <Button x:Name="refreshButton" VerticalAlignment="Bottom" HorizontalAlignment="Center" Click="refreshButton_Click">
+            <StackPanel Orientation="Horizontal">
+                <SymbolIcon Symbol="Refresh"/>
+                <TextBlock Text="Refresh" Margin="8,0,0,0"/>
+            </StackPanel>
+        </Button>
     </Grid>
 </Page>
