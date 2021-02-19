@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="2383BenediktRadtke.SignalPrivateMessenger" Publisher="CN=83951ACF-6CF8-48C5-BDC4-D778CAFD26C0" Version="0.2.26.0" />
+  <Identity Name="2383BenediktRadtke.SignalPrivateMessenger" Publisher="CN=83951ACF-6CF8-48C5-BDC4-D778CAFD26C0" Version="0.3.0.0" />
   <mp:PhoneIdentity PhoneProductId="25d58032-97d6-4555-96ed-ffe17d57a51f" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>Signal Private Messenger</DisplayName>
@@ -38,7 +38,7 @@
           </uap:Protocol>
         </uap:Extension>
         <uap:Extension Category="windows.protocol">
-          <uap:Protocol Name="signalpassback"/>
+          <uap:Protocol Name="signalpassback" />
         </uap:Extension>
       </Extensions>
     </Application>
@@ -51,9 +51,9 @@
     <Extension Category="windows.certificates">
       <Certificates>
         <Certificate StoreName="TrustedPeople" Content="textsecure-servicewhispersystemsorg.crt" />
-        <Certificate StoreName="TrustedPeople" Content="api-directory-signal-org.crt"/>
-        <Certificate StoreName="TrustedPeople" Content="textsecure-service-staging-whispersystems-org.crt"/>
-        <Certificate StoreName="TrustedPeople" Content="api-staging-directory-signal-org.crt"/>
+        <Certificate StoreName="TrustedPeople" Content="api-directory-signal-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="textsecure-service-staging-whispersystems-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="api-staging-directory-signal-org.crt" />
       </Certificates>
     </Extension>
   </Extensions>
