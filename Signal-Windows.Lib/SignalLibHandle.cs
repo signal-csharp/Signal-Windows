@@ -21,7 +21,6 @@ using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
 using Windows.Web;
 using libsignalservice.push;
-using Strilanc.Value;
 using libsignalservice.messages.multidevice;
 using libsignalservice.crypto;
 

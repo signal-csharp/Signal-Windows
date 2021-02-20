@@ -8,7 +8,6 @@ using libsignalservice.util;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
-using Strilanc.Value;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -314,7 +313,7 @@ namespace Signal_Windows.Lib
                 }
                 else
                 {
-                    conversation = await SignalDBContext.GetOrCreateContactLocked(sent.Destination.ForceGetValue(), 0);
+                    conversation = await SignalDBContext.GetOrCreateContactLocked(sent.Destination, 0);
                 }
             }
             else
@@ -380,7 +379,7 @@ namespace Signal_Windows.Lib
                 composedTimestamp = sent.Timestamp;
                 author = null;
                 prefix = "You have";
-                conversationId = sent.Destination.ForceGetValue();
+                conversationId = sent.Destination;
             }
             else
             {
@@ -609,7 +608,7 @@ namespace Signal_Windows.Lib
                 if (isSync)
                 {
                     var sent = content.SynchronizeMessage.Sent;
-                    conversation = await SignalDBContext.GetOrCreateContactLocked(sent.Destination.ForceGetValue(), timestamp);
+                    conversation = await SignalDBContext.GetOrCreateContactLocked(sent.Destination, timestamp);
                     composedTimestamp = sent.Timestamp;
                 }
                 else
