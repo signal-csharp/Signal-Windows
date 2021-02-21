@@ -146,6 +146,10 @@
     <Content Include="Assets\Wide310x150Logo.scale-400.png" />
     <Content Include="api-directory-signal-org.crt" />
     <Content Include="api-staging-directory-signal-org.crt" />
+    <Content Include="cdn-signal-org.crt" />
+    <Content Include="cdn-staging-signal-org.crt" />
+    <Content Include="cdn2-signal-org.crt" />
+    <Content Include="cdn2-staging-signal-org.crt" />
     <None Include="Package.StoreAssociation.xml" />
     <None Include="Package.xml" />
     <Content Include="textsecure-servicewhispersystemsorg.crt" />
