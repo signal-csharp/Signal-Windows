@@ -50,14 +50,14 @@
   <Extensions>
     <Extension Category="windows.certificates">
       <Certificates>
-        <Certificate StoreName="TrustedPeople" Content="textsecure-servicewhispersystemsorg.crt" />
-        <Certificate StoreName="TrustedPeople" Content="cdn-signal-org.crt" />
-        <Certificate StoreName="TrustedPeople" Content="cdn2-signal-org.crt" />
-        <Certificate StoreName="TrustedPeople" Content="api-directory-signal-org.crt" />
-        <Certificate StoreName="TrustedPeople" Content="textsecure-service-staging-whispersystems-org.crt" />
-        <Certificate StoreName="TrustedPeople" Content="cdn-staging-signal-org.crt" />
-        <Certificate StoreName="TrustedPeople" Content="cdns-staging-signal-org.crt" />
-        <Certificate StoreName="TrustedPeople" Content="api-staging-directory-signal-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\textsecure-servicewhispersystemsorg.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\cdn-signal-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\cdn2-signal-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\api-directory-signal-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\textsecure-service-staging-whispersystems-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\cdn-staging-signal-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\cdn2-staging-signal-org.crt" />
+        <Certificate StoreName="TrustedPeople" Content="Certificates\api-staging-directory-signal-org.crt" />
       </Certificates>
     </Extension>
   </Extensions>

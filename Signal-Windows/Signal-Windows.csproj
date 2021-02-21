@@ -144,17 +144,17 @@
     <Content Include="Assets\Wide310x150Logo.scale-125.png" />
     <Content Include="Assets\Wide310x150Logo.scale-150.png" />
     <Content Include="Assets\Wide310x150Logo.scale-400.png" />
-    <Content Include="api-directory-signal-org.crt" />
-    <Content Include="api-staging-directory-signal-org.crt" />
-    <Content Include="cdn-signal-org.crt" />
-    <Content Include="cdn-staging-signal-org.crt" />
-    <Content Include="cdn2-signal-org.crt" />
-    <Content Include="cdn2-staging-signal-org.crt" />
+    <Content Include="Certificates\api-directory-signal-org.crt" />
+    <Content Include="Certificates\api-staging-directory-signal-org.crt" />
+    <Content Include="Certificates\cdn-signal-org.crt" />
+    <Content Include="Certificates\cdn-staging-signal-org.crt" />
+    <Content Include="Certificates\cdn2-signal-org.crt" />
+    <Content Include="Certificates\cdn2-staging-signal-org.crt" />
     <None Include="Package.StoreAssociation.xml" />
     <None Include="Package.xml" />
-    <Content Include="textsecure-servicewhispersystemsorg.crt" />
+    <Content Include="Certificates\textsecure-servicewhispersystemsorg.crt" />
     <None Include="Signal-Windows_StoreKey.pfx" />
-    <Content Include="textsecure-service-staging-whispersystems-org.crt" />
+    <Content Include="Certificates\textsecure-service-staging-whispersystems-org.crt" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
