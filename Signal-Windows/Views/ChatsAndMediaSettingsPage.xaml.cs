@@ -57,5 +57,11 @@ namespace Signal_Windows.Views
             var toggleSwitch = sender as ToggleSwitch;
             Vm.SpellCheckToggleSwitch_Toggled(toggleSwitch.IsOn);
         }
+
+        private void SendMessageWithEnterToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+        {
+            var toggleSwitch = sender as ToggleSwitch;
+            Vm.SendMessageWithEnterToggleSwitch_Toggled(toggleSwitch.IsOn);
+        }
     }
 }

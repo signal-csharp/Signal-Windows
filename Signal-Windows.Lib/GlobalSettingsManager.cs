@@ -26,6 +26,7 @@ namespace Signal_Windows.Lib
         private const string BlockScreenshots = "BlockScreenshots";
         private const string EnableReadReceipts = "EnableReadReceipts";
         private const string SpellCheck = "SpellCheck";
+        private const string SendMessageWithEnter = "SendMessageWithEnter";
 
         private static ApplicationDataContainer localSettings;
         private static IReadOnlyDictionary<string, ApplicationDataContainer> Containers
@@ -105,6 +106,18 @@ namespace Signal_Windows.Lib
             set
             {
                 Containers[ChatsAndMediaContainer].Values[SpellCheck] = value;
+            }
+        }
+
+        public static bool SendMessageWithEnterSetting
+        {
+            get
+            {
+                return GetSetting(Containers[ChatsAndMediaContainer], SendMessageWithEnter, true);
+            }
+            set
+            {
+                Containers[ChatsAndMediaContainer].Values[SendMessageWithEnter] = value;
             }
         }
 
