@@ -128,6 +128,13 @@ namespace Signal_Windows.Controls
             set { spellCheckEnabled = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpellCheckEnabled))); }
         }
 
+        private bool sendMessageWithEnterEnabled;
+        public bool SendMessageWithEnterEnabled
+        {
+            get { return sendMessageWithEnterEnabled; }
+            set { sendMessageWithEnterEnabled = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SendMessageWithEnterEnabled))); }
+        }
+
         public Conversation()
         {
             this.InitializeComponent();
@@ -210,6 +217,7 @@ namespace Signal_Windows.Controls
             DisposeCurrentThread();
             UpdateHeader(conversation);
             SpellCheckEnabled = GlobalSettingsManager.SpellCheckSetting;
+            SendMessageWithEnterEnabled = GlobalSettingsManager.SendMessageWithEnterSetting;
 
             /*
              * When selecting a small (~650 messages) conversation after a bigger (~1800 messages) one,
@@ -219,7 +227,7 @@ namespace Signal_Windows.Controls
              */
             ConversationItemsControl.ItemsSource = new List<object>();
             UpdateLayout();
-            Collection =  new VirtualizedCollection(conversation);
+            Collection = new VirtualizedCollection(conversation);
             ConversationItemsControl.ItemsSource = Collection;
             UpdateLayout();
             SendButtonEnabled = conversation.CanReceive;
@@ -304,8 +312,12 @@ namespace Signal_Windows.Controls
 
         private async void UserInputBar_OnEnterKeyPressed()
         {
-            bool shift = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-            if (shift)
+            CoreWindow corWindow = CoreWindow.GetForCurrentThread();
+            bool shift = corWindow.GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
+            bool control = corWindow.GetKeyState(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
+            // If SendMessageWithEnterEnabled is true then add new if shift key is pressed.
+            // If SendMessageWithEnterEnabled is false then send message if control key is pressed.
+            if (SendMessageWithEnterEnabled ? shift : !control)
             {
                 UserInputBar.AddLinefeed();
             }

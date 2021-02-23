@@ -17,14 +17,27 @@ namespace Signal_Windows.ViewModels
             set { spellCheck = value; RaisePropertyChanged(nameof(SpellCheck)); }
         }
 
+        private bool sendMessageWithEnter;
+        public bool SendMessageWithEnter
+        {
+            get { return sendMessageWithEnter; }
+            set { sendMessageWithEnter = value; RaisePropertyChanged(nameof(SendMessageWithEnter)); }
+        }
+
         public void OnNavigatedTo()
         {
             SpellCheck = GlobalSettingsManager.SpellCheckSetting;
+            SendMessageWithEnter = GlobalSettingsManager.SendMessageWithEnterSetting;
         }
 
         public void SpellCheckToggleSwitch_Toggled(bool value)
         {
             GlobalSettingsManager.SpellCheckSetting = value;
+        }
+
+        public void SendMessageWithEnterToggleSwitch_Toggled(bool value)
+        {
+            GlobalSettingsManager.SendMessageWithEnterSetting = value;
         }
     }
 }
