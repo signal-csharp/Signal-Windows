@@ -218,6 +218,7 @@ namespace Signal_Windows.ViewModels
                     WelcomeVisibility = Visibility.Collapsed;
                     ThreadVisibility = Visibility.Visible;
                     SelectedThread = SelectedConversation;
+                    View.Thread.SaveDraftInCurrentConversation();
                     View.Thread.Load(SelectedThread);
                     View.SwitchToStyle(View.GetCurrentViewStyle());
                 }
@@ -267,12 +268,12 @@ namespace Signal_Windows.ViewModels
                         {
                             var messageView = Utils.CreateMessageView(updateMessage);
                             View.Thread.Append(messageView);
-                            View.Reload();
                         }
+                        View.Reload();
                     }
                     else if (SelectedThread is SignalGroup selectedGroup)
                     {
-                        if (selectedGroup.GroupMemberships.FindAll((gm) => gm.Contact.ThreadId == conversation.ThreadId).Count > 0) // A group member was edited
+                        if (selectedGroup.GroupMemberships.Any((gm) => gm.Contact.ThreadId == conversation.ThreadId)) // A group member was edited
                         {
                             View.Reload();
                         }
@@ -411,6 +412,11 @@ namespace Signal_Windows.ViewModels
                 localConversation.LastSeenMessage = null;
                 localConversation.UpdateUI?.Invoke();
             }
+        }
+
+        public void Release()
+        {
+            View.Thread.SaveDraftInCurrentConversation();
         }
         #endregion
     }

@@ -25,6 +25,7 @@ using Windows.ApplicationModel.Background;
 using Windows.Networking.BackgroundTransfer;
 using Windows.UI;
 using libsignalservice.configuration;
+using System.Linq;
 
 namespace Signal_Windows
 {
@@ -92,6 +93,10 @@ namespace Signal_Windows
             Logger.LogInformation("Suspending");
             var def = e.SuspendingOperation.GetDeferral();
             await Task.Run(() => Handle.Release());
+            await Task.Run(() =>
+            {
+                SignalDBContext.InsertOrUpdateConversationsLocked(Views.Values.SelectMany(view => view.Locator.MainPageInstance.Conversations));
+            });
             def.Complete();
             Logger.LogDebug("Suspended");
         }
@@ -213,7 +218,7 @@ namespace Signal_Windows
 
                 backgroundTaskRegistration.Completed += BackgroundTaskRegistration_Completed;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogError("Cannot setup bg task: {0}\n{1}", ex.Message, ex.StackTrace);
             }
@@ -279,7 +284,7 @@ namespace Signal_Windows
                     //AddFrontend blocks for the handle lock, but the new window is not yet registered, so nothing will be invoked
                     addFrontendResult = Handle.AddFrontend(frontend.Dispatcher, frontend);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Logger.LogError("CreateSecondaryWindowOrShowMain() AddFrontend() failed: {0}\n{1}", e.Message, e.StackTrace);
                 }
@@ -315,7 +320,7 @@ namespace Signal_Windows
                 sb.ForegroundColor = Colors.White;
             }
             // desktop clients have a title bar
-            else if(Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.ApplicationView"))
+            else if (Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.ViewManagement.ApplicationView"))
             {
                 var titleBar = ApplicationView.GetForCurrentView().TitleBar;
                 if (titleBar != null)

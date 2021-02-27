@@ -181,7 +181,7 @@ namespace Signal_Windows.Storage
                         old.IdentityKey = identity;
                         var oldSessions = ctx.Sessions
                             .Where(s => s.Username == address.Name);
-                        foreach(var oldSession in oldSessions)
+                        foreach (var oldSession in oldSessions)
                         {
                             SessionRecord sessionRecord = new SessionRecord(Base64.Decode(oldSession.Session));
                             sessionRecord.archiveCurrentState();
@@ -201,7 +201,7 @@ namespace Signal_Windows.Storage
 
         internal static IdentityKey GetIdentityKey(SignalProtocolAddress address)
         {
-            lock(DBLock)
+            lock (DBLock)
             {
                 using (var ctx = new LibsignalDBContext())
                 {
@@ -314,7 +314,7 @@ namespace Signal_Windows.Storage
         #region Sessions
         public static void ClearSessionCache()
         {
-            lock(DBLock)
+            lock (DBLock)
             {
                 SessionsCache.Clear();
             }
@@ -894,7 +894,7 @@ namespace Signal_Windows.Storage
                     ctx.SaveChanges();
                 }
             }
-            return set_mark? m : null;
+            return set_mark ? m : null;
         }
 
         public static void UpdateMessageExpiresAt(SignalMessage message)
@@ -1078,7 +1078,7 @@ namespace Signal_Windows.Storage
                     conversation = GetSignalConversationByThreadId(ctx, message.ThreadId);
                     var currentLastSeenMessage = ctx.Messages
                         .Where(m => m.ThreadId == conversation.ThreadId)
-                        .Skip((int) conversation.LastSeenMessageIndex-1)
+                        .Skip((int) conversation.LastSeenMessageIndex - 1)
                         .Take(1)
                         .Single();
                     if (message.Id > currentLastSeenMessage.Id)
@@ -1401,32 +1401,53 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    var dbConversation = GetSignalConversationByThreadId(ctx, conversation.ThreadId);
-                    if (dbConversation == null)
+                    InsertOrUpdateConversation(ctx, conversation);
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static void InsertOrUpdateConversationsLocked(IEnumerable<SignalConversation> conversations)
+        {
+            lock (DBLock)
+            {
+                using (var ctx = new SignalDBContext())
+                {
+                    foreach (SignalConversation conversation in conversations)
                     {
-                        if (conversation is SignalContact dbContact)
-                        {
-                            ctx.Contacts.Add(dbContact);
-                        }
-                        else if (conversation is SignalGroup dbGroup)
-                        {
-                            ctx.Groups.Add(dbGroup);
-                        }
-                    }
-                    else
-                    {
-                        dbConversation.ThreadId = conversation.ThreadId;
-                        dbConversation.ThreadDisplayName = conversation.ThreadDisplayName;
-                        dbConversation.CanReceive = conversation.CanReceive;
-                        dbConversation.AvatarFile = conversation.AvatarFile;
-                        dbConversation.Draft = conversation.Draft;
-                        dbConversation.UnreadCount = conversation.UnreadCount;
-                        if (dbConversation is SignalContact dbContact)
-                        {
-                            dbContact.Color = dbContact.Color;
-                        }
+                        InsertOrUpdateConversation(ctx, conversation);
                     }
                     ctx.SaveChanges();
+                }
+            }
+        }
+
+        private static void InsertOrUpdateConversation(SignalDBContext ctx, SignalConversation conversation)
+        {
+            var dbConversation = GetSignalConversationByThreadId(ctx, conversation.ThreadId);
+            if (dbConversation == null)
+            {
+                if (conversation is SignalContact dbContact)
+                {
+                    ctx.Contacts.Add(dbContact);
+                }
+                else if (conversation is SignalGroup dbGroup)
+                {
+                    ctx.Groups.Add(dbGroup);
+                }
+            }
+            else
+            {
+                dbConversation.ThreadId = conversation.ThreadId;
+                dbConversation.ThreadDisplayName = conversation.ThreadDisplayName;
+                dbConversation.CanReceive = conversation.CanReceive;
+                dbConversation.AvatarFile = conversation.AvatarFile;
+                dbConversation.Draft = conversation.Draft;
+                dbConversation.DraftFileTokens = conversation.DraftFileTokens;
+                dbConversation.UnreadCount = conversation.UnreadCount;
+                if (dbConversation is SignalContact dbContact && conversation is SignalContact contract)
+                {
+                    dbContact.Color = contract.Color;
                 }
             }
         }
