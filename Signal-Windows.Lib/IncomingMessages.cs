@@ -1,4 +1,9 @@
-﻿using libsignal.messages.multidevice;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using libsignal.messages.multidevice;
 using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
@@ -8,15 +13,6 @@ using libsignalservice.util;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Windows.Storage;
 using static libsignalservice.SignalServiceMessagePipe;
 
 namespace Signal_Windows.Lib
