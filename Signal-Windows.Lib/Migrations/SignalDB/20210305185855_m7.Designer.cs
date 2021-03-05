@@ -9,13 +9,13 @@ using Signal_Windows.Models;
 namespace Signal_Windows.Migrations
 {
     [DbContext(typeof(SignalDBContext))]
-    [Migration("20210227010514_m7")]
+    [Migration("20210305185855_m7")]
     partial class m7
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.4");
+                .HasAnnotation("ProductVersion", "1.1.5");
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
                 {
@@ -155,7 +155,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<int>("Direction");
 
-                    b.Property<uint>("ExpiresAt");
+                    b.Property<long>("ExpiresAt");
 
                     b.Property<bool>("Read");
 

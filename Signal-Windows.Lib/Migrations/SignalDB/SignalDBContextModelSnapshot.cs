@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Signal_Windows.Storage;
+using Signal_Windows.Models;
 
 namespace Signal_Windows.Migrations
 {
@@ -13,7 +14,7 @@ namespace Signal_Windows.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.4");
+                .HasAnnotation("ProductVersion", "1.1.5");
 
             modelBuilder.Entity("Signal_Windows.Models.GroupMembership", b =>
                 {
@@ -80,6 +81,8 @@ namespace Signal_Windows.Migrations
                         .IsRequired();
 
                     b.Property<string>("Draft");
+
+                    b.Property<string>("DraftFileTokens");
 
                     b.Property<uint>("ExpiresInSeconds");
 
@@ -151,7 +154,7 @@ namespace Signal_Windows.Migrations
 
                     b.Property<int>("Direction");
 
-                    b.Property<uint>("ExpiresAt");
+                    b.Property<long>("ExpiresAt");
 
                     b.Property<bool>("Read");
 

@@ -106,9 +106,9 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Migrations\SignalDB\20210227010514_m7.cs" />
-    <Compile Include="Migrations\SignalDB\20210227010514_m7.designer.cs">
-      <DependentUpon>20210227010514_m7.cs</DependentUpon>
+    <Compile Include="Migrations\SignalDB\20210305185855_m7.cs" />
+    <Compile Include="Migrations\SignalDB\20210305185855_m7.designer.cs">
+      <DependentUpon>20210305185855_m7.cs</DependentUpon>
     </Compile>
     <Compile Include="Settings\AppConfig.cs" />
     <Compile Include="DisappearingMessagesManager.cs" />
