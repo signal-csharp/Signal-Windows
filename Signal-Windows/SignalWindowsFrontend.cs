@@ -112,9 +112,9 @@ namespace Signal_Windows
             }
         }
 
-        public void Release()
+        public Task Release()
         {
-            Locator.MainPageInstance.Release();
+            return Locator.MainPageInstance.Release();
         }
     }
 }

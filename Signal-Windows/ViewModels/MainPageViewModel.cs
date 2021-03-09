@@ -218,7 +218,7 @@ namespace Signal_Windows.ViewModels
                     WelcomeVisibility = Visibility.Collapsed;
                     ThreadVisibility = Visibility.Visible;
                     SelectedThread = SelectedConversation;
-                    View.Thread.SaveDraftInCurrentConversation();
+                    View.Thread.SaveCurrentConversationInDatabase();
                     View.Thread.Load(SelectedThread);
                     View.SwitchToStyle(View.GetCurrentViewStyle());
                 }
@@ -314,7 +314,7 @@ namespace Signal_Windows.ViewModels
 
         public void HandleIdentitykeyChange(LinkedList<SignalMessage> messages)
         {
-            foreach(var message in messages)
+            foreach (var message in messages)
             {
                 var conversation = ConversationsDictionary[message.ThreadId];
                 conversation.MessagesCount += 1;
@@ -414,9 +414,9 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public void Release()
+        public Task Release()
         {
-            View.Thread.SaveDraftInCurrentConversation();
+            return View.Thread.SaveCurrentConversationInDatabase();
         }
         #endregion
     }

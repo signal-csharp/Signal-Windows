@@ -47,7 +47,6 @@ namespace Signal_Windows.Controls
         public VirtualizedCollection Collection;
         private CoreWindowActivationState ActivationState = CoreWindowActivationState.Deactivated;
         private int LastMarkReadRequest;
-        private string SelectedFileToken;
         private StorageFile SelectedFile;
 
         private string _ThreadDisplayName;
@@ -219,10 +218,6 @@ namespace Signal_Windows.Controls
             {
                 LoadDraft();
             }
-            else
-            {   // Set the current draft in the new conversation object.
-                SaveDraftInCurrentConversation();
-            }
             UserInputBar.FocusTextBox();
             DisposeCurrentThread();
             UpdateHeader(conversation);
@@ -357,7 +352,7 @@ namespace Signal_Windows.Controls
                 var filePicker = new FileOpenPicker();
                 filePicker.FileTypeFilter.Add("*"); // Without this the file picker throws an exception, this is not documented
                 var file = await filePicker.PickSingleFileAsync();
-                SetSelectedFile(file, true);
+                SetSelectedFile(file);
                 if (SelectedFile != null)
                 {
                     UserInputBar.FocusTextBox();
@@ -484,7 +479,7 @@ namespace Signal_Windows.Controls
 
         private void AddedAttachmentDisplay_OnCancelAttachmentButtonClicked()
         {
-            SetSelectedFile(null, true);
+            SetSelectedFile(null);
         }
 
         private void UpdateSendButtonIcon()
@@ -501,18 +496,48 @@ namespace Signal_Windows.Controls
 
         private void ResetInput()
         {
-            SetSelectedFile(null, true);
+            SetSelectedFile(null);
             UserInputBar.InputText = string.Empty;
             UpdateSendButtonIcon();
-            SaveDraftInCurrentConversation();
         }
 
-        public void SaveDraftInCurrentConversation()
+        /// <summary>
+        /// Saves the selected file in StorageApplicationPermissions store and saves conversation in database.
+        /// </summary>
+        /// <returns>Task that saves conversation in database.</returns>
+        public async Task SaveCurrentConversationInDatabase()
         {
             if (SignalConversation != null)
             {
                 SignalConversation.Draft = UserInputBar.InputText;
-                SignalConversation.DraftFileTokens = SelectedFileToken;
+                if (SelectedFile == null)
+                {
+                    if (!string.IsNullOrEmpty(SignalConversation.DraftFileTokens) &&
+                        StorageApplicationPermissions.FutureAccessList.ContainsItem(SignalConversation.DraftFileTokens))
+                    {
+                        StorageApplicationPermissions.FutureAccessList.Remove(SignalConversation.DraftFileTokens);
+                    }
+                    SignalConversation.DraftFileTokens = null;
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(SignalConversation.DraftFileTokens) ||
+                        !StorageApplicationPermissions.FutureAccessList.ContainsItem(SignalConversation.DraftFileTokens))
+                    {
+                        SignalConversation.DraftFileTokens = StorageApplicationPermissions.FutureAccessList.Add(SelectedFile);
+                    }
+                    else
+                    {
+                        // Just reuse the old key
+                        StorageApplicationPermissions.FutureAccessList.AddOrReplace(SignalConversation.DraftFileTokens, SelectedFile);
+                    }
+                }
+                // SignalConversation can change while starting Thread.
+                SignalConversation conversationToSave = SignalConversation;
+                await Task.Run(() =>
+                {
+                    SignalDBContext.InsertOrUpdateConversationLocked(conversationToSave);
+                });
             }
         }
 
@@ -520,7 +545,7 @@ namespace Signal_Windows.Controls
         {
             UserInputBar.InputText = SignalConversation.Draft ?? string.Empty;
             UserInputBar.SetCursorPositionToEnd();
-            SetSelectedFile(null, false);
+            SetSelectedFile(null);
             try
             {
                 StorageFile file = !string.IsNullOrWhiteSpace(SignalConversation.DraftFileTokens) &&
@@ -528,8 +553,7 @@ namespace Signal_Windows.Controls
                     await StorageApplicationPermissions.FutureAccessList.GetFileAsync(SignalConversation.DraftFileTokens) : null;
                 if (file != null)
                 {
-                    SelectedFileToken = SignalConversation.DraftFileTokens;
-                    SetSelectedFile(file, false);
+                    SetSelectedFile(file);
                 }
             }
             catch (Exception e)
@@ -539,62 +563,21 @@ namespace Signal_Windows.Controls
         }
 
         /// <summary>
-        /// Set file as attatchment in UI and save it in StorageApplicationPermissions store and save it as draft in database.
-        /// StorageApplicationPermissions stores the file to access it even after restart of app.
+        /// Set file as attatchment in UI.
         /// </summary>
         /// <param name="file">Attatchment to set in UI and save</param>
-        /// <param name="save">If true save the file in StorageApplicationPermissions store and in database. If false only set in UI</param>
-        private void SetSelectedFile(StorageFile file, bool save)
+        private void SetSelectedFile(StorageFile file)
         {
-            try
+            SelectedFile = file;
+            if (SelectedFile == null)
             {
-                SelectedFile = file;
-                if (save)
-                {
-                    if (file == null)
-                    {
-                        if (!string.IsNullOrEmpty(SelectedFileToken))
-                        {
-                            StorageApplicationPermissions.FutureAccessList.Remove(SelectedFileToken);
-                        }
-                        SelectedFileToken = null;
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(SelectedFileToken))
-                        {
-                            SelectedFileToken = StorageApplicationPermissions.FutureAccessList.Add(file);
-                        }
-                        else
-                        {
-                            // Just reuse the old key
-                            StorageApplicationPermissions.FutureAccessList.AddOrReplace(SelectedFileToken, file);
-                        }
-                    }
-                    // Save in Datebase as soon as possible to avoid loosing token
-                    SaveDraftInCurrentConversation();
-                    Task.Run(() =>
-                    {
-                        SignalDBContext.InsertOrUpdateConversationLocked(SignalConversation);
-                    });
-                }
+                AddedAttachmentDisplay.HideAttachment();
             }
-            catch (Exception e)
+            else
             {
-                Logger.LogError("SetSelectedFile() failed: {0}\n{1}", e.Message, e.StackTrace);
+                AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
             }
-            finally
-            {
-                if (SelectedFile == null)
-                {
-                    AddedAttachmentDisplay.HideAttachment();
-                }
-                else
-                {
-                    AddedAttachmentDisplay.ShowAttachment(SelectedFile.Name);
-                }
-                UpdateSendButtonIcon();
-            }
+            UpdateSendButtonIcon();
         }
 
         private async void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -609,7 +592,7 @@ namespace Signal_Windows.Controls
                     {
                         var pastedFiles = await dataPackageView.GetStorageItemsAsync();
                         var pastedFile = pastedFiles[0];
-                        SetSelectedFile(pastedFile as StorageFile, true);
+                        SetSelectedFile(pastedFile as StorageFile);
                     }
                     else if (dataPackageView.Contains(StandardDataFormats.Bitmap))
                     {
@@ -629,7 +612,7 @@ namespace Signal_Windows.Controls
                                 pixels.DetachPixelData());
                             await encoder.FlushAsync();
                         }
-                        SetSelectedFile(tmpFile, true);
+                        SetSelectedFile(tmpFile);
                     }
                 }
             }
@@ -648,7 +631,7 @@ namespace Signal_Windows.Controls
             {
                 var storageItems = await e.DataView.GetStorageItemsAsync();
                 var storageItem = storageItems[0];
-                SetSelectedFile(storageItem as StorageFile, true);
+                SetSelectedFile(storageItem as StorageFile);
             }
         }
 

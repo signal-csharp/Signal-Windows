@@ -48,7 +48,7 @@ namespace Signal_Windows.Lib
         void HandleAttachmentStatusChanged(SignalAttachment sa);
         void HandleBlockedContacts(List<SignalContact> blockedContacts);
         void HandleMessageDelete(SignalMessage messsage);
-        void Release();
+        Task Release();
     }
 
     public interface ISignalLibHandle
@@ -928,11 +928,11 @@ namespace Signal_Windows.Lib
             foreach (var dispatcher in Frames.Keys)
             {
                 var taskCompletionSource = new TaskCompletionSource<bool>();
-                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
                 {
                     try
                     {
-                        Frames[dispatcher].Release();
+                        await Frames[dispatcher].Release();
                     }
                     catch (Exception e)
                     {

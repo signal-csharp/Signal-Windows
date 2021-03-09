@@ -743,21 +743,6 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static void InsertOrUpdateConversationsLocked(IEnumerable<SignalConversation> conversations)
-        {
-            lock (DBLock)
-            {
-                using (var ctx = new SignalDBContext())
-                {
-                    foreach (SignalConversation conversation in conversations)
-                    {
-                        InsertOrUpdateConversation(ctx, conversation);
-                    }
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
         private static void InsertOrUpdateConversation(SignalDBContext ctx, SignalConversation conversation)
         {
             var dbConversation = GetSignalConversationByThreadId(ctx, conversation.ThreadId);

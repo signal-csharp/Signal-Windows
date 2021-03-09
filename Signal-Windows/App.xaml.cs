@@ -25,7 +25,6 @@ using Windows.ApplicationModel.Background;
 using Windows.Networking.BackgroundTransfer;
 using Windows.UI;
 using libsignalservice.configuration;
-using System.Linq;
 
 namespace Signal_Windows
 {
@@ -93,10 +92,6 @@ namespace Signal_Windows
             Logger.LogInformation("Suspending");
             var def = e.SuspendingOperation.GetDeferral();
             await Task.Run(() => Handle.Release());
-            await Task.Run(() =>
-            {
-                SignalDBContext.InsertOrUpdateConversationsLocked(Views.Values.SelectMany(view => view.Locator.MainPageInstance.Conversations));
-            });
             def.Complete();
             Logger.LogDebug("Suspended");
         }
