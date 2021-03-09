@@ -1,5 +1,7 @@
 # Contributing
 
+See more documentation in the `docs` folder.
+
 ## Building
 
 ### Requirements
