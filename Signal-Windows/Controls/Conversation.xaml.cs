@@ -216,7 +216,8 @@ namespace Signal_Windows.Controls
              */
             if (conversationThreadIdChanged)
             {
-                LoadDraft();
+                // We don't need to wait for this
+                _ = LoadDraft();
             }
             UserInputBar.FocusTextBox();
             DisposeCurrentThread();
