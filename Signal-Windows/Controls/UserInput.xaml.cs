@@ -39,6 +39,11 @@ namespace Signal_Windows.Controls
             set => InputTextBox.Text = value;
         }
 
+        public void SetCursorPositionToEnd()
+        {
+            InputTextBox.Select(InputText.Length, 0);
+        }
+
         public void AddLinefeed()
         {
             string prefix = InputTextBox.Text.Substring(0, InputTextBox.SelectionStart);

@@ -11,6 +11,7 @@ namespace Signal_Windows.Models
         public string ThreadDisplayName { get; set; }
         public long LastActiveTimestamp { get; set; }
         public string Draft { get; set; }
+        public string DraftFileTokens { get; set; } // comma seperated list of tokens
         public string AvatarFile { get; set; }
         public long MessagesCount { get; set; }
         public uint UnreadCount { get; set; }

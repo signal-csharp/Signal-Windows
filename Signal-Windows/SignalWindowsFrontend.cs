@@ -111,5 +111,10 @@ namespace Signal_Windows
                 }
             }
         }
+
+        public Task Release()
+        {
+            return Locator.MainPageInstance.Release();
+        }
     }
 }

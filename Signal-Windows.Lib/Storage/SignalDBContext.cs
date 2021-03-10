@@ -737,32 +737,38 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    var dbConversation = GetSignalConversationByThreadId(ctx, conversation.ThreadId);
-                    if (dbConversation == null)
-                    {
-                        if (conversation is SignalContact dbContact)
-                        {
-                            ctx.Contacts.Add(dbContact);
-                        }
-                        else if (conversation is SignalGroup dbGroup)
-                        {
-                            ctx.Groups.Add(dbGroup);
-                        }
-                    }
-                    else
-                    {
-                        dbConversation.ThreadId = conversation.ThreadId;
-                        dbConversation.ThreadDisplayName = conversation.ThreadDisplayName;
-                        dbConversation.CanReceive = conversation.CanReceive;
-                        dbConversation.AvatarFile = conversation.AvatarFile;
-                        dbConversation.Draft = conversation.Draft;
-                        dbConversation.UnreadCount = conversation.UnreadCount;
-                        if (dbConversation is SignalContact dbContact)
-                        {
-                            dbContact.Color = dbContact.Color;
-                        }
-                    }
+                    InsertOrUpdateConversation(ctx, conversation);
                     ctx.SaveChanges();
+                }
+            }
+        }
+
+        private static void InsertOrUpdateConversation(SignalDBContext ctx, SignalConversation conversation)
+        {
+            var dbConversation = GetSignalConversationByThreadId(ctx, conversation.ThreadId);
+            if (dbConversation == null)
+            {
+                if (conversation is SignalContact dbContact)
+                {
+                    ctx.Contacts.Add(dbContact);
+                }
+                else if (conversation is SignalGroup dbGroup)
+                {
+                    ctx.Groups.Add(dbGroup);
+                }
+            }
+            else
+            {
+                dbConversation.ThreadId = conversation.ThreadId;
+                dbConversation.ThreadDisplayName = conversation.ThreadDisplayName;
+                dbConversation.CanReceive = conversation.CanReceive;
+                dbConversation.AvatarFile = conversation.AvatarFile;
+                dbConversation.Draft = conversation.Draft;
+                dbConversation.DraftFileTokens = conversation.DraftFileTokens;
+                dbConversation.UnreadCount = conversation.UnreadCount;
+                if (dbConversation is SignalContact dbContact && conversation is SignalContact contract)
+                {
+                    dbContact.Color = contract.Color;
                 }
             }
         }

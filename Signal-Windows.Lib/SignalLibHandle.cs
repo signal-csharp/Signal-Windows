@@ -28,7 +28,7 @@ namespace Signal_Windows.Lib
 {
     public class AppendResult
     {
-        public bool WasInstantlyRead { get;  }
+        public bool WasInstantlyRead { get; }
         public AppendResult(bool wasInstantlyRead)
         {
             WasInstantlyRead = wasInstantlyRead;
@@ -48,6 +48,7 @@ namespace Signal_Windows.Lib
         void HandleAttachmentStatusChanged(SignalAttachment sa);
         void HandleBlockedContacts(List<SignalContact> blockedContacts);
         void HandleMessageDelete(SignalMessage messsage);
+        Task Release();
     }
 
     public interface ISignalLibHandle
@@ -321,6 +322,7 @@ namespace Signal_Windows.Lib
                 CancelSource.Cancel();
                 IncomingMessagesTask?.Wait();
                 OutgoingMessagesTask?.Wait();
+                DispatchRelease().Wait();
                 Instance = null;
                 Logger.LogTrace("Release() releasing global");
                 LibUtils.Unlock();
@@ -375,7 +377,7 @@ namespace Signal_Windows.Lib
                         Read = true,
                         Type = SignalMessageType.Normal,
                         Attachments = attachmentsList,
-                        AttachmentsCount = (uint) attachmentsList.Count()
+                        AttachmentsCount = (uint)attachmentsList.Count()
                     };
                     await SaveAndDispatchSignalMessage(message, attachmentStorageFile, conversation);
                     OutgoingQueue.Add(new SignalMessageSendable(message));
@@ -497,7 +499,7 @@ namespace Signal_Windows.Lib
                     Logger.LogTrace("StartAttachmentDownload() locked");
                     await TryScheduleAttachmentDownload(sa);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Logger.LogError("StartAttachmentDownload failed: {0}\n{1}", e.Message, e.StackTrace);
                 }
@@ -550,7 +552,7 @@ namespace Signal_Windows.Lib
             foreach (var dispatcher in Frames.Keys)
             {
                 var taskCompletionSource = new TaskCompletionSource<bool>();
-                await dispatcher.RunAsync(CoreDispatcherPriority.Normal,async () =>
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
                 {
                     try
                     {
@@ -703,7 +705,7 @@ namespace Signal_Windows.Lib
                     {
                         ar = (Frames[dispatcher].HandleMessage(message, conversation));
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Logger.LogError("DispatchHandleMessage() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
                     }
@@ -849,7 +851,7 @@ namespace Signal_Windows.Lib
                     {
                         Frames[dispatcher].HandleMessageUpdate(msg);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Logger.LogError("DispatchMessageUpdate() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
                     }
@@ -906,6 +908,35 @@ namespace Signal_Windows.Lib
                     catch (Exception e)
                     {
                         Logger.LogError("DispatchHandleBlockedContacts() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
+                    }
+                    finally
+                    {
+                        taskCompletionSource.SetResult(false);
+                    }
+                });
+                operations.Add(taskCompletionSource.Task);
+            }
+            foreach (var t in operations)
+            {
+                await t;
+            }
+        }
+
+        internal async Task DispatchRelease()
+        {
+            List<Task> operations = new List<Task>();
+            foreach (var dispatcher in Frames.Keys)
+            {
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+                {
+                    try
+                    {
+                        await Frames[dispatcher].Release();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("DispatchRelease() dispatch failed: {0}\n{1}", e.Message, e.StackTrace);
                     }
                     finally
                     {
@@ -997,7 +1028,7 @@ namespace Signal_Windows.Lib
                     }
                 });
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.LogError($"InitNetwork() failed: {e.Message}\n{e.StackTrace}");
             }
@@ -1075,7 +1106,7 @@ namespace Signal_Windows.Lib
                 SignalDBContext.UpdateAttachmentStatus(attachment);
                 await DispatchAttachmentStatusChanged(download, attachment);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.LogError("HandleSuccessfullDownload failed: {0}\n{1}", e.Message, e.StackTrace);
             }
@@ -1127,7 +1158,7 @@ namespace Signal_Windows.Lib
                         download.AttachAsync().Cancel();
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Logger.LogError("TriageDownloads encountered an error: {0}\n{1}", e.Message, e.StackTrace);
                 }
@@ -1164,7 +1195,7 @@ namespace Signal_Windows.Lib
                     await t;
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.LogError("DispatchAttachmentStatusChanged encountered an error: {0}\n{1}", e.Message, e.StackTrace);
             }
