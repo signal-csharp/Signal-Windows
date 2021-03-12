@@ -6,7 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-0.3.0 is not released in the Microsoft Store yet.
+## [0.3.1] - 2021-03-12
+
+## Added
+
+- Support for Signal UUIDs. This is an underlying change in libsignal-service-dotnet.
+- Option to toggle sending messages with enter. If disabled on desktop press Shift-Enter to send messages. Thanks to @ShelbyBoss for contributing this feature in https://github.com/signal-csharp/Signal-Windows/pull/224!
+- Support for saving and loading drafts including attachment drafts. Thanks to @ShelbyBoss for contributing this feature in https://github.com/signal-csharp/Signal-Windows/pull/225!
+
+## Fixed
+
+- Attachment uploads and downloads are now fixed.
+- Adding an unknown number will first check if that number has registered with Signal.
 
 ## [0.3.0] - 2021-02-18
 
