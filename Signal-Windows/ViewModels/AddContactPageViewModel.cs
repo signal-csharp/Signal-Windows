@@ -1,39 +1,36 @@
-using GalaSoft.MvvmLight;
-using libsignalservice.util;
-using Signal_Windows.Models;
-using Signal_Windows.Storage;
-using Signal_Windows.Views;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using GalaSoft.MvvmLight;
+using libsignalservice;
+using Microsoft.Extensions.Logging;
+using PhoneNumbers;
+using Signal_Windows.Lib;
+using Signal_Windows.Models;
+using Signal_Windows.Views;
 using Windows.ApplicationModel.Contacts;
 using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
-using System.Collections.ObjectModel;
-using Windows.ApplicationModel.Core;
-using libsignalservice;
-using PhoneNumbers;
-using System.Collections.Generic;
-using System.Linq;
 using Windows.UI.Xaml.Controls;
-using System.Globalization;
-using System.Threading;
-using Microsoft.Extensions.Logging;
-using Signal_Windows.Lib;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace Signal_Windows.ViewModels
 {
     public class AddContactPageViewModel : ViewModelBase
     {
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<AddContactPageViewModel>();
+
+        public MainPageViewModel MainPageVM;
+        public AddContactPage View;
         public ObservableCollection<PhoneContact> Contacts;
         private List<PhoneContact> signalContacts;
         private PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.GetInstance();
-        public MainPageViewModel MainPageVM;
-        public AddContactPage View;
+        private SignalServiceAccountManager accountManager;
 
         private string _ContactName = string.Empty;
         public string ContactName
@@ -61,12 +58,6 @@ namespace Signal_Windows.ViewModels
         {
             get { return _RefreshingContacts; }
             set { _RefreshingContacts = value; RaisePropertyChanged(nameof(RefreshingContacts)); }
-        }
-
-        public AddContactPageViewModel()
-        {
-            Contacts = new ObservableCollection<PhoneContact>();
-            signalContacts = new List<PhoneContact>();
         }
 
         private bool _UIEnabled = true;
@@ -105,20 +96,26 @@ namespace Signal_Windows.ViewModels
             }
         }
 
-        public async Task OnNavigatedTo(CancellationToken? cancellationToken = null)
+        public AddContactPageViewModel()
+        {
+            Contacts = new ObservableCollection<PhoneContact>();
+            signalContacts = new List<PhoneContact>();
+        }
+
+        public async Task OnNavigatedTo()
         {
             ContactName = string.Empty;
             ContactNumber = string.Empty;
-            await RefreshContacts(cancellationToken);
+            accountManager = App.Handle.AccountManager;
+            await RefreshContacts();
         }
 
-        public async Task RefreshContacts(CancellationToken? cancellationToken = null)
+        public async Task RefreshContacts()
         {
             CancellationTokenSource cancelSource = new CancellationTokenSource();
             RefreshingContacts = true;
             Contacts.Clear();
             signalContacts.Clear();
-            SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceConfiguration, App.Handle.Store.Username, App.Handle.Store.Password, (int)App.Handle.Store.DeviceId, LibUtils.USER_AGENT, LibUtils.HttpClient);
             ContactStore contactStore = await ContactManager.RequestStoreAsync(ContactStoreAccessType.AllContactsReadOnly);
             List<PhoneContact> intermediateContacts = new List<PhoneContact>();
             if (contactStore != null)
@@ -196,16 +193,18 @@ namespace Signal_Windows.ViewModels
                 var registeredUsers = await accountManager.GetRegisteredUsersAsync(intermediateContactPhoneNumbers, LibUtils.SignalSettings.ContactDiscoveryServiceEnclaveId, cancelSource.Token);
                 foreach (var contact in intermediateContacts)
                 {
-                    var foundContact = registeredUsers.FirstOrDefault(c => c.Key == contact.PhoneNumber).Key;
-                    if (!string.IsNullOrEmpty(foundContact))
+                    var foundContact = registeredUsers.FirstOrDefault(c => c.Key == contact.PhoneNumber);
+                    if (!string.IsNullOrEmpty(foundContact.Key))
                     {
                         contact.OnSignal = true;
+                        contact.SignalGuid = foundContact.Value;
                         ContactAnnotation contactAnnotation = new ContactAnnotation
                         {
                             ContactId = contact.Id,
                             RemoteId = contact.PhoneNumber,
                             SupportedOperations = ContactAnnotationOperations.Message | ContactAnnotationOperations.ContactProfile
                         };
+                        contactAnnotation.ProviderProperties.Add(nameof(contact.SignalGuid), foundContact.Value);
                         await contactAnnotationList.TrySaveAnnotationAsync(contactAnnotation);
                         signalContacts.Add(contact);
                     }
@@ -287,7 +286,7 @@ namespace Signal_Windows.ViewModels
             if (UIEnabled)
             {
                 UIEnabled = false;
-                string formattedPhoneNumber = null;
+                string formattedPhoneNumber;
                 try
                 {
                     formattedPhoneNumber = ParsePhoneNumber(ContactNumber);
@@ -296,10 +295,32 @@ namespace Signal_Windows.ViewModels
                 {
                     MessageDialog message = new MessageDialog("Please format the number in E.164 format.", "Could not format number");
                     await message.ShowAsync();
+                    UIEnabled = true;
                     return;
                 }
-                await AddContact(ContactName, formattedPhoneNumber);
+
+                // Validate that phone number is on Signal
+                var potentialUsers = await accountManager.GetRegisteredUsersAsync(new List<string>() { formattedPhoneNumber }, LibUtils.SignalSettings.ContactDiscoveryServiceEnclaveId);
+                if (potentialUsers.Count >= 1)
+                {
+                    if (potentialUsers.Count > 1)
+                    {
+                        Logger.LogWarning("Found more than 1 Signal user with this phone number?");
+                    }
+
+                    var foundUser = potentialUsers.First();
+                    await AddContact(ContactName, formattedPhoneNumber, foundUser.Value);
+                }
+                else
+                {
+                    MessageDialog message = new MessageDialog("This phone number is not registered with Signal", "Add contact error");
+                    await message.ShowAsync();
+                    UIEnabled = true;
+                    return;
+                }
+
                 UIEnabled = true;
+                View.Frame.Navigate(typeof(MainPage));
             }
         }
 
@@ -309,18 +330,20 @@ namespace Signal_Windows.ViewModels
             {
                 UIEnabled = false;
                 PhoneContact phoneContact = e.ClickedItem as PhoneContact;
-                await AddContact(phoneContact.Name, phoneContact.PhoneNumber);
+                await AddContact(phoneContact.Name, phoneContact.PhoneNumber, phoneContact.SignalGuid);
                 UIEnabled = true;
+                View.Frame.Navigate(typeof(MainPage));
             }
         }
 
-        private async Task AddContact(string name, string number)
+        private async Task AddContact(string name, string number, Guid? guid)
         {
             Debug.WriteLine("creating contact {0} ({1})", name, number);
             SignalContact contact = new SignalContact()
             {
                 ThreadDisplayName = name,
                 ThreadId = number,
+                ThreadGuid = guid,
                 CanReceive = true,
                 AvatarFile = null,
                 LastActiveTimestamp = 0,

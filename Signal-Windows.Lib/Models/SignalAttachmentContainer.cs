@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Signal_Windows.Lib.Models
 {
+    // Not a database model
     public class SignalAttachmentContainer
     {
         public SignalAttachment Attachment;

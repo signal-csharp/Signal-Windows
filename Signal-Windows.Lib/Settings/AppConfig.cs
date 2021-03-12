@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 using Windows.ApplicationModel;
 
 namespace Signal_Windows.Lib.Settings
@@ -31,6 +32,8 @@ namespace Signal_Windows.Lib.Settings
         public SignalSettings GetSignalSettings()
         {
             return new SignalSettings(GetSection<string>(nameof(SignalSettings.ServiceUrl)),
+                new List<string>() { GetSection<string>("CdnUrl1") },
+                new List<string>() { GetSection<string>("CdnUrl2") },
                 GetSection<string>(nameof(SignalSettings.ContactDiscoveryServiceUrl)),
                 GetSection<string>(nameof(SignalSettings.ContactDiscoveryServiceEnclaveId)));
         }

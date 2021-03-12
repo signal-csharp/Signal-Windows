@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 namespace Signal_Windows.Models
 {
+    // Database model
     public class SignalGroup : SignalConversation
     {
         public List<GroupMembership> GroupMemberships { get; set; }

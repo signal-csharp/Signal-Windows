@@ -13,9 +13,14 @@ namespace Signal_Windows.Lib
 {
     public class SignalWebSocketFactory : ISignalWebSocketFactory
     {
-        public ISignalWebSocket CreateSignalWebSocket(CancellationToken token, Uri uri)
+        public ISignalWebSocket CreateSignalWebSocket(Uri uri, CancellationToken? token = null)
         {
-            return new SignalWebSocket(token, uri);
+            if (token == null)
+            {
+                token = CancellationToken.None;
+            }
+
+            return new SignalWebSocket(uri, token.Value);
         }
     }
 
@@ -29,7 +34,7 @@ namespace Signal_Windows.Lib
         public event EventHandler<SignalWebSocketClosedEventArgs> Closed;
         public event EventHandler<SignalWebSocketMessageReceivedEventArgs> MessageReceived;
 
-        public SignalWebSocket(CancellationToken token, Uri uri)
+        public SignalWebSocket(Uri uri, CancellationToken token)
         {
             CreateMessageWebSocket();
             Token = token;

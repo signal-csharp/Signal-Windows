@@ -60,6 +60,7 @@ namespace Signal_Windows
             Task.Run(() => { SignalDBContext.Migrate(); });
             Task.Run(() => { LibsignalDBContext.Migrate(); });
         }
+
         /// <summary>
         /// Initialisiert das Singletonanwendungsobjekt. Dies ist die erste Zeile von erstelltem Code
         /// und daher das logische Äquivalent von main() bzw. WinMain().

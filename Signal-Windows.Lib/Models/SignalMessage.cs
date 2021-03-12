@@ -4,6 +4,7 @@ using System;
 
 namespace Signal_Windows.Models
 {
+    // Database model
     public class SignalMessage
     {
         public long Id { get; set; }
@@ -11,7 +12,17 @@ namespace Signal_Windows.Models
         public SignalMessageType Type { get; set; }
         public SignalMessageStatus Status { get; set; }
         public SignalMessageContent Content { get; set; }
+
+        /// <summary>
+        /// The E.164 number of the contact that sent this message. This may be null.
+        /// </summary>
         public string ThreadId { get; set; }
+
+        /// <summary>
+        /// The Guid of the contact that sent this message. This may be null. This was added once Signal started
+        /// supporting UUIDs.
+        /// </summary>
+        public Guid? ThreadGuid { get; set; }
         public long? AuthorId { get; set; }
         public SignalContact Author { get; set; }
         public uint DeviceId { get; set; }

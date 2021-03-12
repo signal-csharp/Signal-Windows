@@ -5,6 +5,7 @@ using Windows.UI.Xaml.Controls;
 
 namespace Signal_Windows.Models
 {
+    // Database model
     public class SignalAttachment
     {
         public long Id { get; set; }
@@ -16,7 +17,17 @@ namespace Signal_Windows.Models
         public SignalAttachmentStatus Status { get; set; }
         public byte[] Key { get; set; }
         public string Relay { get; set; }
+        public int CdnNumber { get; set; }
+
+        /// <summary>
+        /// The Signal attachment pointer V2 remote id.
+        /// </summary>
         public ulong StorageId { get; set; }
+
+        /// <summary>
+        /// The Signal attachment pointer V3 remote id.
+        /// </summary>
+        public string V3StorageId { get; set; }
         public byte[] Digest { get; set; }
         public long Size { get; set; }
         public string Guid { get; set; }
@@ -26,16 +37,40 @@ namespace Signal_Windows.Models
 
         public SignalServiceAttachmentPointer ToAttachmentPointer()
         {
-            return new SignalServiceAttachmentPointer(StorageId,
-                ContentType,
-                Key,
-                (uint)Util.ToIntExact(Size),
-                null,
-                0,
-                0,
-                Digest,
-                FileName,
-                false);
+            if (StorageId != 0)
+            {
+                return new SignalServiceAttachmentPointer(CdnNumber,
+                    new SignalServiceAttachmentRemoteId((long)StorageId),
+                    ContentType,
+                    Key,
+                    (uint)Util.ToIntExact(Size),
+                    null,
+                    0,
+                    0,
+                    Digest,
+                    FileName,
+                    false,
+                    null,
+                    null,
+                    Util.CurrentTimeMillis());
+            }
+            else
+            {
+                return new SignalServiceAttachmentPointer(CdnNumber,
+                    new SignalServiceAttachmentRemoteId(V3StorageId),
+                    ContentType,
+                    Key,
+                    (uint)Util.ToIntExact(Size),
+                    null,
+                    0,
+                    0,
+                    Digest,
+                    FileName,
+                    false,
+                    null,
+                    null,
+                    Util.CurrentTimeMillis());
+            }
         }
     }
 

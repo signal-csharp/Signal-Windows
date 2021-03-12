@@ -1,5 +1,6 @@
 namespace Signal_Windows.Models
 {
+    // Database model
     public class SignalIdentity
     {
         public long Id { get; set; }

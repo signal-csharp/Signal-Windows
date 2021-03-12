@@ -42,13 +42,11 @@ namespace Signal_Windows.Views
         private async void AddButton_Click(object sender, RoutedEventArgs e)
         {
             await Vm.AddButton_Click(sender, e);
-            Frame.Navigate(typeof(MainPage));
         }
 
         private async void ContactsList_ItemClick(object sender, ItemClickEventArgs e)
         {
             await Vm.ContactsList_ItemClick(sender, e);
-            Frame.Navigate(typeof(MainPage));
         }
 
         private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)

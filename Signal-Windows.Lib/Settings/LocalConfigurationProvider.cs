@@ -14,7 +14,10 @@ namespace Signal_Windows.Lib.Settings
             JObject o = JObject.Parse(WaitAndGet(FileIO.ReadTextAsync(appSettingsFile).AsTask()));
             foreach (JProperty token in o["signalSettings"])
             {
-                Data.Add(token.Name, (string)token.Value);
+                if (token.Value.Type == JTokenType.String)
+                {
+                    Data.Add(token.Name, (string)token.Value);
+                }
             }
         }
 

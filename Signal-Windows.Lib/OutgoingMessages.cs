@@ -1,4 +1,9 @@
-﻿using libsignal;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using libsignalservice;
 using libsignalservice.crypto;
 using libsignalservice.messages;
@@ -10,14 +15,6 @@ using libsignalservicedotnet.crypto;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Models;
 using Signal_Windows.Storage;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Windows.Storage;
 
 namespace Signal_Windows.Lib
@@ -40,7 +37,7 @@ namespace Signal_Windows.Lib
 
         public async Task Send(SignalServiceMessageSender messageSender, CancellationToken token)
         {
-            await messageSender.SendMessage(token, SyncMessage, null);
+            await messageSender.SendMessageAsync(SyncMessage, null, token);
         }
     }
 
@@ -58,7 +55,7 @@ namespace Signal_Windows.Lib
 
         public async Task Send(SignalServiceMessageSender messageSender, CancellationToken token)
         {
-            await messageSender.SendMessage(token, Recipient, null, DataMessage);
+            await messageSender.SendMessageAsync(Recipient, null, DataMessage, token);
         }
     }
 
@@ -85,7 +82,7 @@ namespace Signal_Windows.Lib
                     try
                     {
                         var file = await ApplicationData.Current.LocalCacheFolder.GetFileAsync(@"Attachments\" + attachment.Id + ".plain");
-                        var stream = await file.OpenStreamForReadAsync();
+                        var stream = (await file.OpenAsync(FileAccessMode.ReadWrite, StorageOpenOptions.None)).AsStream();
                         outgoingAttachmentsList.Add(SignalServiceAttachment.NewStreamBuilder()
                             .WithContentType(attachment.ContentType)
                             .WithStream(stream)
@@ -100,13 +97,8 @@ namespace Signal_Windows.Lib
                 }
             }
 
-            SignalServiceDataMessage message = new SignalServiceDataMessage()
-            {
-                Body = OutgoingSignalMessage.Content.Content,
-                Timestamp = OutgoingSignalMessage.ComposedTimestamp,
-                ExpiresInSeconds = (int)OutgoingSignalMessage.ExpiresAt,
-                Attachments = outgoingAttachmentsList
-            };
+            SignalServiceDataMessage message = new SignalServiceDataMessage(OutgoingSignalMessage.ComposedTimestamp,
+                outgoingAttachmentsList, OutgoingSignalMessage.Content.Content, (int)OutgoingSignalMessage.ExpiresAt);
 
             UpdateExpiresAt(OutgoingSignalMessage);
             DisappearingMessagesManager.QueueForDeletion(OutgoingSignalMessage);
@@ -115,7 +107,7 @@ namespace Signal_Windows.Lib
             {
                 if (!token.IsCancellationRequested)
                 {
-                    await messageSender.SendMessage(token, new SignalServiceAddress(OutgoingSignalMessage.ThreadId), null, message);
+                    await messageSender.SendMessageAsync(new SignalServiceAddress(OutgoingSignalMessage.ThreadGuid, OutgoingSignalMessage.ThreadId), null, message, token);
                     OutgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                 }
             }
@@ -127,14 +119,11 @@ namespace Signal_Windows.Lib
                 {
                     if (sc.Contact.ThreadId != SignalLibHandle.Instance.Store.Username)
                     {
-                        recipients.Add(new SignalServiceAddress(sc.Contact.ThreadId));
+                        recipients.Add(new SignalServiceAddress(null, sc.Contact.ThreadId));
                     }
                 }
-                message.Group = new SignalServiceGroup()
-                {
-                    GroupId = Base64.Decode(g.ThreadId),
-                    Type = SignalServiceGroup.GroupType.DELIVER
-                };
+                message.Group = new SignalServiceGroup(SignalServiceGroup.GroupType.DELIVER, Base64.Decode(g.ThreadId),
+                    null, null, null);
                 if (!token.IsCancellationRequested)
                 {
                     var uaps = new List<UnidentifiedAccessPair>();
@@ -142,7 +131,7 @@ namespace Signal_Windows.Lib
                     {
                         uaps.Add(null);
                     }
-                    await messageSender.SendMessage(token, recipients, uaps, message);
+                    await messageSender.SendMessageAsync(recipients, uaps, false, message, token);
                     OutgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
                 }
             }
@@ -189,7 +178,11 @@ namespace Signal_Windows.Lib
             Logger.LogDebug("HandleOutgoingMessages()");
             try
             {
-                var messageSender = new SignalServiceMessageSender(Token, LibUtils.ServiceConfiguration, Store.Username, Store.Password, (int)Store.DeviceId, new Store(), LibUtils.USER_AGENT, LibUtils.HttpClient, Store.DeviceId != 1, Pipe, null, null);
+                var messageSender = new SignalServiceMessageSender(LibUtils.ServiceConfiguration, Store.OwnGuid,
+                    Store.Username, Store.Password, (int)Store.DeviceId, new Store(), LibUtils.USER_AGENT,
+                    LibUtils.HttpClient, Store.DeviceId != 1,
+                    true, // true means we're using the Attachment V3 API
+                    Pipe, null, null);
                 while (!Token.IsCancellationRequested)
                 {
                     ISendable sendable = null;
@@ -220,7 +213,7 @@ namespace Signal_Windows.Lib
                             //UpdateExpiresAt(outgoingSignalMessage);
                             //DisappearingMessagesManager.QueueForDeletion(outgoingSignalMessage);
                             //outgoingSignalMessage.Status = SignalMessageStatus.Confirmed;
-                            await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
+                            await Handle.HandleOutgoingKeyChangeLocked(e.Identifier, Base64.EncodeBytes(e.IdentityKey.serialize()));
                         }
                     }
                     catch (RateLimitException)
@@ -232,7 +225,7 @@ namespace Signal_Windows.Lib
                     {
                         Logger.LogError("HandleOutgoingMessages() could not send due to untrusted identities");
                         sendable.Status = SignalMessageStatus.Failed_Identity;
-                        await Handle.HandleOutgoingKeyChangeLocked(e.E164number, Base64.EncodeBytes(e.IdentityKey.serialize()));
+                        await Handle.HandleOutgoingKeyChangeLocked(e.Identifier, Base64.EncodeBytes(e.IdentityKey.serialize()));
                     }
                     catch (Exception e)
                     {

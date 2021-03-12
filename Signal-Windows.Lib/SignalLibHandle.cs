@@ -55,6 +55,7 @@ namespace Signal_Windows.Lib
     {
         //Frontend API
         SignalStore Store { get; set; }
+        SignalServiceAccountManager AccountManager { get; set; }
 
         void RequestSync();
         Task SendMessage(string messageText, StorageFile attachment, SignalConversation conversation);
@@ -93,6 +94,8 @@ namespace Signal_Windows.Lib
     {
         internal static SignalLibHandle Instance;
         public SignalStore Store { get; set; }
+        public SignalServiceAccountManager AccountManager { get; set; }
+
         private readonly ILogger Logger = LibsignalLogging.CreateLogger<SignalLibHandle>();
         public SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
         private readonly bool Headless;
@@ -210,6 +213,8 @@ namespace Signal_Windows.Lib
                 {
                     return false;
                 }
+
+                await SetSingletonsAsync(Store);
                 LikelyHasValidStore = true;
                 InitNetwork();
                 var recoverDownloadsTask = Task.Run(() =>
@@ -294,6 +299,7 @@ namespace Signal_Windows.Lib
                 });
                 if (LikelyHasValidStore)
                 {
+                    await SetSingletonsAsync(Store);
                     Logger.LogTrace($"Reacquire() initializing network");
                     InitNetwork();
                 }
@@ -372,6 +378,7 @@ namespace Signal_Windows.Lib
                         ExpiresAt = conversation.ExpiresInSeconds,
                         Content = new SignalMessageContent() { Content = messageText },
                         ThreadId = conversation.ThreadId,
+                        ThreadGuid = conversation.ThreadGuid,
                         ReceivedTimestamp = now,
                         Direction = SignalMessageDirection.Outgoing,
                         Read = true,
@@ -426,7 +433,7 @@ namespace Signal_Windows.Lib
                 var updatedConversation = SignalDBContext.UpdateMessageRead(message.ComposedTimestamp);
                 UpdateMessageExpiration(message, updatedConversation.ExpiresInSeconds);
                 OutgoingQueue.Add(new SignalServiceSyncMessageSendable(SignalServiceSyncMessage.ForRead(new List<ReadMessage>() {
-                        new ReadMessage(message.Author.ThreadId, message.ComposedTimestamp)
+                        new ReadMessage(new SignalServiceAddress(message.Author.ThreadGuid, message.Author.ThreadId), message.ComposedTimestamp)
                 })));
                 await DispatchMessageRead(updatedConversation);
             }
@@ -474,11 +481,11 @@ namespace Signal_Windows.Lib
         public async Task SendBlockedMessage()
         {
             List<SignalContact> blockedContacts = SignalDBContext.GetAllContactsLocked().Where(c => c.Blocked).ToList();
-            List<string> blockedNumbers = new List<string>();
+            List<SignalServiceAddress> blockedNumbers = new List<SignalServiceAddress>();
             List<byte[]> blockedGroups = new List<byte[]>();
             foreach (var contact in blockedContacts)
             {
-                blockedNumbers.Add(contact.ThreadId);
+                blockedNumbers.Add(new SignalServiceAddress(contact.ThreadGuid, contact.ThreadId));
             }
             var blockMessage = SignalServiceSyncMessage.ForBlocked(new BlockedListMessage(blockedNumbers, blockedGroups));
             OutgoingQueue.Add(new SignalServiceSyncMessageSendable(blockMessage));
@@ -953,6 +960,53 @@ namespace Signal_Windows.Lib
         #endregion
 
         #region private
+        private async Task SetSingletonsAsync(SignalStore store)
+        {
+            // Setup SignalServiceAccountManager
+            AccountManager = CreateNewSignalServiceAccountManager(store);
+            if (await UpdateOwnGuid(store, AccountManager))
+            {
+                AccountManager = CreateNewSignalServiceAccountManager(store);
+            }
+        }
+
+        /// <summary>
+        /// Updates the store Signal UUID if it hasn't been set due to an upgrade from an older version.
+        /// </summary>
+        /// <param name="store">The SignalStore</param>
+        /// <param name="accountManager">The SignalServiceAccountManager</param>
+        /// <returns>True if the UUID was set, false if it wasn't set</returns>
+        private async Task<bool> UpdateOwnGuid(SignalStore store, SignalServiceAccountManager accountManager)
+        {
+            if (!store.OwnGuid.HasValue)
+            {
+                Logger.LogInformation("Own Signal UUID not set, attempting to set.");
+                Guid ownGuid;
+                try
+                {
+                    ownGuid = await accountManager.GetOwnUuidAsync(CancelSource.Token);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(new EventId(), ex, "Failed to get own Signal UUID");
+                    return false;
+                }
+
+                store.OwnGuid = ownGuid;
+                LibsignalDBContext.SaveOrUpdateSignalStore(store);
+
+                Logger.LogInformation("Own Signal UUID now set");
+                return true;
+            }
+            return false;
+        }
+
+        private SignalServiceAccountManager CreateNewSignalServiceAccountManager(SignalStore store)
+        {
+            return new SignalServiceAccountManager(LibUtils.ServiceConfiguration, store.OwnGuid, store.Username,
+                store.Password, (int)store.DeviceId, LibUtils.USER_AGENT, LibUtils.HttpClient);
+        }
+
         private List<SignalConversation> GetConversations()
         {
             List<SignalConversation> conversations = new List<SignalConversation>();
@@ -1005,12 +1059,12 @@ namespace Signal_Windows.Lib
             try
             {
                 Logger.LogTrace("InitNetwork() sync context = {0}", SynchronizationContext.Current);
-                MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.Username, Store.Password, (int)Store.DeviceId), LibUtils.USER_AGENT, LibUtils.HttpClient);
+                MessageReceiver = new SignalServiceMessageReceiver(LibUtils.ServiceConfiguration, new StaticCredentialsProvider(Store.OwnGuid, Store.Username, Store.Password, (int)Store.DeviceId), LibUtils.USER_AGENT, LibUtils.HttpClient);
                 Task.Run(async () =>
                 {
                     try
                     {
-                        var pipe = await MessageReceiver.CreateMessagePipe(CancelSource.Token, new SignalWebSocketFactory());
+                        var pipe = await MessageReceiver.CreateMessagePipeAsync(new SignalWebSocketFactory(), CancelSource.Token);
                         Logger.LogTrace("Starting IncomingMessagesTask");
                         IncomingMessagesTask = Task.Run(() => new IncomingMessages(CancelSource.Token, pipe, MessageReceiver).HandleIncomingMessages());
                         Logger.LogTrace("Starting OutgoingMessagesTask");
@@ -1018,7 +1072,7 @@ namespace Signal_Windows.Lib
                     }
                     catch (OperationCanceledException)
                     {
-                        Logger.LogInformation("InitNetwork cancelled");
+                        Logger.LogInformation("InitNetwork canceled");
                     }
                     catch (Exception e)
                     {
@@ -1066,7 +1120,7 @@ namespace Signal_Windows.Lib
                 {
                     SignalServiceAttachmentPointer attachmentPointer = attachment.ToAttachmentPointer();
                     IStorageFolder localFolder = ApplicationData.Current.LocalFolder;
-                    IStorageFile tmpDownload = await Task.Run(async () =>
+                    StorageFile tmpDownload = await Task.Run(async () =>
                     {
                         return await ApplicationData.Current.LocalCacheFolder.CreateFileAsync(@"Attachments\" + attachment.Id + ".cipher", CreationCollisionOption.ReplaceExisting);
                     });
@@ -1074,7 +1128,7 @@ namespace Signal_Windows.Lib
                     downloader.SetRequestHeader("Content-Type", "application/octet-stream");
                     // this is the recommended way to call CreateDownload
                     // see https://docs.microsoft.com/en-us/uwp/api/windows.networking.backgroundtransfer.backgrounddownloader#Methods
-                    DownloadOperation download = downloader.CreateDownload(new Uri(await MessageReceiver.RetrieveAttachmentDownloadUrl(CancelSource.Token, attachmentPointer)), tmpDownload);
+                    DownloadOperation download = downloader.CreateDownload(new Uri(MessageReceiver.RetrieveAttachmentDownloadUrl(attachmentPointer)), tmpDownload);
                     attachment.Guid = download.Guid.ToString();
                     SignalDBContext.UpdateAttachmentGuid(attachment);
                     Downloads.Add(attachment.Id, download);
@@ -1122,8 +1176,7 @@ namespace Signal_Windows.Lib
 
         private void DecryptAttachment(SignalServiceAttachmentPointer pointer, Stream ciphertextFileStream, Stream plaintextFileStream)
         {
-            byte[] buf = new byte[32];
-            Stream s = AttachmentCipherInputStream.CreateFor(ciphertextFileStream, pointer.Size != null ? pointer.Size.Value : 0, pointer.Key, pointer.Digest);
+            Stream s = AttachmentCipherInputStream.CreateForAttachment(ciphertextFileStream, pointer.Size != null ? pointer.Size.Value : 0, pointer.Key, pointer.Digest);
             s.CopyTo(plaintextFileStream);
         }
 

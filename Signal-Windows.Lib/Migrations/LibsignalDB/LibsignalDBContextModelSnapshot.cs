@@ -1,6 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Signal_Windows.Storage;
+using Signal_Windows.Models;
 
 namespace Signal_Windows.Migrations.LibsignalDB
 {
@@ -10,11 +14,11 @@ namespace Signal_Windows.Migrations.LibsignalDB
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.2");
+                .HasAnnotation("ProductVersion", "1.1.5");
 
             modelBuilder.Entity("Signal_Windows.Models.SignalIdentity", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("IdentityKey");
@@ -32,7 +36,7 @@ namespace Signal_Windows.Migrations.LibsignalDB
 
             modelBuilder.Entity("Signal_Windows.Models.SignalPreKey", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("Key");
@@ -46,7 +50,7 @@ namespace Signal_Windows.Migrations.LibsignalDB
 
             modelBuilder.Entity("Signal_Windows.Models.SignalSession", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<uint>("DeviceId");
@@ -66,7 +70,7 @@ namespace Signal_Windows.Migrations.LibsignalDB
 
             modelBuilder.Entity("Signal_Windows.Models.SignalSignedPreKey", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("Key");
@@ -78,7 +82,7 @@ namespace Signal_Windows.Migrations.LibsignalDB
 
             modelBuilder.Entity("Signal_Windows.Models.SignalStore", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<uint>("DeviceId");
@@ -86,6 +90,8 @@ namespace Signal_Windows.Migrations.LibsignalDB
                     b.Property<string>("IdentityKeyPair");
 
                     b.Property<uint>("NextSignedPreKeyId");
+
+                    b.Property<Guid?>("OwnGuid");
 
                     b.Property<string>("Password");
 

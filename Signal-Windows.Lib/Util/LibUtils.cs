@@ -21,6 +21,8 @@ namespace Signal_Windows.Lib
         public const string GlobalEventWaitHandleName = "SignalWindowsPrivateMessenger_EventWaitHandle";
         public static string UNIDENTIFIED_SENDER_TRUST_ROOT = "BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF";
         public static SignalServiceUrl[] ServiceUrls;
+        public static SignalCdnUrl[] Cdn1Urls;
+        public static SignalCdnUrl[] Cdn2Urls;
         public static SignalContactDiscoveryUrl[] ContactDiscoveryUrls;
         public static SignalServiceConfiguration ServiceConfiguration;
         public static bool MainPageActive = false;
@@ -38,8 +40,10 @@ namespace Signal_Windows.Lib
             AppConfig = new AppConfig();
             SignalSettings = AppConfig.GetSignalSettings();
             ServiceUrls = new SignalServiceUrl[] { new SignalServiceUrl(SignalSettings.ServiceUrl) };
+            Cdn1Urls = new SignalCdnUrl[] { new SignalCdnUrl(SignalSettings.Cdn1Urls[0]) };
+            Cdn2Urls = new SignalCdnUrl[] { new SignalCdnUrl(SignalSettings.Cdn2Urls[0]) };
             ContactDiscoveryUrls = new SignalContactDiscoveryUrl[] { new SignalContactDiscoveryUrl(SignalSettings.ContactDiscoveryServiceUrl) };
-            ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, null, ContactDiscoveryUrls);
+            ServiceConfiguration = new SignalServiceConfiguration(ServiceUrls, Cdn1Urls, Cdn2Urls, ContactDiscoveryUrls);
         }
 
         private static SynchronizationContext GlobalLockContext;

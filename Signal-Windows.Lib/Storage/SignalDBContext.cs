@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using libsignalservice;
 using libsignalservice.messages;
+using libsignalservice.push;
+using libsignalservice.util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Lib;
@@ -224,7 +226,7 @@ namespace Signal_Windows.Storage
                         {
                             DeviceId = (uint)envelope.GetSourceDevice(),
                             Timestamp = envelope.GetTimestamp(),
-                            Username = envelope.GetSource()
+                            Username = envelope.GetSourceE164()
                         });
                     }
                     ctx.SaveChanges();
@@ -435,7 +437,7 @@ namespace Signal_Windows.Storage
             return conversation;
         }
 
-        internal static async Task<List<SignalConversation>> InsertOrUpdateGroups(IList<(SignalGroup group, IList<string> members)> groups)
+        internal static async Task<List<SignalConversation>> InsertOrUpdateGroups(IList<(SignalGroup group, List<SignalServiceAddress> members)> groups)
         {
             List<SignalConversation> refreshedGroups = new List<SignalConversation>();
             List<SignalContact> newContacts = new List<SignalContact>();
@@ -468,7 +470,7 @@ namespace Signal_Windows.Storage
                             refreshedGroups.Add(dbGroup);
                             foreach (var member in members)
                             {
-                                (var contact, var createdNew) = GetOrCreateContact(ctx, member, 0);
+                                (var contact, var createdNew) = GetOrCreateContact(ctx, member.E164, member.Uuid);
                                 dbGroup.GroupMemberships.Add(new GroupMembership()
                                 {
                                     Contact = contact,
@@ -692,7 +694,14 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static async Task<SignalContact> GetOrCreateContactLocked(string username, long timestamp)
+        /// <summary>
+        /// Gets a <see cref="SignalContact"/> from the database using the specified E.164 or creates a new one if no
+        /// such contact exists already.
+        /// </summary>
+        /// <param name="e164">The E.164 of the contact</param>
+        /// <param name="guid">The Signal UUID of the contact</param>
+        /// <returns>The <see cref="SignalContact"/></returns>
+        public static async Task<SignalContact> GetOrCreateContactLocked(string e164, Guid? guid)
         {
             SignalContact contact;
             bool createdNew;
@@ -700,7 +709,7 @@ namespace Signal_Windows.Storage
             {
                 using (var ctx = new SignalDBContext())
                 {
-                    (contact, createdNew) = GetOrCreateContact(ctx, username, timestamp);
+                    (contact, createdNew) = GetOrCreateContact(ctx, e164, guid);
                 }
             }
             if (createdNew)
@@ -710,21 +719,38 @@ namespace Signal_Windows.Storage
             return contact;
         }
 
-        private static (SignalContact contact, bool createdNew) GetOrCreateContact(SignalDBContext ctx, string username, long timestamp)
+        /// <summary>
+        /// Get a <see cref="SignalContact"/> from the database using the specified E.164 or creates a new one if no
+        /// such contact exists already.
+        /// </summary>
+        /// <param name="ctx">The current DB context</param>
+        /// <param name="e164">The E.164 of the contact</param>
+        /// <param name="guid">The Signal UUID of the contact</param>
+        /// <returns>A tuple of the <see cref="SignalContact"/> and if the contact was newly created.</returns>
+        private static (SignalContact contact, bool createdNew) GetOrCreateContact(SignalDBContext ctx, string e164, Guid? guid)
         {
             bool createdNew = false;
-            SignalContact contact = GetSignalContactByThreadId(ctx, username);
+            SignalContact contact = GetSignalContactByThreadId(ctx, e164);
             if (contact == null)
             {
                 contact = new SignalContact()
                 {
-                    ThreadId = username,
-                    ThreadDisplayName = username,
+                    ThreadId = e164,
+                    ThreadGuid = guid,
+                    ThreadDisplayName = e164,
                     CanReceive = true,
-                    LastActiveTimestamp = timestamp,
+                    LastActiveTimestamp = Util.CurrentTimeMillis(),
                     Color = null
                 };
                 ctx.Contacts.Add(contact);
+                ctx.SaveChanges();
+                createdNew = true;
+            }
+
+            // If we retrieve an existing contact and the Guid isn't set on it, set it now.
+            if (guid.HasValue && !contact.ThreadGuid.HasValue)
+            {
+                contact.ThreadGuid = guid;
                 ctx.SaveChanges();
                 createdNew = true;
             }

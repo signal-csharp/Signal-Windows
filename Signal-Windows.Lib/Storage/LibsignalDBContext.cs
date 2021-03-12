@@ -119,6 +119,7 @@ namespace Signal_Windows.Storage
                         Direction = SignalMessageDirection.Incoming,
                         Type = SignalMessageType.IdentityKeyChange,
                         ThreadId = contact.ThreadId,
+                        ThreadGuid = contact.ThreadGuid,
                         Content = new SignalMessageContent() { Content = str }
                     };
                     contact.LastMessage = msg;
@@ -139,6 +140,7 @@ namespace Signal_Windows.Storage
                             Direction = SignalMessageDirection.Incoming,
                             Type = SignalMessageType.IdentityKeyChange,
                             ThreadId = gm.Group.ThreadId,
+                            ThreadGuid = gm.Group.ThreadGuid,
                             Content = new SignalMessageContent() { Content = str }
                         };
                         gm.Group.LastMessage = msg;
@@ -612,11 +614,11 @@ namespace Signal_Windows.Storage
             }
         }
 
-        public static async Task RefreshPreKeys(CancellationToken token, SignalServiceAccountManager accountManager) //TODO wrap in extra lock? enforce reload?
+        public static async Task RefreshPreKeysAsync(SignalServiceAccountManager accountManager, CancellationToken token) //TODO wrap in extra lock? enforce reload?
         {
             List<PreKeyRecord> oneTimePreKeys = GeneratePreKeys();
             SignedPreKeyRecord signedPreKeyRecord = GenerateSignedPreKey(GetIdentityKeyPair());
-            await accountManager.SetPreKeys(token, GetIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+            await accountManager.SetPreKeysAsync(GetIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys, token);
         }
 
         private static List<PreKeyRecord> GeneratePreKeys()

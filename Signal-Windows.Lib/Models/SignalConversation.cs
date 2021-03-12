@@ -4,10 +4,20 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Signal_Windows.Models
 {
+    // Database model
     public abstract class SignalConversation
     {
         public long Id { get; set; }
+
+        /// <summary>
+        /// The E.164 number of the conversation. This may be null. This was originally the only identifier needed.
+        /// </summary>
         public string ThreadId { get; set; }
+
+        /// <summary>
+        /// The Guid of the conversation. This may be null. This was added once Signal started supporting UUIDs.
+        /// </summary>
+        public Guid? ThreadGuid { get; set; }
         public string ThreadDisplayName { get; set; }
         public long LastActiveTimestamp { get; set; }
         public string Draft { get; set; }
@@ -32,6 +42,7 @@ namespace Signal_Windows.Models
                 {
                     Id = Id,
                     ThreadId = ThreadId,
+                    ThreadGuid = ThreadGuid,
                     ThreadDisplayName = ThreadDisplayName,
                     LastActiveTimestamp = LastActiveTimestamp,
                     Draft = Draft,
@@ -53,6 +64,7 @@ namespace Signal_Windows.Models
                 {
                     Id = Id,
                     ThreadId = ThreadId,
+                    ThreadGuid = ThreadGuid,
                     ThreadDisplayName = ThreadDisplayName,
                     LastActiveTimestamp = LastActiveTimestamp,
                     Draft = Draft,

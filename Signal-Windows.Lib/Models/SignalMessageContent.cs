@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Signal_Windows.Models
 {
+    // Database model
     public class SignalMessageContent
     {
         [Key]

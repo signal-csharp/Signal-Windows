@@ -86,6 +86,7 @@ namespace Signal_Windows.ViewModels
         {
             App.Handle.PurgeAccountData();
             SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceConfiguration,
+                null,
                 App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber,
                 Password, 1 /*device id isn't actually used*/, LibUtils.USER_AGENT, LibUtils.HttpClient);
 
@@ -99,11 +100,11 @@ namespace Signal_Windows.ViewModels
             {
                 if (voice)
                 {
-                    await accountManager.RequestVoiceVerificationCode(captcha, CancelSource.Token);
+                    await accountManager.RequestVoiceVerificationCodeAsync(captcha, CancelSource.Token);
                 }
                 else
                 {
-                    await accountManager.RequestSmsVerificationCode(captcha, CancelSource.Token);
+                    await accountManager.RequestSmsVerificationCodeAsync(captcha, CancelSource.Token);
                 }
             }
             catch (CaptchaRequiredException)

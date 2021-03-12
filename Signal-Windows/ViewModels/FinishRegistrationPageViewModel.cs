@@ -1,14 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
 using libsignalservice;
 using libsignalservice.util;
-using libsignalservicedotnet.crypto;
 using Microsoft.Extensions.Logging;
 using Signal_Windows.Lib;
 using Signal_Windows.Models;
@@ -31,11 +26,17 @@ namespace Signal_Windows.ViewModels
                 await Task.Run(async () =>
                 {
                     string SignalingKey = Base64.EncodeBytes(Util.GetSecretBytes(52));
-                    await App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager.VerifyAccountWithCode(
-                        cancelSource.Token,
+                    SignalServiceAccountManager accountManager = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.AccountManager;
+
+                    Guid ownGuid = await accountManager.VerifyAccountWithCodeAsync(
                         App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.VerificationCode.Replace("-", ""),
-                            SignalingKey, App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
-                            true, null, null, false);
+                        SignalingKey,
+                        App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
+                        true,
+                        null,
+                        null,
+                        false,
+                        cancelSource.Token);
                     SignalStore store = new SignalStore()
                     {
                         DeviceId = 1,
@@ -47,6 +48,7 @@ namespace Signal_Windows.ViewModels
                         RegistrationId = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterFinalizationPageInstance.SignalRegistrationId,
                         SignalingKey = SignalingKey,
                         Username = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance.FinalNumber,
+                        OwnGuid = ownGuid
                     };
                     LibsignalDBContext.SaveOrUpdateSignalStore(store);
                     Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -55,9 +57,10 @@ namespace Signal_Windows.ViewModels
                     }).AsTask().Wait();
 
                     /* create prekeys */
-                    await LibsignalDBContext.RefreshPreKeys(
-                        cancelSource.Token,
-                        new SignalServiceAccountManager(LibUtils.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, LibUtils.USER_AGENT, LibUtils.HttpClient));
+                    await LibsignalDBContext.RefreshPreKeysAsync(new SignalServiceAccountManager(
+                        LibUtils.ServiceConfiguration, store.OwnGuid, store.Username, store.Password, (int)store.DeviceId,
+                            LibUtils.USER_AGENT, LibUtils.HttpClient),
+                        cancelSource.Token);
 
                     /* reload again with prekeys and their offsets */
                     store = LibsignalDBContext.GetSignalStore();

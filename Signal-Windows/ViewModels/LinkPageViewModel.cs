@@ -83,7 +83,7 @@ namespace Signal_Windows.ViewModels
 
                 // fetch new device uuid
                 SignalServiceAccountManager accountManager = new SignalServiceAccountManager(LibUtils.ServiceConfiguration, LibUtils.USER_AGENT, LibUtils.HttpClient, new SignalWebSocketFactory());
-                string uuid = await accountManager.GetNewDeviceUuid(CancelSource.Token, new SignalWebSocketFactory());
+                string uuid = await accountManager.GetNewDeviceUuidAsync(new SignalWebSocketFactory(), CancelSource.Token);
                 string tsdevice = "tsdevice:/?uuid=" + Uri.EscapeDataString(uuid) + "&pub_key=" + Uri.EscapeDataString(Base64.EncodeBytesWithoutPadding(tmpIdentity.getPublicKey().serialize()));
 
                 View.SetQR(tsdevice); //TODO generate qrcode in worker task
@@ -93,8 +93,8 @@ namespace Signal_Windows.ViewModels
                 string tmpSignalingKey = Base64.EncodeBytes(Util.GetSecretBytes(52));
                 int registrationId = (int)KeyHelper.generateRegistrationId(false);
 
-                var provisionMessage = await accountManager.GetProvisioningMessage(CancelSource.Token, tmpIdentity);
-                int deviceId = await accountManager.FinishNewDeviceRegistration(CancelSource.Token, provisionMessage, tmpSignalingKey, password, false, true, registrationId, View.GetDeviceName());
+                var provisionMessage = await accountManager.GetProvisioningMessageAsync(tmpIdentity, CancelSource.Token);
+                int deviceId = await accountManager.FinishNewDeviceRegistrationAsync(provisionMessage, tmpSignalingKey, password, false, true, registrationId, View.GetDeviceName(), CancelSource.Token);
                 SignalStore store = new SignalStore()
                 {
                     DeviceId = (uint)deviceId,
@@ -117,7 +117,9 @@ namespace Signal_Windows.ViewModels
                 App.Handle.Store = store;
 
                 // create prekeys
-                await LibsignalDBContext.RefreshPreKeys(CancelSource.Token, new SignalServiceAccountManager(LibUtils.ServiceConfiguration, store.Username, store.Password, (int)store.DeviceId, LibUtils.USER_AGENT, LibUtils.HttpClient));
+                await LibsignalDBContext.RefreshPreKeysAsync(new SignalServiceAccountManager(LibUtils.ServiceConfiguration,
+                    null, store.Username, store.Password, (int)store.DeviceId, LibUtils.USER_AGENT, LibUtils.HttpClient),
+                    CancelSource.Token);
 
                 // reload again with prekeys and their offsets
                 App.Handle.Store = LibsignalDBContext.GetSignalStore();

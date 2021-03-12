@@ -39,6 +39,8 @@ namespace Signal_Windows.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<int>("CdnNumber");
+
                     b.Property<string>("ContentType");
 
                     b.Property<byte[]>("Digest");
@@ -60,6 +62,8 @@ namespace Signal_Windows.Migrations
                     b.Property<int>("Status");
 
                     b.Property<ulong>("StorageId");
+
+                    b.Property<string>("V3StorageId");
 
                     b.HasKey("Id");
 
@@ -97,6 +101,8 @@ namespace Signal_Windows.Migrations
                     b.Property<long>("MessagesCount");
 
                     b.Property<string>("ThreadDisplayName");
+
+                    b.Property<Guid?>("ThreadGuid");
 
                     b.Property<string>("ThreadId");
 
@@ -163,6 +169,8 @@ namespace Signal_Windows.Migrations
                     b.Property<long>("ReceivedTimestamp");
 
                     b.Property<int>("Status");
+
+                    b.Property<Guid?>("ThreadGuid");
 
                     b.Property<string>("ThreadId");
 
