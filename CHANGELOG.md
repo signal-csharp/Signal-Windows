@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Attachment uploads and downloads are now fixed.
 - Adding an unknown number will first check if that number has registered with Signal.
+- Contact color will not be reset back to its original color if you change it. Thanks to @ShelbyBoss for contributing this feature in https://github.com/signal-csharp/Signal-Windows/pull/225!
 
 ## [0.3.0] - 2021-02-18
 
