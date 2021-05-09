@@ -54,5 +54,24 @@ namespace Signal_Windows.Views
             // KeyDown event doesn't work with WebView so just use a button to allow users to refresh the page
             webView.Refresh();
         }
+
+        private void webView_NavigationStarting(WebView sender, WebViewNavigationStartingEventArgs args)
+        {
+            if (args.Uri.ToString().StartsWith("http://token/"))
+            {
+                args.Cancel = true;
+                var token = args.Uri.ToString().Substring("http://token/".Length);
+                Vm.SetToken(token);
+            }
+        }
+
+        private async void webView_NavigationCompleted(WebView sender, WebViewNavigationCompletedEventArgs args)
+        {
+            var result = await sender.InvokeScriptAsync("eval", new[] { "document.getElementsByTagName('html')[0].innerHTML;" });
+            if (result.Contains("\"signalcaptcha://\"") && result.Contains("function onToken(token)"))
+            {
+                await sender.InvokeScriptAsync("eval", new[] { @"function onToken(token) { window.location = ""http://Token/"" + token; }" });
+            }
+        }
     }
 }
