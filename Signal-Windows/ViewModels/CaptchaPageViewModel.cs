@@ -40,5 +40,13 @@ namespace Signal_Windows.ViewModels
             View.Frame.GoBack();
             e.Handled = true;
         }
+
+        public void SetToken(string signalCaptchaToken)
+        {
+            var registerPageInstance = App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.RegisterPageInstance;
+            registerPageInstance.CaptchaCode = signalCaptchaToken;
+            registerPageInstance.CaptchaWebViewEnabled = false;
+            App.CurrentSignalWindowsFrontend(App.MainViewId).Locator.CaptchaPageInstance.View.Frame.GoBack();
+        }
     }
 }
