@@ -46,6 +46,7 @@ namespace Signal_Windows.ViewModels
             SimpleIoc.Default.Register<AppearanceSettingsPageViewModel>();
             SimpleIoc.Default.Register<ChatsAndMediaSettingsPageViewModel>();
             SimpleIoc.Default.Register<AdvancedSettingsPageViewModel>();
+            SimpleIoc.Default.Register<DeviceSettingsPageViewmodel>();
             SimpleIoc.Default.Register<BlockedContactsPageViewModel>();
             SimpleIoc.Default.Register<CaptchaPageViewModel>();
         }
@@ -142,6 +143,11 @@ namespace Signal_Windows.ViewModels
         public AdvancedSettingsPageViewModel AdvancedSettingsPageInstance
         {
             get { return ServiceLocator.Current.GetInstance<AdvancedSettingsPageViewModel>(Key.ToString()); }
+        }
+
+        public DeviceSettingsPageViewmodel DeviceSettingsPageInstance
+        {
+            get { return ServiceLocator.Current.GetInstance<DeviceSettingsPageViewmodel>(Key.ToString()); }
         }
 
         public BlockedContactsPageViewModel BlockedContactsPageInstance

@@ -79,5 +79,10 @@ namespace Signal_Windows.Views
         {
             Frame.Navigate(typeof(AboutPage));
         }
+
+        private void LinkedDevices_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(DeviceSettingsPage));
+        }
     }
 }
