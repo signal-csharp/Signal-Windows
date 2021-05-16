@@ -1,10 +1,12 @@
 ﻿using GalaSoft.MvvmLight;
 using libsignal;
+using libsignal.ecc;
 using libsignal.util;
 using libsignalservice;
 using libsignalservice.messages.multidevice;
 using libsignalservice.util;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -46,13 +48,25 @@ namespace Signal_Windows.ViewModels
 
             var code = await App.Handle.AccountManager.GetNewDeviceVerificationCodeAsync();
 
-            // I'm not sure where which parameter goes...
-            // but it failes when the QR code is to old, so the first two are propably correct...
-            await App.Handle.AccountManager.AddDeviceAsync(toAdd.Uuid, toAdd.IdentetyKey.getPublicKey(),
-                     new IdentityKeyPair(Base64.Decode(App.Handle.Store.IdentityKeyPair)),
-                     Base64.Decode(App.Handle.Store.SignalingKey),
-                     code);
 
+            // is the SignalingKey the profileKey???
+            var profileKey = Base64.Decode(App.Handle.Store.SignalingKey);
+            var identityKeyPair = new IdentityKeyPair(Base64.Decode(App.Handle.Store.IdentityKeyPair));
+
+            try
+            {
+                // I'm not sure where which parameter goes...
+                // but it failes when the QR code is to old, so the first two are propably correct...
+                await App.Handle.AccountManager.AddDeviceAsync(toAdd.Uuid, toAdd.PublicKey,
+                         identityKeyPair,
+                        profileKey,
+                         code);
+            }
+            catch (libsignalservice.push.exceptions.NotFoundException)
+            {
+
+                // ToDo: Handle Divice not found
+            }
 
             await this.RefreshList();
         }
@@ -61,14 +75,14 @@ namespace Signal_Windows.ViewModels
 
     public class DeviceProtocoll
     {
-        private DeviceProtocoll(string uuid, IdentityKey identetyKey)
+        private DeviceProtocoll(string uuid, ECPublicKey identetyKey)
         {
             this.Uuid = uuid;
-            this.IdentetyKey = identetyKey;
+            this.PublicKey = identetyKey;
         }
 
         public string Uuid { get; }
-        public IdentityKey IdentetyKey { get; }
+        public ECPublicKey PublicKey { get; }
 
         public static DeviceProtocoll FromUri(Uri uri)
         {
@@ -104,9 +118,14 @@ namespace Signal_Windows.ViewModels
 
             }
 
-            var publicKeyBytes = Base64.Decode(Uri.UnescapeDataString(pub_key));
-            var identetyKey = new IdentityKey(publicKeyBytes, 0);
-            return new DeviceProtocoll(uuid, identetyKey);
+            uuid = Uri.UnescapeDataString(uuid);
+
+            var publicKeyBytes = Base64.DecodeWithoutPadding(Uri.UnescapeDataString(pub_key));
+
+
+            var publicKey = Curve.decodePoint(publicKeyBytes, 0);
+
+            return new DeviceProtocoll(uuid, publicKey);
         }
     }
 

@@ -25,8 +25,8 @@
             HorizontalAlignment="Center"
             Orientation="Horizontal">
             <Button
-                x:Name="btnBarcodeCancel"
-                Click="btnBarcodeCancel_Click"
+                x:Name="cancleButton"
+                Click="cancelButton_Click"
                 Content="Cancel" />
         </StackPanel>
     </Grid>

@@ -154,8 +154,17 @@ namespace Signal_Windows.Controls
             }
 
             var focusControl = this.mediaCapture.VideoDeviceController.FocusControl;
-            if (focusControl.FocusChangedSupported)
+            if (focusControl.Supported && focusControl.FocusChangedSupported)
             {
+
+                var state = focusControl.FocusState;
+                var mode = focusControl.Mode;
+                var presset = focusControl.Preset;
+                var modes = focusControl.SupportedFocusModes.ToArray();
+                var presets = focusControl.SupportedPresets.ToArray();
+
+
+
                 this.isReady = false;
                 this.isScanning = true;
 
@@ -185,6 +194,7 @@ namespace Signal_Windows.Controls
             }
             else
             {
+                var capabilits = this.mediaCapture.VideoDeviceController.Focus.Capabilities;
                 await this.OnErrorAsync(new NotSupportedException("AutoFocus control is not supported on this device"));
             }
 
@@ -321,7 +331,7 @@ namespace Signal_Windows.Controls
 
         public async Task StartScan()
         {
-            this.btnBarcodeCancel.IsEnabled = false;
+            this.cancleButton.IsEnabled = false;
             this.mediaCapture = new MediaCapture();
             this.isInitialized = false;
             this.isScanning = false;
@@ -339,7 +349,7 @@ namespace Signal_Windows.Controls
             };
 
             await this.StartPreview();
-            this.btnBarcodeCancel.IsEnabled = true;
+            this.cancleButton.IsEnabled = true;
         }
 
         private void Dispose(bool disposing)
