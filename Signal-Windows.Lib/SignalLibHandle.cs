@@ -530,6 +530,11 @@ namespace Signal_Windows.Lib
                     SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Downloads,
                     SuggestedFileName = sa.SentFileName ?? "signal"
                 };
+                string extension = Path.GetExtension(savePicker.SuggestedFileName);
+                if (!string.IsNullOrWhiteSpace(extension))
+                {
+                    savePicker.FileTypeChoices.Add(extension.TrimStart('.').ToUpper(), new List<string>() { extension });
+                }
                 savePicker.FileTypeChoices.Add("Any", new List<string>() { "." });
                 var target_file = await savePicker.PickSaveFileAsync();
                 if (target_file != null)
