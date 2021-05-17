@@ -71,14 +71,20 @@ namespace Signal_Windows.Controls
                     AttachmentDownloadIcon.Visibility = Visibility.Collapsed;
                     if (IMAGE_TYPES.Contains(Model.ContentType))
                     {
+                        AttachmentSaveIcon.Visibility = Visibility.Collapsed;
                         var path = ApplicationData.Current.LocalCacheFolder.Path + @"\Attachments\" + Model.Id + ".plain";
                         ImagePath = new Uri(path);
+                    }
+                    else
+                    {
+                        AttachmentSaveIcon.Visibility = Visibility.Visible;
                     }
                 }
                 else if (Model.Status == SignalAttachmentStatus.Default || Model.Status == SignalAttachmentStatus.Finished || Model.Status == SignalAttachmentStatus.Failed)
                 {
                     AttachmentImage.Visibility = Visibility.Collapsed;
                     AttachmentDownloadIcon.Visibility = Visibility.Visible;
+                    AttachmentSaveIcon.Visibility = Visibility.Collapsed;
                 }
             }
         }
@@ -86,6 +92,10 @@ namespace Signal_Windows.Controls
         private void AttachmentDownloadIcon_Tapped(object sender, TappedRoutedEventArgs e)
         {
             App.Handle.StartAttachmentDownload(Model);
+        }
+        private async void AttachmentSaveIcon_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            await App.Handle.ExportAttachment(Model);
         }
 
         private void AttachmentImage_Tapped(object sender, TappedRoutedEventArgs e)

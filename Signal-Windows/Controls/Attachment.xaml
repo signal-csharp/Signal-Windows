@@ -17,6 +17,8 @@
                 </Image.Source>
             </Image>
             <SymbolIcon Name="AttachmentDownloadIcon" Symbol="Download" Tapped="AttachmentDownloadIcon_Tapped" />
+            <SymbolIcon Name="AttachmentSaveIcon" Symbol="Save"
+                        Visibility="Collapsed" Tapped="AttachmentSaveIcon_Tapped" />
         </Grid>
     </StackPanel>
 </UserControl>
