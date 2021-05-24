@@ -38,7 +38,9 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="{x:Bind LastMessage, Mode=OneWay}" Visibility="{x:Bind LastMessageVisibility, Mode=OneWay}" FontSize="12"/>
+                <TextBlock Grid.Column="0" Text="{x:Bind LastMessage, Mode=OneWay}"
+                           Visibility="{x:Bind LastMessageVisibility, Mode=OneWay}"
+                           FontSize="12" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis"/>
                 <Grid Grid.Column="1" Margin="10 0 0 0">
                     <Ellipse Fill="#2190EA" Visibility="{x:Bind UnreadStringVisibility, Mode=OneWay}" Width="20" Height="20"/>
                     <TextBlock Text="{x:Bind UnreadString, Mode=TwoWay}" Visibility="{x:Bind UnreadStringVisibility, Mode=OneWay}" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
