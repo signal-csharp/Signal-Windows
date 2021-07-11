@@ -169,6 +169,9 @@
     <Compile Include="Controls\Attachment.xaml.cs">
       <DependentUpon>Attachment.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\QRScanner.cs">
+      <DependentUpon>QRScanner.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\IdentityKeyChangeMessage.xaml.cs">
       <DependentUpon>IdentityKeyChangeMessage.xaml</DependentUpon>
     </Compile>
@@ -200,6 +203,7 @@
     <Compile Include="ViewModels\CaptchaPageViewModel.cs" />
     <Compile Include="ViewModels\ChatsAndMediaSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\ConversationSettingsPageViewModel.cs" />
+    <Compile Include="ViewModels\DeviceSettingsPageViewmodel.cs" />
     <Compile Include="ViewModels\FinishRegistrationPageViewModel.cs" />
     <Compile Include="ViewModels\GlobalSettingsPageViewModel.cs" />
     <Compile Include="ViewModels\LinkPageViewModel.cs" />
@@ -230,6 +234,9 @@
     </Compile>
     <Compile Include="Views\CaptchaPage.xaml.cs">
       <DependentUpon>CaptchaPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\DeviceSettingsPage.xaml.cs">
+      <DependentUpon>DeviceSettingsPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ChatsAndMediaSettingsPage.xaml.cs">
       <DependentUpon>ChatsAndMediaSettingsPage.xaml</DependentUpon>
@@ -298,6 +305,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\QRScanner.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Controls\IdentityKeyChangeMessage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -353,6 +364,10 @@
     <Page Include="Views\CaptchaPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\DeviceSettingsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\ChatsAndMediaSettingsPage.xaml">
       <SubType>Designer</SubType>

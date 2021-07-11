@@ -1,0 +1,40 @@
+﻿<Page
+    x:Class="Signal_Windows.Views.DeviceSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Signal_Windows.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Signal_Windows.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    DataContext="{Binding DeviceSettingsPageInstance, Source={StaticResource Locator}}"
+    mc:Ignorable="d">
+
+    <Grid x:Name="root" SizeChanged="root_SizeChanged">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Popup
+            x:Name="ScannerPopup"
+            Grid.RowSpan="2"
+            IsLightDismissEnabled="False"
+            IsOpen="False">
+            <Grid>
+                <controls:QRScanner x:Name="scanner" CodeFound="CodeFound" Cancled="scanner_Cancled" />
+            </Grid>
+        </Popup>
+
+
+        <Button
+            x:Name="startScanButton"
+            Grid.Row="0"
+            Click="startScanButton_Click"
+            Content="Add Device"
+            FontSize="22" />
+        <ListView
+            Grid.Row="1"
+            DisplayMemberPath="Name"
+            ItemsSource="{Binding Devices}" />
+    </Grid>
+</Page>

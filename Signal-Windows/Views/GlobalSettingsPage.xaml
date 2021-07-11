@@ -54,6 +54,12 @@
                     <TextBlock Text="Chats &amp; Media" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
                 </StackPanel>
             </Button>
+            <Button x:Name="LinkedDevices" Background="{x:Null}" HorizontalContentAlignment="Left" Width="250" Click="LinkedDevices_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE8EA;" FontSize="36"/>
+                    <TextBlock Text="Linked Devices" Style="{StaticResource TitleTextBlockStyle}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Button>
             <Button x:Name="AdvancedButton" Background="{x:Null}" HorizontalContentAlignment="Left" Width="250" Click="AdvancedButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <FontIcon Glyph="&#xE15E;" FontSize="36"/>
